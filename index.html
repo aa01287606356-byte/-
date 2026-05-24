@@ -239,6 +239,7 @@
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
+    <!-- كروت عدد الأصناف -->
     <div class="stats-grid">
       <div class="stat-card red" data-tab="urgent" onclick="switchTab('urgent')">
         <div class="stat-label">🔴 أصناف عاجلة</div>
@@ -262,6 +263,7 @@
       </div>
     </div>
 
+    <!-- كروت كمية القطع -->
     <div class="qty-stats-grid">
       <div class="qty-card"><div class="qty-label">🔴 إجمالي القطع العاجلة</div><div class="qty-value" id="qty-urgent">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🟢 إجمالي قطع مراجعة 2025</div><div class="qty-value" id="qty-review">0</div><div class="qty-unit">قطعة</div></div>
@@ -269,11 +271,13 @@
       <div class="qty-card"><div class="qty-label">🟡 إجمالي قطع المتابعة</div><div class="qty-value" id="qty-balance">0</div><div class="qty-unit">قطعة</div></div>
     </div>
 
+    <!-- الرسوم البيانية -->
     <div class="charts-grid">
       <div class="chart-card"><h4>📊 توزيع الأصناف حسب الفئات</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
       <div class="chart-card"><h4>🎨 توزيع الألوان</h4><div class="chart-wrap"><canvas id="color-chart"></canvas></div></div>
     </div>
 
+    <!-- الجدول -->
     <div class="table-card">
       <div class="table-header">
         <h4 id="table-title">🔴 أصناف عاجلة</h4>
@@ -470,7 +474,7 @@ function renderTable(list) {
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
-    html += `<tr class="${priorityClass}"><td>${i+1}</td><td>${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}<td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
+    html += `<tr class="${priorityClass}"><td>${i+1}</td><td>${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
   });
   html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجمالي</td><td><strong>${totalQty}</strong></td><td colspan="4"></td></tr>`;
   html += '</tbody></table>';
