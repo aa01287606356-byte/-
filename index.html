@@ -100,6 +100,7 @@
   .btn-excel { background: #107c41; }
   .btn-print { background: var(--gold); }
   
+  /* كروت عدد الأصناف */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
   .stat-card {
     background: white; border-radius: 16px; padding: 20px; text-align: center;
@@ -121,6 +122,27 @@
   .stat-label { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
   .stat-value { font-size: 36px; font-weight: 900; }
   .stat-sub { font-size: 12px; color: var(--gray); margin-top: 4px; }
+
+  /* كروت كمية القطع */
+  .qty-stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+  .qty-card {
+    background: white; border-radius: 16px; padding: 20px; text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+    border-right: 4px solid var(--gold);
+  }
+  .qty-label { font-size: 13px; color: var(--gray); margin-bottom: 4px; }
+  .qty-value { font-size: 28px; font-weight: 900; }
+  .qty-unit { font-size: 11px; color: var(--gray); margin-top: 4px; }
+
+  /* كروت التحليلات (رصيد ومبيعات المجموعة الفرعية) */
+  .analytics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
+  .analytics-card {
+    background: white; border-radius: 16px; padding: 20px; text-align: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  }
+  .analytics-card h4 { font-size: 13px; color: var(--gray); margin-bottom: 8px; }
+  .analytics-value { font-size: 24px; font-weight: 900; }
+  .analytics-unit { font-size: 11px; color: var(--gray); }
 
   .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
   .chart-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
@@ -147,7 +169,7 @@
   .password-item { display: flex; justify-content: space-between; background: var(--gray-light); padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; }
 
   @media print {
-    .app-header, .action-buttons, .stats-grid, .charts-grid, .search-box { display: none !important; }
+    .app-header, .action-buttons, .stats-grid, .qty-stats-grid, .analytics-grid, .charts-grid, .search-box { display: none !important; }
   }
 </style>
 </head>
@@ -195,6 +217,7 @@
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
+    <!-- كروت عدد الأصناف (تفاعلية) -->
     <div class="stats-grid">
       <div class="stat-card red" data-tab="urgent" onclick="switchTab('urgent')">
         <div class="stat-label">🔴 أصناف عاجلة</div>
@@ -212,12 +235,61 @@
         <div class="stat-sub">صنف</div>
       </div>
       <div class="stat-card purple" data-tab="review" onclick="switchTab('review')">
-        <div class="stat-label">🟢 مراجعة المخزون</div>
+        <div class="stat-label">🟢 مراجعة المخزون 2025</div>
         <div class="stat-value" id="card-review">0</div>
         <div class="stat-sub">صنف</div>
       </div>
     </div>
 
+    <!-- كروت كمية القطع -->
+    <div class="qty-stats-grid">
+      <div class="qty-card">
+        <div class="qty-label">🔴 إجمالي القطع العاجلة</div>
+        <div class="qty-value" id="qty-urgent">0</div>
+        <div class="qty-unit">قطعة</div>
+      </div>
+      <div class="qty-card">
+        <div class="qty-label">🔄 إجمالي قطع البدائل</div>
+        <div class="qty-value" id="qty-substitute">0</div>
+        <div class="qty-unit">قطعة</div>
+      </div>
+      <div class="qty-card">
+        <div class="qty-label">🟡 إجمالي قطع المتابعة</div>
+        <div class="qty-value" id="qty-balance">0</div>
+        <div class="qty-unit">قطعة</div>
+      </div>
+      <div class="qty-card">
+        <div class="qty-label">🟢 إجمالي قطع المراجعة 2025</div>
+        <div class="qty-value" id="qty-review">0</div>
+        <div class="qty-unit">قطعة</div>
+      </div>
+    </div>
+
+    <!-- كروت التحليلات (رصيد ومبيعات المجموعة الفرعية) -->
+    <div class="analytics-grid" id="analytics-grid">
+      <div class="analytics-card">
+        <h4>📦 إجمالي رصيد المجموعة الفرعية</h4>
+        <div class="analytics-value" id="analytics-stock">0</div>
+        <div class="analytics-unit">قطعة</div>
+      </div>
+      <div class="analytics-card">
+        <h4>📈 إجمالي مبيعات المجموعة الفرعية</h4>
+        <div class="analytics-value" id="analytics-sales">0</div>
+        <div class="analytics-unit">قطعة</div>
+      </div>
+      <div class="analytics-card">
+        <h4>📊 متوسط المبيعات لكل صنف</h4>
+        <div class="analytics-value" id="analytics-avg">0</div>
+        <div class="analytics-unit">قطعة</div>
+      </div>
+      <div class="analytics-card">
+        <h4>🏪 عدد المجموعات الفرعية</h4>
+        <div class="analytics-value" id="analytics-groups">0</div>
+        <div class="analytics-unit">مجموعة</div>
+      </div>
+    </div>
+
+    <!-- الرسوم البيانية -->
     <div class="charts-grid">
       <div class="chart-card">
         <h4>📊 توزيع الأصناف حسب الفئات</h4>
@@ -229,6 +301,7 @@
       </div>
     </div>
 
+    <!-- الجدول -->
     <div class="table-card">
       <div class="table-header">
         <h4 id="table-title">🔴 أصناف عاجلة</h4>
@@ -355,7 +428,6 @@ function loadFile(input) {
       const ws = wb.Sheets[wb.SheetNames[0]];
       const allData = XLSX.utils.sheet_to_json(ws);
       
-      // فلترة الصفوف التابعة للفرع الحالي
       uploadedRows = allData.filter(r => {
         let branchVal = String(r['اسم الفرع'] || r['الفرع'] || '').trim();
         return branchVal === currentBranch.trim();
@@ -382,41 +454,61 @@ function processDataSegmentation() {
   cachedLists = { urgent: [], substitute: [], balance: [], review: [] };
   
   uploadedRows.forEach(row => {
-    // استخدام نفس أسماء الأعمدة من كود Power Query
     const decReason = String(row['سبب_القرار'] || '').trim();
     const itemType = String(row['تصنيف_المنتج_معدل'] || '').trim();
     
-    // شرط البديل
     if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل")) {
       cachedLists.substitute.push(row);
       return;
     }
-    
-    // تصنيف عاجل: جديد 2026 غير مكتمل أو اطلب الان
     if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "اطلب الان" || itemType === "جديد 2026 غير مكتمل") {
       cachedLists.urgent.push(row);
-    } 
-    // متابعة الرصيد
-    else if(itemType === "متوسطة" || itemType === "غير متوفر" || itemType === "تاريخ غير محدد") {
+    } else if(itemType === "متوسطة" || itemType === "غير متوفر" || itemType === "تاريخ غير محدد") {
       cachedLists.balance.push(row);
-    } 
-    // مراجعة المخزون: جديد 2025 غير مكتمل
-    else if(itemType === "جديد ٢٠٢٥ غير مكتمل" || itemType === "جديد 2025 غير مكتمل" || itemType.includes("جديد 2025")) {
+    } else if(itemType === "جديد ٢٠٢٥ غير مكتمل" || itemType === "جديد 2025 غير مكتمل" || itemType.includes("جديد 2025")) {
       cachedLists.review.push(row);
-    }
-    // أي تصنيفات تانية متعرفش - تظهر في مراجعة عشان تراجعوها
-    else if(itemType !== "" && itemType !== null) {
+    } else if(itemType !== "" && itemType !== null) {
       cachedLists.review.push(row);
     }
   });
   
-  // تحديث الكروت
+  // كروت عدد الأصناف
   document.getElementById('card-urgent').textContent = cachedLists.urgent.length;
   document.getElementById('card-substitute').textContent = cachedLists.substitute.length;
   document.getElementById('card-balance').textContent = cachedLists.balance.length;
   document.getElementById('card-review').textContent = cachedLists.review.length;
   
+  updateQuantityCards();
   updateCharts();
+}
+
+function updateQuantityCards() {
+  const totalQty = (list) => list.reduce((sum, row) => sum + Number(row['الكمية_المخصصة'] || 0), 0);
+  
+  document.getElementById('qty-urgent').textContent = totalQty(cachedLists.urgent);
+  document.getElementById('qty-substitute').textContent = totalQty(cachedLists.substitute);
+  document.getElementById('qty-balance').textContent = totalQty(cachedLists.balance);
+  document.getElementById('qty-review').textContent = totalQty(cachedLists.review);
+}
+
+function updateAnalyticsCards() {
+  const list = cachedLists[currentTab];
+  
+  // إجمالي رصيد المجموعة الفرعية
+  const totalGroupStock = list.reduce((sum, row) => sum + Number(row['رصيد_المجموعة_في_الفرع'] || 0), 0);
+  document.getElementById('analytics-stock').textContent = totalGroupStock;
+  
+  // إجمالي مبيعات المجموعة الفرعية
+  const totalGroupSales = list.reduce((sum, row) => sum + Number(row['مبيعات_المجموعة_الفرعية'] || 0), 0);
+  document.getElementById('analytics-sales').textContent = totalGroupSales;
+  
+  // متوسط المبيعات لكل صنف
+  const avgSales = list.length > 0 ? (totalGroupSales / list.length).toFixed(1) : 0;
+  document.getElementById('analytics-avg').textContent = avgSales;
+  
+  // عدد المجموعات الفرعية المتنوعة
+  const uniqueGroups = new Set(list.map(row => row['المجموعة الفرعية.2'] || row['المجموعة الفرعية'] || '').filter(g => g !== ''));
+  document.getElementById('analytics-groups').textContent = uniqueGroups.size;
 }
 
 function switchTab(tabKey) {
@@ -428,10 +520,14 @@ function switchTab(tabKey) {
     urgent: "🔴 أصناف عاجلة",
     substitute: "🔄 متوفر البديل",
     balance: "🟡 متابعة الرصيد",
-    review: "🟢 مراجعة المخزون"
+    review: "🟢 مراجعة المخزون 2025"
   };
   document.getElementById('table-title').textContent = titles[tabKey];
+  
+  updateAnalyticsCards();
   filterTable();
+  updateCategoriesChart();
+  updateColorChart();
 }
 
 function filterTable() {
@@ -455,10 +551,9 @@ function renderTable(list) {
   let html = `<table class="data-table"><thead><tr>
     <th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th><th>المقاس</th>
     <th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>مخزن ابيس</th>
-    </tr></thead><tbody>`;
+    <tr></thead><tbody>`;
   
   list.forEach((row, i) => {
-    // استخدام الأسماء الصحيحة من Power Query
     const productName = row['إسم الصنف'] || row['اسم الصنف'] || '—';
     const barcode = row['باركود الوحدة المخزنية'] || '—';
     const color = row['اللون'] || '—';
@@ -488,24 +583,35 @@ function renderTable(list) {
   container.innerHTML = html;
 }
 
-function updateCharts() {
-  // رسم بياني 1: توزيع الأصناف حسب الفئات
-  const categoriesCount = [
-    cachedLists.urgent.length,
-    cachedLists.substitute.length,
-    cachedLists.balance.length,
-    cachedLists.review.length
-  ];
+function updateCategoriesChart() {
+  let categoriesCount = [];
+  let categoriesLabels = [];
+  
+  if(currentTab === 'urgent') {
+    categoriesCount = [cachedLists.urgent.length];
+    categoriesLabels = ['🔴 أصناف عاجلة'];
+  } else if(currentTab === 'substitute') {
+    categoriesCount = [cachedLists.substitute.length];
+    categoriesLabels = ['🔄 متوفر البديل'];
+  } else if(currentTab === 'balance') {
+    categoriesCount = [cachedLists.balance.length];
+    categoriesLabels = ['🟡 متابعة الرصيد'];
+  } else {
+    categoriesCount = [cachedLists.review.length];
+    categoriesLabels = ['🟢 مراجعة المخزون 2025'];
+  }
   
   if(categoriesChart) categoriesChart.destroy();
   const ctx1 = document.getElementById('categories-chart').getContext('2d');
   categoriesChart = new Chart(ctx1, {
     type: 'doughnut',
     data: {
-      labels: ['🔴 أصناف عاجلة', '🔄 متوفر البديل', '🟡 متابعة الرصيد', '🟢 مراجعة المخزون'],
+      labels: categoriesLabels,
       datasets: [{
         data: categoriesCount,
-        backgroundColor: ['#dc2626', '#2563eb', '#ca8a04', '#7c3aed'],
+        backgroundColor: currentTab === 'urgent' ? '#dc2626' : 
+                        currentTab === 'substitute' ? '#2563eb' :
+                        currentTab === 'balance' ? '#ca8a04' : '#7c3aed',
         borderWidth: 0,
         hoverOffset: 10
       }]
@@ -519,10 +625,12 @@ function updateCharts() {
       }
     }
   });
-  
-  // رسم بياني 2: توزيع الألوان
+}
+
+function updateColorChart() {
+  const list = cachedLists[currentTab];
   const colorMap = {};
-  uploadedRows.forEach(row => {
+  list.forEach(row => {
     const color = row['اللون'] || 'غير محدد';
     colorMap[color] = (colorMap[color] || 0) + 1;
   });
@@ -536,60 +644,4 @@ function updateCharts() {
   };
   
   if(colorChart) colorChart.destroy();
-  const ctx2 = document.getElementById('color-chart').getContext('2d');
-  colorChart = new Chart(ctx2, {
-    type: 'bar',
-    data: {
-      labels: sortedColors.map(([c]) => c),
-      datasets: [{
-        label: 'عدد الأصناف',
-        data: sortedColors.map(([,v]) => v),
-        backgroundColor: sortedColors.map(([c]) => colorPalette[c] || '#1a6b3c'),
-        borderRadius: 8,
-        barPercentage: 0.7
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: { callbacks: { label: function(context) { return `${context.raw} صنف`; } } }
-      },
-      scales: {
-        y: { beginAtZero: true, ticks: { stepSize: 1, font: { family: 'Cairo' } }, title: { display: true, text: 'عدد الأصناف', font: { family: 'Cairo' } } },
-        x: { ticks: { font: { family: 'Cairo', size: 11 } } }
-      }
-    }
-  });
-}
-
-function exportToExcel() {
-  if(uploadedRows.length === 0) return;
-  const wb = XLSX.utils.book_new();
-  
-  const formatSheet = (list, name) => {
-    const data = list.map((row, idx) => ({ 
-      "م": idx+1, 
-      "إسم الصنف": row['إسم الصنف'] || row['اسم الصنف'] || '—', 
-      "الباركود": row['باركود الوحدة المخزنية'] || '—', 
-      "اللون": row['اللون'] || '—', 
-      "المقاس": row['المقاس'] || '—', 
-      "المجموعة الفرعية": row['المجموعة الفرعية.2'] || row['المجموعة الفرعية'] || '—', 
-      "الكمية المخصصة": Number(row['الكمية_المخصصة'] || 0), 
-      "المبيعات": Number(row['المبيعات'] || 0), 
-      "الرصيد": Number(row['رصيد'] || 0),
-      "مخزن ابيس": Number(row['مخزن ابيس'] || 0)
-    }));
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(data), name);
-  };
-  
-  formatSheet(cachedLists.urgent, "🔴 عاجل");
-  formatSheet(cachedLists.balance, "🟡 متابعة الرصيد");
-  formatSheet(cachedLists.review, "🟢 مراجعة المخزون");
-  
-  XLSX.writeFile(wb, `تقرير_فرع_${currentBranch}_${new Date().toLocaleDateString('ar-EG')}.xlsx`);
-}
-</script>
-</body>
-</html>
+  const ctx2 = document.getElementById('color-chart').
