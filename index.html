@@ -97,7 +97,7 @@
   .upload-zone { border: 2px dashed var(--green-light); border-radius: 16px; padding: 32px; cursor: pointer; background: var(--gray-light); margin-top: 20px; }
   .upload-zone input { display: none; }
 
-  /* ===== لوحة التحكم لوحة التحليلات ===== */
+  /* ===== لوحة التحكم ===== */
   #dashboard-screen { display: none; padding: 32px; }
   .dashboard-title { display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; }
   
@@ -107,7 +107,7 @@
   .btn-excel { background: #107c41; }
   .btn-action:hover { transform: translateY(-2px); opacity: 0.9; }
 
-  /* الكروت التحليلية KPI */
+  /* الكروت التحليلية */
   .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 28px; }
   .stat-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); border-right: 4px solid var(--green); }
   .stat-card.red { border-right-color: var(--red); }
@@ -123,7 +123,7 @@
   .chart-card h4 { font-size: 15px; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--gray-light); }
   .chart-wrap { height: 220px; position: relative; }
 
-  /* نظام الأزرار التبويبية الملونة Tabs */
+  /* الأيقونات التفاعلية */
   .tabs-container { display: flex; gap: 12px; margin-bottom: 20px; }
   .tab-btn {
     flex: 1; padding: 16px; border: 2px solid #e5e7eb; background: white; border-radius: 14px;
@@ -144,7 +144,7 @@
   .tab-btn.active[data-tab="review"] { border-color: var(--green); color: var(--green); background: #f0fdf4; }
   .tab-btn.active[data-tab="review"] .count { background: var(--green); color: white; }
 
-  /* تصميم الجدول المتقدم */
+  /* الجدول */
   .table-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.04); }
   .table-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
   .search-box { background: var(--gray-light); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
@@ -154,14 +154,12 @@
   .data-table th { background: var(--gray-light); padding: 12px 10px; text-align: right; font-weight: 700; color: var(--gray); border-bottom: 2px solid #e5e7eb; }
   .data-table td { padding: 12px 10px; border-bottom: 1px solid #f3f4f6; }
   
-  /* تمييز الأسطر حرارياً Heatmap */
   .data-table tr.high-risk td { background-color: #fff1f2; }
   
   .qty-badge { background: var(--green); color: white; padding: 3px 10px; border-radius: 12px; font-weight: 700; }
   .barcode-text { font-family: monospace; color: #4b5563; letter-spacing: 0.5px; font-size: 12px; }
-  .badge-icon { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
 
-  /* لوحة الإشراف للأدمن */
+  /* لوحة الأدمن */
   #admin-screen { display: none; }
   .admin-container { padding: 32px; }
   .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
@@ -180,11 +178,11 @@
   <div class="login-card">
     <div class="login-logo">
       <h1>🌳 TREE</h1>
-      <p style="color:var(--gray); font-size:13px; margin-top:4px;">نظام تصفية وإدارة توزيع البضائع الذكي</p>
+      <p style="color:var(--gray); font-size:13px; margin-top:4px;">نظام إدارة المخزون والتوزيع الذكي</p>
     </div>
     <div class="form-group">
       <label>اسم الفرع</label>
-      <select id="branch-select"><option value="">— اختر فرعك من القائمة —</option></select>
+      <select id="branch-select"><option value="">— اختر فرعك —</option></select>
     </div>
     <div class="form-group">
       <label>كلمة المرور</label>
@@ -206,10 +204,10 @@
 
   <div id="upload-screen">
     <div class="upload-card">
-      <h3 style="margin-bottom:10px;">📊 رفع ملف التوزيع العام للشركة</h3>
-      <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">قم برفع ملف الإكسيل الرئيسي لتصفية وعرض بيانات فرعك الحالي والتحليلات فوراً</p>
+      <h3 style="margin-bottom:10px;">📊 رفع ملف التوزيع</h3>
+      <p style="color:var(--gray); font-size:14px; margin-bottom:20px;">قم برفع ملف الإكسيل الرئيسي لتصفية وعرض بيانات فرعك</p>
       <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-        <p>📎 اضغط هنا واصعد بملف الإكسيل (.xlsx)</p>
+        <p>📎 اضغط لاختيار الملف</p>
         <input type="file" id="file-input" accept=".xlsx,.xls" onchange="loadFile(this)">
       </div>
       <p id="upload-status" style="margin-top:15px; font-size:13px; color:var(--red);"></p>
@@ -219,49 +217,50 @@
   <div id="dashboard-screen">
     <div class="dashboard-title">
       <div>
-        <h2 id="dashboard-title-text">📊 تحليل لوحة التوزيع الرقمية</h2>
+        <h2>📊 لوحة تحكم التوزيع</h2>
         <p id="dashboard-subtitle" style="color:var(--gray); font-size:13px;"></p>
       </div>
       <div class="action-buttons">
-        <button class="btn-action btn-excel" onclick="exportToThreeSheetsExcel()">Excel تصدير التقرير (3 شيتات)</button>
-        <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة الجدول الحالي</button>
+        <button class="btn-action btn-excel" onclick="exportToThreeSheetsExcel()">📊 تصدير Excel (3 شيتات)</button>
+        <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
       </div>
     </div>
 
     <div class="stats-grid">
       <div class="stat-card red">
-        <div class="stat-label">🔴 مخاطر نفاذ المخزون العاجل</div>
-        <div class="stat-value" id="kpi-stockout" style="color:var(--red)">0</div>
-        <div class="stat-sub">أصناف عاجلة مبيعاتها نشطة ورصيدها بالفرع صفر</div>
+        <div class="stat-label">🔴 مخاطر النفاذ</div>
+        <div class="stat-value" id="kpi-stockout">0</div>
+        <div class="stat-sub">عاجل + رصيد صفر + مبيعات</div>
       </div>
       <div class="stat-card blue">
-        <div class="stat-label">🔄 نسبة تغطية البضاعة البديلة</div>
-        <div class="stat-value" id="kpi-sub-rate" style="color:var(--blue)">0%</div>
-        <div class="stat-sub">من إجمالي الأصناف الملغاة لوجود بديل متوفر بالمجموعة</div>
+        <div class="stat-label">🔄 نسبة البدائل</div>
+        <div class="stat-value" id="kpi-sub-rate">0%</div>
+        <div class="stat-sub">من إجمالي الطلبية</div>
       </div>
       <div class="stat-card yellow">
-        <div class="stat-label">🟡 إجمالي القطع المطلوبة للمتابعة</div>
-        <div class="stat-value" id="kpi-total-qty" style="color:var(--yellow)">0</div>
-        <div class="stat-sub">مجموع كميات الأصناف الجاري متابعتها وعرضها</div>
+        <div class="stat-label">🟡 إجمالي القطع</div>
+        <div class="stat-value" id="kpi-total-qty">0</div>
+        <div class="stat-sub">للمتابعة</div>
       </div>
       <div class="stat-card">
-        <div class="stat-label">🏛️ إجمالي مساحات العرض النشطة</div>
+        <div class="stat-label">🏛️ المساحات النشطة</div>
         <div class="stat-value" id="kpi-active-spaces">0</div>
-        <div class="stat-sub">عدد الأقسام المختلفة المخصصة بالفرع</div>
+        <div class="stat-sub">أقسام مختلفة</div>
       </div>
     </div>
 
     <div class="charts-grid">
       <div class="chart-card">
-        <h4>📊 حجم كميات التوزيع الإجمالية بناءً على مساحة القسم</h4>
-        <div class="chart-wrap"><canvas id="space-allocation-chart"></canvas></div>
+        <h4>📊 التوزيع حسب المساحة</h4>
+        <div class="chart-wrap"><canvas id="space-chart"></canvas></div>
       </div>
       <div class="chart-card">
-        <h4>📈 أعلى 5 أصناف سحباً بالفرع ومقارنتها بالبضاعة الجارية</h4>
-        <div class="chart-wrap"><canvas id="sales-vs-allocated-chart"></canvas></div>
+        <h4>📈 أعلى 5 مبيعات</h4>
+        <div class="chart-wrap"><canvas id="sales-chart"></canvas></div>
       </div>
     </div>
 
+    <!-- الأيقونات التفاعلية الأربعة -->
     <div class="tabs-container">
       <button class="tab-btn active" data-tab="urgent" onclick="switchTab('urgent')">
         <span>🔴 أصناف عاجلة</span>
@@ -283,9 +282,9 @@
 
     <div class="table-card">
       <div class="table-header">
-        <h4 id="table-view-title">جدول البيانات المفلترة</h4>
+        <h4 id="table-title">قائمة الأصناف العاجلة</h4>
         <div class="search-box">
-          🔍 <input type="text" id="search-input" placeholder="بحث فوري بالاسم، الباركود، المساحة، اللون..." oninput="filterTable()">
+          🔍 <input type="text" id="search-input" placeholder="بحث بالاسم، الباركود، اللون..." oninput="filterTable()">
         </div>
       </div>
       <div style="overflow-x:auto;" id="table-container"></div>
@@ -295,26 +294,26 @@
 
 <div id="admin-screen">
   <header class="app-header">
-    <div><h2>🌳 لوحة إدارة كلمات مرور الفروع</h2></div>
+    <div><h2>🌳 لوحة الإدارة</h2></div>
     <button class="btn-logout" onclick="doLogout()">خروج ↩</button>
   </header>
   <div class="admin-container">
     <div class="admin-grid">
       <div class="chart-card">
-        <h3 style="margin-bottom:15px;">🔐 صلاحيات كلمات المرور الحالية</h3>
-        <div id="admin-password-list" style="max-height:420px; overflow-y:auto;"></div>
+        <h3>🔐 كلمات مرور الفروع</h3>
+        <div id="admin-password-list"></div>
       </div>
       <div class="chart-card">
-        <h3 style="margin-bottom:15px;">✏️ تحديث فوري لكلمة مرور فرع</h3>
+        <h3>✏️ تحديث كلمة مرور</h3>
         <div class="form-group">
-          <label>اختر الفرع المستهدف</label>
+          <label>اختر الفرع</label>
           <select id="admin-branch-select"></select>
         </div>
         <div class="form-group">
           <label>كلمة المرور الجديدة</label>
-          <input type="text" id="admin-new-password" placeholder="أدخل كلمة مرور جديدة للفرع">
+          <input type="text" id="admin-new-password" placeholder="أدخل كلمة المرور الجديدة">
         </div>
-        <button class="btn-login" onclick="updateBranchPassword()">💾 حفظ وتحديث فوري</button>
+        <button class="btn-login" onclick="updateBranchPassword()">💾 حفظ التحديث</button>
         <p id="admin-toast" style="margin-top:12px; font-weight:600; color:var(--green); display:none;"></p>
       </div>
     </div>
@@ -322,65 +321,57 @@
 </div>
 
 <script>
-// ===== المجموعات والحالة الفنية لنظام الشجرة المتقدم =====
+// ===== قائمة الفروع =====
 const BRANCHES = [
   "أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني",
   "التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية",
   "العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل",
   "الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز",
-  "حدائق الاهرام","خالد بن وليد","دمنهور","سان ستيفانو","سبورتنج",
+  "حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج",
   "سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا",
   "عجمى ستار","لوران"
 ];
-const ADMIN_MASTER_KEY = "101499"; // كود الأدمن العام الموحد
+const ADMIN_MASTER_KEY = "101499";
 
 let currentBranch = null;
 let uploadedRows = [];
-let currentTab = 'urgent'; 
+let currentTab = 'urgent';
 let cachedLists = { urgent: [], substitute: [], balance: [], review: [] };
-
-let spaceChartInstance = null;
-let salesChartInstance = null;
+let spaceChart = null, salesChart = null;
 
 window.onload = function() {
-  const loginSelect = document.getElementById('branch-select');
+  const select = document.getElementById('branch-select');
   BRANCHES.forEach(b => {
     let opt = document.createElement('option');
     opt.value = b; opt.textContent = b;
-    loginSelect.appendChild(opt);
+    select.appendChild(opt);
   });
 };
 
 function getBranchPasswords() {
-  let stored = localStorage.getItem('tree_sys_passwords');
+  let stored = localStorage.getItem('tree_passwords');
   if(stored) return JSON.parse(stored);
-  let initial = {};
-  BRANCHES.forEach((b, idx) => {
-    initial[b] = 'tree' + String(idx + 1).padStart(3, '0');
-  });
-  return initial;
+  let defaults = {};
+  BRANCHES.forEach((b, i) => { defaults[b] = 'tree' + String(i+1).padStart(3,'0'); });
+  return defaults;
 }
 
-// ===== نظام الصلاحيات والأمان =====
 function doLogin() {
-  const br = document.getElementById('branch-select').value;
-  const pw = document.getElementById('password-input').value.trim();
+  const branch = document.getElementById('branch-select').value;
+  const pwd = document.getElementById('password-input').value.trim();
   const err = document.getElementById('login-error');
-
-  if(pw === ADMIN_MASTER_KEY) {
-    showAdminPanel();
-    return;
-  }
-  if(!br) { err.style.display='block'; err.textContent='❌ يرجى اختيار اسم الفرع أولاً من القائمة القابلة للمنسدلة'; return; }
-
+  
+  if(pwd === ADMIN_MASTER_KEY) { showAdmin(); return; }
+  if(!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع أولاً'; return; }
+  
   const pwds = getBranchPasswords();
-  if(pwds[br] === pw) {
-    currentBranch = br;
+  if(pwds[branch] === pwd) {
+    currentBranch = branch;
     err.style.display = 'none';
-    showAppDashboard();
+    showApp();
   } else {
     err.style.display = 'block';
-    err.textContent = '❌ كلمة المرور غير صحيحة، يرجى إعادة المحاولة';
+    err.textContent = '❌ كلمة المرور غير صحيحة';
   }
 }
 
@@ -390,19 +381,18 @@ function doLogout() {
   document.getElementById('app-screen').style.display = 'none';
   document.getElementById('admin-screen').style.display = 'none';
   document.getElementById('file-input').value = '';
-  document.getElementById('upload-status').textContent = '';
   document.getElementById('search-input').value = '';
 }
 
-function showAppDashboard() {
+function showApp() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('app-screen').style.display = 'block';
-  document.getElementById('header-branch').textContent = '🏪 فرعك الحالي: ' + currentBranch;
+  document.getElementById('header-branch').textContent = '🏪 ' + currentBranch;
   document.getElementById('upload-screen').style.display = 'flex';
   document.getElementById('dashboard-screen').style.display = 'none';
 }
 
-function showAdminPanel() {
+function showAdmin() {
   document.getElementById('login-screen').style.display = 'none';
   document.getElementById('admin-screen').style.display = 'block';
   renderAdminList();
@@ -411,16 +401,13 @@ function showAdminPanel() {
 function renderAdminList() {
   const listDiv = document.getElementById('admin-password-list');
   const selectNode = document.getElementById('admin-branch-select');
-  listDiv.innerHTML = '';
-  selectNode.innerHTML = '<option value="">— اختر الفرع المستهدف —</option>';
-  
+  listDiv.innerHTML = ''; selectNode.innerHTML = '<option value="">— اختر —</option>';
   const pwds = getBranchPasswords();
   BRANCHES.forEach(b => {
     let row = document.createElement('div');
     row.className = 'password-item';
-    row.innerHTML = `<strong>${b}</strong><span style="color:var(--green); font-family:monospace; font-weight:700;">${pwds[b]}</span>`;
+    row.innerHTML = `<strong>${b}</strong><span style="color:var(--green);">${pwds[b]}</span>`;
     listDiv.appendChild(row);
-
     let opt = document.createElement('option');
     opt.value = b; opt.textContent = b;
     selectNode.appendChild(opt);
@@ -428,61 +415,47 @@ function renderAdminList() {
 }
 
 function updateBranchPassword() {
-  const br = document.getElementById('admin-branch-select').value;
-  const npw = document.getElementById('admin-new-password').value.trim();
-  const toast = document.getElementById('admin-toast');
-  if(!br || !npw) return;
-
+  const branch = document.getElementById('admin-branch-select').value;
+  const newPwd = document.getElementById('admin-new-password').value.trim();
+  if(!branch || !newPwd) return;
   let pwds = getBranchPasswords();
-  pwds[br] = npw;
-  localStorage.setItem('tree_sys_passwords', JSON.stringify(pwds));
-  toast.style.display = 'block'; toast.textContent = '✅ تم تحديث وحفظ كلمة المرور الجديدة بنجاح';
+  pwds[branch] = newPwd;
+  localStorage.setItem('tree_passwords', JSON.stringify(pwds));
+  const toast = document.getElementById('admin-toast');
+  toast.style.display = 'block'; toast.textContent = '✅ تم تحديث كلمة المرور';
   renderAdminList();
   document.getElementById('admin-new-password').value = '';
-  setTimeout(() => toast.style.display='none', 3000);
+  setTimeout(() => toast.style.display = 'none', 3000);
 }
 
-// ===== محرك قراءة الملفات وفرز التوزيع الفوري =====
 function loadFile(input) {
   const file = input.files[0];
   if(!file) return;
-  document.getElementById('upload-status').style.color = 'var(--gray)';
-  document.getElementById('upload-status').textContent = '⏳ جاري فك حزم البيانات وتصفية الفرع تلقائياً...';
-
+  document.getElementById('upload-status').textContent = '⏳ جاري التحميل...';
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
-      const dataArr = new Uint8Array(e.target.result);
-      const workbook = XLSX.read(dataArr, { type: 'array' });
-      const sheetName = workbook.SheetNames[0];
-      const jsonRows = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName]);
-
-      // فلترة الصفوف التابعة لفرع المستخدم الحالي فقط
-      uploadedRows = jsonRows.filter(r => {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const allData = XLSX.utils.sheet_to_json(ws);
+      
+      uploadedRows = allData.filter(r => {
         let branchVal = String(r['اسم الفرع'] || r['الفرع'] || '').trim();
         return branchVal === currentBranch.trim();
       });
-
+      
       if(uploadedRows.length === 0) {
-        document.getElementById('upload-status').style.color = 'var(--red)';
-        document.getElementById('upload-status').textContent = `⚠️ عذراً، لم نجد أي بيانات تخص فرع (${currentBranch}) في هذا شيت الملف المرفوع!`;
+        document.getElementById('upload-status').textContent = `⚠️ لا توجد بيانات لفرع ${currentBranch}`;
         return;
       }
-
-      // تشغيل محرك تقسيم المجموعات بناءً على القواعد الذكية الجديدة
-      processDataSegmentation();
       
+      processDataSegmentation();
       document.getElementById('upload-screen').style.display = 'none';
       document.getElementById('dashboard-screen').style.display = 'block';
-      
-      // التوجه التلقائي لتبويب "عاجل" كوضع رئيسي وافتراضي عند فتح الشاشة
       switchTab('urgent');
       renderAnalytics();
-
     } catch(err) {
-      console.error(err);
-      document.getElementById('upload-status').style.color = 'var(--red)';
-      document.getElementById('upload-status').textContent = '❌ خطأ بنيوي في معالجة الشيت، يرجى التأكد من توافق الأعمدة والملف.';
+      document.getElementById('upload-status').textContent = '❌ خطأ في قراءة الملف';
     }
   };
   reader.readAsArrayBuffer(file);
@@ -490,271 +463,168 @@ function loadFile(input) {
 
 function processDataSegmentation() {
   cachedLists = { urgent: [], substitute: [], balance: [], review: [] };
-
+  
   uploadedRows.forEach(row => {
-    const decReason = String(row['سبب_القرار'] || row['سبب القرار'] || row['حسب_القرار'] || row['حسب القرار'] || '').trim();
+    const decReason = String(row['سبب_القرار'] || row['سبب القرار'] || '').trim();
     const itemType = String(row['تصنيف_المنتج_معدل'] || row['تصنيف المنتج معدل'] || '').trim();
-
-    // 1. فحص شرط استبعاد المنتجات الملغاة لوجود بديل متوفر ونقلها فوراً للمجموعة الخاصة بها لعدم تشتيت الفروع
-    if(decReason === "تم إلغاء التخصيص بديل لنفس اللون بالمجموعة" || decReason.includes("بديل لنفس اللون")) {
+    
+    // شرط البديل: يتجه لأيقونة منفصلة
+    if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل لنفس اللون")) {
       cachedLists.substitute.push(row);
-      return; 
+      return;
     }
-
-    // 2. تقسيم وترشيح الحالات المعتمدة لبقية المجموعات بشكل نظيف
+    
+    // تصنيف عاجل
     if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "اطلب الان") {
       cachedLists.urgent.push(row);
-    } 
+    }
+    // متابعة الرصيد
     else if(itemType === "متوسطة" || itemType === "غير متوفر" || itemType === "تاريخ غير محدد") {
       cachedLists.balance.push(row);
-    } 
+    }
+    // مراجعة المخزون
     else if(itemType === "جديد ٢٠٢٥ غير مكتمل") {
       cachedLists.review.push(row);
     }
-    // ملاحظة: الحالات الأخرى مثل "متوفر" أو "مستقر" تم عزلها تلقائياً ولا تظهر بناءً على طلبك لمنع الفروع من التشتت
+    // باقي التصنيفات لا تظهر
   });
-
-  // تحديث عدادات الأزرار التبويبية فوق الجدول تلقائياً بالأرقام الحقيقية
+  
   document.getElementById('count-urgent').textContent = cachedLists.urgent.length;
   document.getElementById('count-substitute').textContent = cachedLists.substitute.length;
   document.getElementById('count-balance').textContent = cachedLists.balance.length;
   document.getElementById('count-review').textContent = cachedLists.review.length;
 }
 
-// ===== الفلترة التفاعلية ونظام عرض الجداول المطور =====
 function switchTab(tabKey) {
   currentTab = tabKey;
-  
-  // تفعيل التصميم المضاء للتبويب النشط حالياً في لوحة التحكم
   document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
   document.querySelector(`.tab-btn[data-tab="${tabKey}"]`).classList.add('active');
-
-  const titles = {
-    urgent: "🚨 قائمة الأصناف العاجلة والأولوية القصوى لطلبها بالفرع",
-    substitute: "🔄 الأصناف الملغاة بسبب توافر بديل لنفس اللون والمجموعة",
-    balance: "🟡 مراجعة ومتابعة أرصدة الأصناف المتوسطة وغير المتوفرة",
-    review: "🟢 أصناف مراجعة المخزون المستهدفة (جديد ٢٠٢٥ غير مكتمل)"
-  };
-  document.getElementById('table-view-title').textContent = titles[tabKey];
   
+  const titles = {
+    urgent: "🔴 قائمة الأصناف العاجلة",
+    substitute: "🔄 قائمة الأصناف الملغاة (بدائل متوفرة)",
+    balance: "🟡 قائمة متابعة الرصيد",
+    review: "🟢 قائمة مراجعة المخزون"
+  };
+  document.getElementById('table-title').textContent = titles[tabKey];
   filterTable();
 }
 
 function filterTable() {
-  const searchQuery = document.getElementById('search-input').value.toLowerCase().trim();
-  const originalList = cachedLists[currentTab];
-
-  const filteredList = originalList.filter(row => {
+  const search = document.getElementById('search-input').value.toLowerCase();
+  const list = cachedLists[currentTab];
+  const filtered = list.filter(row => {
     const name = String(row['اسم الصنف'] || row['إسم الصنف'] || '').toLowerCase();
-    const barcode = String(row['الباركود'] || row['البركود'] || row['Barcode'] || '').toLowerCase();
+    const barcode = String(row['الباركود'] || row['Barcode'] || '').toLowerCase();
     const color = String(row['اللون'] || '').toLowerCase();
-    const subGroup = String(row['المجموعة الفرعية'] || row['المجموعة الفرعية.2'] || '').toLowerCase();
-    const space = String(row['المساحة'] || row['مساحة'] || '').toLowerCase();
-
-    return name.includes(searchQuery) || barcode.includes(searchQuery) || color.includes(searchQuery) || subGroup.includes(searchQuery) || space.includes(searchQuery);
+    return name.includes(search) || barcode.includes(search) || color.includes(search);
   });
-
-  renderTableHTML(filteredList);
+  renderTable(filtered);
 }
 
-function renderTableHTML(list) {
+function renderTable(list) {
   const container = document.getElementById('table-container');
   if(list.length === 0) {
-    container.innerHTML = '<p style="text-align:center; padding:40px; color:var(--gray); font-weight:600;">📭 لا توجد أي قطع أو أصناف مطابقة لعرضها ضمن هذه الفئة حالياً.</p>';
+    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>';
     return;
   }
-
-  let html = `
-    <table class="data-table">
-      <thead>
-        <tr>
-          <th>#</th>
-          <th>اسم الصنف التفصيلي</th>
-          <th>الباركود (Barcode)</th>
-          <th>اللون</th>
-          <th>المقاس</th>
-          <th>مساحة القسم</th>
-          <th>المجموعة الفرعية</th>
-          <th style="text-align:center;">الكمية المخصصة</th>
-          <th>المبيعات التاريخية</th>
-          <th>الرصيد الحالي</th>
-          <th>التصنيف بالملف</th>
-        </tr>
-      </thead>
-      <tbody>
-  `;
-
-  list.forEach((row, index) => {
-    const name = row['اسم الصنف'] || row['إسم الصنف'] || '—';
-    const barcode = row['الباركود'] || row['البركود'] || row['Barcode'] || '—';
-    const color = row['اللون'] || '—';
-    const size = row['المقاس'] || '—';
-    const space = row['المساحة'] || row['مساحة'] || '—';
-    const subGroup = row['المجموعة الفرعية'] || row['المجموعة الفرعية.2'] || '—';
-    const allocatedQty = Number(row['الكمية_المخصصة'] || row['الكمية مخصصة'] || row['الكمية المخصصة'] || 0);
-    const sales = Number(row['المبيعات'] || 0);
-    const stock = Number(row['رصيد'] || row['الرصيد'] || 0);
-    const originalCat = row['تصنيف_المنتج_معدل'] || row['تصنيف المنتج معدل'] || '—';
-
-    // التلوين الحراري الذكي للأخطار المرتفعة: صنف عاجل ومبيعاته نشطة والرصيد الحالي له في الفرع صفر
-    const isHighRisk = (currentTab === 'urgent' && stock === 0 && sales > 0);
-    const rowClass = isHighRisk ? 'class="high-risk"' : '';
-
-    html += `
-      <tr ${rowClass}>
-        <td style="color:var(--gray); font-size:12px;">${index + 1}</td>
-        <td style="font-weight:600; max-width:240px; white-space:normal;">${name}</td>
-        <td class="barcode-text">${barcode}</td>
-        <td>${color}</td>
-        <td><strong>${size}</strong></td>
-        <td style="font-weight:700; color:var(--green-dark);">${space}</td>
-        <td style="color:var(--gray); font-size:12px;">${subGroup}</td>
-        <td style="text-align:center;"><span class="qty-badge">${allocatedQty}</span></td>
-        <td style="color:var(--blue); font-weight:700;">${sales}</td>
-        <td style="font-weight:700;">${stock}</td>
-        <td><span class="badge-icon" style="background:#f3f4f6; color:#374151;">📄 ${originalCat}</span></td>
-      </tr>
-    `;
+  
+  let html = `<table class="data-table"><thead><tr>
+    <th>#</th><th>اسم الصنف</th><th>الباركود</th><th>اللون</th><th>المقاس</th>
+    <th>المساحة</th><th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th>
+  </tr></thead><tbody>`;
+  
+  list.forEach((row, i) => {
+    const isHighRisk = (currentTab === 'urgent' && Number(row['رصيد']||0) === 0 && Number(row['المبيعات']||0) > 0);
+    html += `<tr ${isHighRisk ? 'class="high-risk"' : ''}>
+      <td>${i+1}</td>
+      <td style="font-weight:600;">${row['اسم الصنف'] || row['إسم الصنف'] || '—'}</td>
+      <td class="barcode-text">${row['الباركود'] || row['Barcode'] || '—'}</td>
+      <td>${row['اللون'] || '—'}</td>
+      <td>${row['المقاس'] || '—'}</td>
+      <td>${row['المساحة'] || row['مساحة'] || '—'}</td>
+      <td>${row['المجموعة الفرعية'] || row['المجموعة الفرعية.2'] || '—'}</td>
+      <td><span class="qty-badge">${Number(row['الكمية_المخصصة'] || 0)}</span></td>
+      <td>${Number(row['المبيعات'] || 0)}</td>
+      <td>${Number(row['رصيد'] || 0)}</td>
+    </tr>`;
   });
-
   html += '</tbody></table>';
   container.innerHTML = html;
 }
 
-// ===== محرك الإحصائيات وبناء الرسوم البيانية التفاعلية =====
 function renderAnalytics() {
-  const today = new Date().toLocaleDateString('ar-EG');
-  document.getElementById('dashboard-subtitle').textContent = `تصفية وتحليل فرع: ${currentBranch} — آخر تحديث للبيانات: ${today}`;
-
-  // 1. حساب بطاقة مخاطر نفاد المخزون الشديدة للأصناف العاجلة بالفرع
-  const stockoutCount = cachedLists.urgent.filter(r => Number(r['رصيد'] || r['الرصيد'] || 0) === 0 && Number(r['المبيعات'] || 0) > 0).length;
-  document.getElementById('kpi-stockout').textContent = stockoutCount;
-
-  // 2. حساب نسبة تغطية البدائل من إجمالي الكمية الجاري معالجتها
-  const totalSubQty = cachedLists.substitute.reduce((sum, r) => sum + Number(r['الكمية_المخصصة'] || r['الكمية مخصصة'] || r['الكمية المخصصة'] || 0), 0);
-  const totalAllQty = uploadedRows.reduce((sum, r) => sum + Number(r['الكمية_المخصصة'] || r['الكمية مخصصة'] || r['الكمية المخصصة'] || 0), 0);
-  const subRate = totalAllQty > 0 ? Math.round((totalSubQty / totalAllQty) * 100) : 0;
-  document.getElementById('kpi-sub-rate').textContent = subRate + '%';
-
-  // 3. مجموع القطع الفعلية الجاري متابعتها بالأزرار حالياً
-  const activeTotalQty = [...cachedLists.urgent, ...cachedLists.balance, ...cachedLists.review]
-    .reduce((sum, r) => sum + Number(r['الكمية_المخصصة'] || r['الكمية مخصصة'] || r['الكمية المخصصة'] || 0), 0);
-  document.getElementById('kpi-total-qty').textContent = activeTotalQty.toLocaleString('ar-EG');
-
-  // 4. حصر مساحات وأقسام العرض المختلفة للفرع بالملف
-  const uniqueSpaces = new Set(uploadedRows.map(r => String(r['المساحة'] || r['مساحة'] || '').trim()).filter(Boolean));
-  document.getElementById('kpi-active-spaces').textContent = uniqueSpaces.size;
-
-  buildSpaceChart();
-  buildSalesVsAllocatedChart();
-}
-
-function buildSpaceChart() {
-  const spaceDataMap = {};
-  uploadedRows.forEach(r => {
-    const sp = String(r['المساحة'] || r['مساحة'] || 'غير محدد').trim();
-    const qty = Number(r['الكمية_المخصصة'] || r['الكمية مخصصة'] || r['الكمية المخصصة'] || 0);
-    if(sp) spaceDataMap[sp] = (spaceDataMap[sp] || 0) + qty;
-  });
-
-  const labels = Object.keys(spaceDataMap);
-  const dataValues = Object.values(spaceDataMap);
-
-  if(spaceChartInstance) spaceChartInstance.destroy();
-  const ctx = document.getElementById('space-allocation-chart').getContext('2d');
-  spaceChartInstance = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [{
-        label: 'الكميات المخصصة للمساحة القسمية',
-        data: dataValues,
-        backgroundColor: '#2d9e5f',
-        borderRadius: 6
-      }]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { display: false } },
-      scales: {
-        y: { beginAtZero: true, ticks: { font: { family: 'Cairo' } } },
-        x: { ticks: { font: { family: 'Cairo', size: 10 } } }
-      }
-    }
-  });
-}
-
-function buildSalesVsAllocatedChart() {
-  // فرز أعلى 5 أصناف سحباً ومبيعات بالفرع للتحليل ومقارنتها بالبضاعة الجارية
-  const sortedBySales = [...uploadedRows].sort((a, b) => Number(b['المبيعات'] || 0) - Number(a['المبيعات'] || 0)).slice(0, 5);
+  const stockout = cachedLists.urgent.filter(r => Number(r['رصيد']||0) === 0 && Number(r['المبيعات']||0) > 0).length;
+  document.getElementById('kpi-stockout').textContent = stockout;
   
-  const labels = sortedBySales.map(r => String(r['اسم الصنف'] || r['إسم الصنف'] || '').slice(0, 18) + '...');
-  const salesValues = sortedBySales.map(r => Number(r['المبيعات'] || 0));
-  const allocatedValues = sortedBySales.map(r => Number(r['الكمية_المخصصة'] || r['الكمية مخصصة'] || r['الكمية المخصصة'] || 0));
+  const subQty = cachedLists.substitute.reduce((s,r) => s + Number(r['الكمية_المخصصة']||0), 0);
+  const totalQty = uploadedRows.reduce((s,r) => s + Number(r['الكمية_المخصصة']||0), 0);
+  const subRate = totalQty > 0 ? Math.round((subQty/totalQty)*100) : 0;
+  document.getElementById('kpi-sub-rate').textContent = subRate + '%';
+  
+  const activeQty = [...cachedLists.urgent, ...cachedLists.balance, ...cachedLists.review]
+    .reduce((s,r) => s + Number(r['الكمية_المخصصة']||0), 0);
+  document.getElementById('kpi-total-qty').textContent = activeQty;
+  
+  const spaces = new Set(uploadedRows.map(r => String(r['المساحة']||'').trim()).filter(Boolean));
+  document.getElementById('kpi-active-spaces').textContent = spaces.size;
+  
+  buildCharts();
+}
 
-  if(salesChartInstance) salesChartInstance.destroy();
-  const ctx = document.getElementById('sales-vs-allocated-chart').getContext('2d');
-  salesChartInstance = new Chart(ctx, {
+function buildCharts() {
+  const spaceMap = {};
+  uploadedRows.forEach(r => {
+    let sp = String(r['المساحة'] || '').trim();
+    let qty = Number(r['الكمية_المخصصة'] || 0);
+    if(sp) spaceMap[sp] = (spaceMap[sp] || 0) + qty;
+  });
+  
+  if(spaceChart) spaceChart.destroy();
+  spaceChart = new Chart(document.getElementById('space-chart'), {
     type: 'bar',
-    data: {
-      labels: labels,
-      datasets: [
-        { label: 'المبيعات التاريخية بالفرع', data: salesValues, backgroundColor: '#2563eb', borderRadius: 4 },
-        { label: 'الكمية الجاري شحنها وتوزيعها', data: allocatedValues, backgroundColor: '#c9a84c', borderRadius: 4 }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { labels: { font: { family: 'Cairo', size: 11 } } } },
-      scales: {
-        y: { beginAtZero: true, ticks: { font: { family: 'Cairo' } } },
-        x: { ticks: { font: { family: 'Cairo', size: 9 } } }
-      }
-    }
+    data: { labels: Object.keys(spaceMap), datasets: [{ label: 'الكميات', data: Object.values(spaceMap), backgroundColor: '#2d9e5f' }] },
+    options: { responsive: true, maintainAspectRatio: false }
+  });
+  
+  const top5 = [...uploadedRows].sort((a,b) => (b['المبيعات']||0) - (a['المبيعات']||0)).slice(0,5);
+  if(salesChart) salesChart.destroy();
+  salesChart = new Chart(document.getElementById('sales-chart'), {
+    type: 'bar',
+    data: { labels: top5.map(r => String(r['اسم الصنف']||'').slice(0,15)), datasets: [
+      { label: 'المبيعات', data: top5.map(r => r['المبيعات']||0), backgroundColor: '#2563eb' },
+      { label: 'المخصص', data: top5.map(r => r['الكمية_المخصصة']||0), backgroundColor: '#c9a84c' }
+    ] },
+    options: { responsive: true, maintainAspectRatio: false }
   });
 }
 
-// ===== محرك تصدير ملفات الـ Excel المكون من 3 شيتات منفصلة تلقائياً =====
 function exportToThreeSheetsExcel() {
   if(uploadedRows.length === 0) return;
-
   const wb = XLSX.utils.book_new();
-
-  // دالة تشكيل وصياغة مصفوفة الحقول والبيانات المنظمة لتطابق شروط الأعمدة المطلوبة
-  const formatSheetData = (list) => {
-    return list.map((row, index) => ({
-      "م": index + 1,
-      "اسم الصنف التفصيلي": row['اسم الصنف'] || row['إسم الصنف'] || '—',
-      "الباركود (Barcode)": row['الباركود'] || row['البركود'] || row['Barcode'] || '—',
+  
+  const formatSheet = (list, sheetName) => {
+    const data = list.map((row, idx) => ({
+      "م": idx+1,
+      "اسم الصنف": row['اسم الصنف'] || row['إسم الصنف'] || '—',
+      "الباركود": row['الباركود'] || row['Barcode'] || '—',
       "اللون": row['اللون'] || '—',
       "المقاس": row['المقاس'] || '—',
-      "مساحة القسم": row['المساحة'] || row['مساحة'] || '—',
+      "المساحة": row['المساحة'] || '—',
       "المجموعة الفرعية": row['المجموعة الفرعية'] || row['المجموعة الفرعية.2'] || '—',
-      "الكمية المخصصة للفرع": Number(row['الكمية_المخصصة'] || row['الكمية مخصصة'] || row['الكمية المخصصة'] || 0),
-      "المبيعات التاريخية": Number(row['المبيعات'] || 0),
-      "الرصيد الحالي بالفرع": Number(row['رصيد'] || row['الرصيد'] || 0),
-      "التصنيف الأصلي بالملف": row['تصنيف_المنتج_معدل'] || row['تصنيف المنتج معدل'] || '—'
+      "الكمية المخصصة": Number(row['الكمية_المخصصة'] || 0),
+      "المبيعات": Number(row['المبيعات'] || 0),
+      "الرصيد الحالي": Number(row['رصيد'] || 0)
     }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, sheetName);
   };
-
-  // 1. تصدير الشيت الأول مستقل تلقائياً: الأصناف العاجلة 🔴
-  const urgentFormatted = formatSheetData(cachedLists.urgent);
-  const wsUrgent = XLSX.utils.json_to_sheet(urgentFormatted);
-  XLSX.utils.book_append_sheet(wb, wsUrgent, "الأصناف العاجلة 🔴");
-
-  // 2. تصدير الشيت الثاني مستقل تلقائياً: متابعة الرصيد 🟡
-  const balanceFormatted = formatSheetData(cachedLists.balance);
-  const wsBalance = XLSX.utils.json_to_sheet(balanceFormatted);
-  XLSX.utils.book_append_sheet(wb, wsBalance, "متابعة الرصيد 🟡");
-
-  // 3. تصدير الشيت الثالث مستقل تلقائياً: مراجعة المخزون 🟢
-  const reviewFormatted = formatSheetData(cachedLists.review);
-  const wsReview = XLSX.utils.json_to_sheet(reviewFormatted);
-  XLSX.utils.book_append_sheet(wb, wsReview, "مراجعة المخزون 🟢");
-
-  // توليد وتحميل الملف الموحد بـ 3 صفحات باسم فرعك الحالي فوراً لحمايته
-  const fileName = `تقرير_توزيع_فرع_${currentBranch}_TREE.xlsx`;
-  XLSX.writeFile(wb, fileName);
+  
+  formatSheet(cachedLists.urgent, "🔴 الأصناف العاجلة");
+  formatSheet(cachedLists.balance, "🟡 متابعة الرصيد");
+  formatSheet(cachedLists.review, "🟢 مراجعة المخزون");
+  
+  XLSX.writeFile(wb, `تقرير_فرع_${currentBranch}.xlsx`);
 }
 </script>
 </body>
