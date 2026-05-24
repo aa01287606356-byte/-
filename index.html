@@ -162,7 +162,6 @@
   .data-table td { padding: 12px 10px; border-bottom: 1px solid #f3f4f6; }
   .data-table tfoot td { font-weight: 700; background: #f9fafb; border-top: 2px solid #e5e7eb; color: var(--text); }
   
-  /* تمييز الأسطر حرارياً مع أنيميشن وميض هادئ للمخاطر العالية */
   .data-table tr.high-risk td { background-color: #fff1f2; animation: alertPulse 2s infinite alternate; }
   @keyframes alertPulse { from { background-color: #fff1f2; } to { background-color: #ffe4e6; } }
 
@@ -172,7 +171,7 @@
   .barcode-text { font-family: monospace; color: #4b5563; letter-spacing: 0.5px; font-size: 12px; }
   .badge-icon { display: inline-flex; align-items: center; gap: 4px; font-weight: 700; padding: 4px 8px; border-radius: 6px; font-size: 11px; }
 
-  /* مودال نافذة عرض التقرير التلخيصي للاجتماعات */
+  /* مودال نافذة عرض التقرير التلخيصي */
   .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 1000; align-items: center; justify-content: center; }
   .modal-card { background: white; border-radius: 20px; width: 550px; max-width: 90%; padding: 32px; box-shadow: 0 20px 50px rgba(0,0,0,0.2); }
   .modal-body { background: var(--gray-light); padding: 16px; border-radius: 12px; font-size: 14px; white-space: pre-line; line-height: 1.6; max-height: 350px; overflow-y: auto; text-align: right; margin: 15px 0; border: 1px solid #e5e7eb; }
@@ -418,7 +417,6 @@ function doLogin() {
     currentBranch = br;
     err.style.display = 'none';
     
-    // محرك الاستدعاء الذكي والآلي من الذاكرة المحلية دون الحاجة لإعادة الرفع
     const savedData = localStorage.getItem(`tree_data_cache_${currentBranch}`);
     if(savedData) {
       uploadedRows = JSON.parse(savedData);
@@ -444,7 +442,6 @@ function showDashboardWithLoadedData() {
 }
 
 function doLogout() {
-  // مسح الأمان المؤقت للفرع الحالي
   localStorage.removeItem(`tree_data_cache_${currentBranch}`);
   currentBranch = null; uploadedRows = [];
   document.getElementById('login-screen').style.display = 'flex';
@@ -526,7 +523,7 @@ function loadFile(input) {
       const sample = jsonRows[0];
       let missingFields = [];
       if (sample['اسم الفرع'] === undefined) missingFields.push("- اسم الفرع");
-      if (sample['اسم الصنف'] === undefined) missingFields.push("- اسم الصنف");
+      if (sample['اسم الصنف التفصيلي'] === undefined) missingFields.push("- اسم الصنف التفصيلي");
       if (sample['تصنيف_المنتج_معدل'] === undefined) missingFields.push("- تصنيف_المنتج_معدل");
       if (sample['الكمية المخصصة'] === undefined) missingFields.push("- الكمية المخصصة");
 
@@ -544,7 +541,6 @@ function loadFile(input) {
         return;
       }
 
-      // حفظ ذكي وتلقائي للبيانات لتجنب الرفع المتكرر (Offline Auto-Save)
       localStorage.setItem(`tree_data_cache_${currentBranch}`, JSON.stringify(uploadedRows));
 
       processDataSegmentation();
@@ -622,7 +618,7 @@ function filterTable() {
   const originalList = cachedLists[currentTab];
 
   const filteredList = originalList.filter(row => {
-    const name = String(row['اسم الصنف'] || '').toLowerCase();
+    const name = String(row['اسم الصنف التفصيلي'] || '').toLowerCase();
     const barcode = String(row['كود الوحدة المخزنية'] || '').toLowerCase();
     const color = String(row['اللون'] || '').toLowerCase();
     const space = rowSpace(row).toLowerCase();
@@ -687,7 +683,7 @@ function renderTableHTML(list) {
   let totalAllocated = 0, totalSales = 0, totalStock = 0;
 
   list.forEach((row, index) => {
-    const name = row['اسم الصنف'] || '—';
+    const name = row['اسم الصنف التفصيلي'] || '—';
     const barcode = row['كود الوحدة المخزنية'] || '—';
     const color = row['اللون'] || '—';
     const size = row['المقاس'] || '—';
@@ -796,7 +792,7 @@ function buildSalesVsAllocatedChart() {
   salesChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: sortedBySales.map(r => String(r['اسم الصنف'] || '').slice(0, 15) + '...'),
+      labels: sortedBySales.map(r => String(r['اسم الصنف التفصيلي'] || '').slice(0, 15) + '...'),
       datasets: [
         { label: 'المبيعات', data: sortedBySales.map(r => Number(r['المبيعات'] || 0)), backgroundColor: '#2563eb', borderRadius: 4 },
         { label: 'الكمية المشحونة', data: sortedBySales.map(r => Number(r['الكمية المخصصة'] || 0)), backgroundColor: '#c9a84c', borderRadius: 4 }
@@ -809,7 +805,6 @@ function buildSalesVsAllocatedChart() {
   });
 }
 
-// ===== محرك توليد التقرير التلخيصي السريع للاجتماعات والمناقشات فوراُ =====
 function generateMeetingDigest() {
   const stockoutCount = document.getElementById('kpi-stockout').textContent;
   const subRate = document.getElementById('kpi-sub-rate').textContent;
@@ -844,7 +839,7 @@ function exportToThreeSheetsExcel() {
   const formatSheetData = (list) => {
     return list.map((row, index) => ({
       "م": index + 1,
-      "اسم الصنف التفصيلي": row['اسم الصنف'] || '—',
+      "اسم الصنف التفصيلي": row['اسم الصنف التفصيلي'] || '—',
       "كود الوحدة المخزنية / الباركود": row['كود الوحدة المخزنية'] || '—',
       "اللون": row['اللون'] || '—',
       "المقاس": row['المقاس'] || '—',
