@@ -373,6 +373,9 @@ let uploadedRows = [];
 let currentTab = 'urgent'; 
 let cachedLists = { urgent: [], substitute: [], balance: [], review: [] };
 
+// متغيرات حفظ أسماء الأعمدة الديناميكية لربطها تلقائياً بالملف المرفوع
+let mappedColumns = { branch: '', itemName: '', category: '', allocated: '' };
+
 let spaceChartInstance = null;
 let salesChartInstance = null;
 
@@ -400,6 +403,8 @@ function cleanText(txt) {
   let s = String(txt).trim().toLowerCase();
   const map = {'٠':'0','١':'1','٢':'2','٣':'3','٤':'4','٥':'5','٦':'6','٧':'7','٨':'8','٩':'9'};
   s = s.replace(/[٠-٩]/g, function(m) { return map[m]; });
+  // استبدال الياء البطة بالياء العادية لضمان المظهر والمطابقة الصحيحة
+  s = s.replace(/ى/g, 'ي');
   s = s.replace(/_/g, ' ').replace(/\s+/g, ' ');
   return s;
 }
@@ -418,8 +423,10 @@ function doLogin() {
     err.style.display = 'none';
     
     const savedData = localStorage.getItem(`tree_data_cache_${currentBranch}`);
-    if(savedData) {
+    const savedCols = localStorage.getItem(`tree_cols_cache_${currentBranch}`);
+    if(savedData && savedCols) {
       uploadedRows = JSON.parse(savedData);
+      mappedColumns = JSON.parse(savedCols);
       showDashboardWithLoadedData();
     } else {
       showAppDashboard();
@@ -443,6 +450,7 @@ function showDashboardWithLoadedData() {
 
 function doLogout() {
   localStorage.removeItem(`tree_data_cache_${currentBranch}`);
+  localStorage.removeItem(`tree_cols_cache_${currentBranch}`);
   currentBranch = null; uploadedRows = [];
   document.getElementById('login-screen').style.display = 'flex';
   document.getElementById('app-screen').style.display = 'none';
@@ -504,7 +512,7 @@ function loadFile(input) {
   const file = input.files[0];
   if(!file) return;
   document.getElementById('upload-status').style.color = 'var(--gray)';
-  document.getElementById('upload-status').textContent = '⏳ جاري فك حزم البيانات وفحص أعمدة التقرير...';
+  document.getElementById('upload-status').textContent = '⏳ جاري فك حزم البيانات وفحص أعمدة التقرير بطريقة مرنة...';
 
   const reader = new FileReader();
   reader.onload = function(e) {
@@ -520,28 +528,40 @@ function loadFile(input) {
         return;
       }
 
-      const sample = jsonRows[0];
+      // محرك المطابقة الذكي للأعمدة لتخطي أي اختلاف طفيف في الحروف أو المسافات
+      const allHeaders = Object.keys(jsonRows[0]);
+      mappedColumns = { branch: '', itemName: '', category: '', allocated: '' };
+
+      allHeaders.forEach(header => {
+        let cleanH = cleanText(header);
+        if (cleanH.includes('فرع')) mappedColumns.branch = header;
+        if (cleanH.includes('صنف')) mappedColumns.itemName = header;
+        if (cleanH.includes('منتج معدل') || cleanH.includes('تصنيف')) mappedColumns.category = header;
+        if (cleanH.includes('مخصصه') || cleanH.includes('كميه مخصصه') || cleanH.includes('تخصيص') || cleanH.includes('الكميه')) mappedColumns.allocated = header;
+      });
+
       let missingFields = [];
-      if (sample['اسم الفرع'] === undefined) missingFields.push("- اسم الفرع");
-      if (sample['اسم الصنف التفصيلي'] === undefined) missingFields.push("- اسم الصنف التفصيلي");
-      if (sample['تصنيف_المنتج_معدل'] === undefined) missingFields.push("- تصنيف_المنتج_معدل");
-      if (sample['الكمية المخصصة'] === undefined) missingFields.push("- الكمية المخصصة");
+      if (!mappedColumns.branch) missingFields.push("- عمود اسم الفرع");
+      if (!mappedColumns.itemName) missingFields.push("- عمود اسم الصنف (أو الصنف التفصيلي)");
+      if (!mappedColumns.category) missingFields.push("- عمود تصنيف المنتج");
+      if (!mappedColumns.allocated) missingFields.push("- عمود الكمية المخصصة");
 
       if (missingFields.length > 0) {
         document.getElementById('upload-status').style.color = 'var(--red)';
-        document.getElementById('upload-status').textContent = `❌ خطأ في هيكل ملف الإكسيل المرفوع!\nالأعمدة التالية لم يستطع السيستم العثور عليها بالملف:\n${missingFields.join('\n')}`;
+        document.getElementById('upload-status').textContent = `❌ لم يستطع المحرك الذكي العثور على الأعمدة الفعّالة بالملف:\n${missingFields.join('\n')}\n\nيرجى مراجعة هيدر ملف الإكسيل جيداً.`;
         return;
       }
 
-      uploadedRows = jsonRows.filter(r => cleanText(r['اسم الفرع'] || '') === cleanText(currentBranch));
+      uploadedRows = jsonRows.filter(r => cleanText(r[mappedColumns.branch] || '') === cleanText(currentBranch));
 
       if(uploadedRows.length === 0) {
         document.getElementById('upload-status').style.color = 'var(--red)';
-        document.getElementById('upload-status').textContent = `⚠️ لم نجد أي بيانات تخص فرع (${currentBranch}) في هذا الملف!`;
+        document.getElementById('upload-status').textContent = `⚠️ لم نجد أي بيانات تخص فرع (${currentBranch}) في هذا الملف المرفوع!`;
         return;
       }
 
       localStorage.setItem(`tree_data_cache_${currentBranch}`, JSON.stringify(uploadedRows));
+      localStorage.setItem(`tree_cols_cache_${currentBranch}`, JSON.stringify(mappedColumns));
 
       processDataSegmentation();
       populateSpaceFilter();
@@ -555,7 +575,7 @@ function loadFile(input) {
     } catch(err) {
       console.error(err);
       document.getElementById('upload-status').style.color = 'var(--red)';
-      document.getElementById('upload-status').textContent = '❌ خطأ فني أثناء معالجة الشيت.';
+      document.getElementById('upload-status').textContent = '❌ خطأ فني غير متوقع أثناء معالجة الشيت.';
     }
   };
   reader.readAsArrayBuffer(file);
@@ -566,7 +586,7 @@ function processDataSegmentation() {
 
   uploadedRows.forEach(row => {
     const decReason = cleanText(row['سبب_القرار'] || row['سبب القرار'] || '');
-    const itemType = cleanText(row['تصنيف_المنتج_معدل'] || '');
+    const itemType = cleanText(row[mappedColumns.category] || '');
 
     if(decReason.includes("الغا التخصيص بديل") || decReason.includes("بديل لنفس اللون") || decReason.includes("يوجد بديل")) {
       cachedLists.substitute.push(row);
@@ -618,7 +638,7 @@ function filterTable() {
   const originalList = cachedLists[currentTab];
 
   const filteredList = originalList.filter(row => {
-    const name = String(row['اسم الصنف التفصيلي'] || '').toLowerCase();
+    const name = String(row[mappedColumns.itemName] || '').toLowerCase();
     const barcode = String(row['كود الوحدة المخزنية'] || '').toLowerCase();
     const color = String(row['اللون'] || '').toLowerCase();
     const space = rowSpace(row).toLowerCase();
@@ -683,15 +703,15 @@ function renderTableHTML(list) {
   let totalAllocated = 0, totalSales = 0, totalStock = 0;
 
   list.forEach((row, index) => {
-    const name = row['اسم الصنف التفصيلي'] || '—';
+    const name = row[mappedColumns.itemName] || '—';
     const barcode = row['كود الوحدة المخزنية'] || '—';
     const color = row['اللون'] || '—';
     const size = row['المقاس'] || '—';
     const space = rowSpace(row) || '—';
-    const allocatedQty = Number(row['الكمية المخصصة'] || 0);
+    const allocatedQty = Number(row[mappedColumns.allocated] || 0);
     const sales = Number(row['المبيعات'] || 0);
     const stock = Number(row['الرصيد'] || 0);
-    const originalCat = row['تصنيف_المنتج_معدل'] || '—';
+    const originalCat = row[mappedColumns.category] || '—';
 
     const totalCirculation = sales + stock;
     const sellThrough = totalCirculation > 0 ? Math.round((sales / totalCirculation) * 100) : 0;
@@ -744,13 +764,13 @@ function renderAnalytics() {
   const stockoutCount = cachedLists.urgent.filter(r => Number(r['الرصيد'] || 0) === 0 && Number(r['المبيعات'] || 0) > 0).length;
   document.getElementById('kpi-stockout').textContent = stockoutCount;
 
-  const totalSubQty = cachedLists.substitute.reduce((sum, r) => sum + Number(r['الكمية المخصصة'] || 0), 0);
-  const totalAllQty = uploadedRows.reduce((sum, r) => sum + Number(r['الكمية المخصصة'] || 0), 0);
+  const totalSubQty = cachedLists.substitute.reduce((sum, r) => sum + Number(r[mappedColumns.allocated] || 0), 0);
+  const totalAllQty = uploadedRows.reduce((sum, r) => sum + Number(r[mappedColumns.allocated] || 0), 0);
   const subRate = totalAllQty > 0 ? Math.round((totalSubQty / totalAllQty) * 100) : 0;
   document.getElementById('kpi-sub-rate').textContent = subRate + '%';
 
   const activeTotalQty = [...cachedLists.urgent, ...cachedLists.balance, ...cachedLists.review]
-    .reduce((sum, r) => sum + Number(r['الكمية المخصصة'] || 0), 0);
+    .reduce((sum, r) => sum + Number(r[mappedColumns.allocated] || 0), 0);
   document.getElementById('kpi-total-qty').textContent = activeTotalQty.toLocaleString('ar-EG');
 
   const uniqueSpaces = new Set(uploadedRows.map(r => rowSpace(r).trim()).filter(Boolean));
@@ -764,7 +784,7 @@ function buildSpaceChart() {
   const spaceDataMap = {};
   uploadedRows.forEach(r => {
     const sp = rowSpace(r) || 'غير محدد';
-    const qty = Number(r['الكمية المخصصة'] || 0);
+    const qty = Number(r[mappedColumns.allocated] || 0);
     spaceDataMap[sp] = (spaceDataMap[sp] || 0) + qty;
   });
 
@@ -792,10 +812,10 @@ function buildSalesVsAllocatedChart() {
   salesChartInstance = new Chart(ctx, {
     type: 'bar',
     data: {
-      labels: sortedBySales.map(r => String(r['اسم الصنف التفصيلي'] || '').slice(0, 15) + '...'),
+      labels: sortedBySales.map(r => String(r[mappedColumns.itemName] || '').slice(0, 15) + '...'),
       datasets: [
         { label: 'المبيعات', data: sortedBySales.map(r => Number(r['المبيعات'] || 0)), backgroundColor: '#2563eb', borderRadius: 4 },
-        { label: 'الكمية المشحونة', data: sortedBySales.map(r => Number(r['الكمية المخصصة'] || 0)), backgroundColor: '#c9a84c', borderRadius: 4 }
+        { label: 'الكمية المشحونة', data: sortedBySales.map(r => Number(r[mappedColumns.allocated] || 0)), backgroundColor: '#c9a84c', borderRadius: 4 }
       ]
     },
     options: {
@@ -839,15 +859,15 @@ function exportToThreeSheetsExcel() {
   const formatSheetData = (list) => {
     return list.map((row, index) => ({
       "م": index + 1,
-      "اسم الصنف التفصيلي": row['اسم الصنف التفصيلي'] || '—',
+      "اسم الصنف التفصيلي": row[mappedColumns.itemName] || '—',
       "كود الوحدة المخزنية / الباركود": row['كود الوحدة المخزنية'] || '—',
       "اللون": row['اللون'] || '—',
       "المقاس": row['المقاس'] || '—',
       "مساحة القسم": rowSpace(row) || '—',
-      "الكمية المخصصة": Number(row['الكمية المخصصة'] || 0),
+      "الكمية المخصصة": Number(row[mappedColumns.allocated] || 0),
       "المبيعات": Number(row['المبيعات'] || 0),
       "الرصيد الحالي": Number(row['الرصيد'] || 0),
-      "التصنيف بالملف": row['تصنيف_المنتج_معدل'] || '—'
+      "التصنيف بالملف": row[mappedColumns.category] || '—'
     }));
   };
 
