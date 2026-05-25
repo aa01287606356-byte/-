@@ -88,11 +88,6 @@
   .branch-badge { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; font-size: 14px; }
   .btn-logout { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
 
-  #upload-screen { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 40px; }
-  .upload-card { background: white; border-radius: 20px; padding: 48px; text-align: center; max-width: 500px; width: 100%; }
-  .upload-zone { border: 2px dashed var(--green-light); border-radius: 16px; padding: 32px; cursor: pointer; background: var(--gray-light); margin-top: 20px; }
-  .upload-zone input { display: none; }
-
   #dashboard-screen { display: none; padding: 32px; }
   
   .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; justify-content: flex-end; }
@@ -222,24 +217,12 @@
     </div>
   </header>
 
-  <div id="upload-screen">
-    <div class="upload-card">
-      <h3>📊 رفع ملف التوزيع</h3>
-      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-        <p>📎 اضغط لاختيار الملف</p>
-        <input type="file" id="file-input" accept=".xlsx,.xls" onchange="loadFile(this)">
-      </div>
-      <p id="upload-status" style="margin-top:15px; font-size:13px; color:var(--red);"></p>
-    </div>
-  </div>
-
   <div id="dashboard-screen">
     <div class="action-buttons">
       <button class="btn-action btn-excel" onclick="exportToFourSheetsExcel()">📊 تصدير Excel (4 شيتات)</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
-    <!-- كروت عدد الأصناف -->
     <div class="stats-grid">
       <div class="stat-card red" data-tab="urgent" onclick="switchTab('urgent')">
         <div class="stat-label">🔴 أصناف عاجلة</div>
@@ -263,7 +246,6 @@
       </div>
     </div>
 
-    <!-- كروت كمية القطع -->
     <div class="qty-stats-grid">
       <div class="qty-card"><div class="qty-label">🔴 إجمالي القطع العاجلة</div><div class="qty-value" id="qty-urgent">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🟢 إجمالي قطع مراجعة 2025</div><div class="qty-value" id="qty-review">0</div><div class="qty-unit">قطعة</div></div>
@@ -271,13 +253,11 @@
       <div class="qty-card"><div class="qty-label">🟡 إجمالي قطع المتابعة</div><div class="qty-value" id="qty-balance">0</div><div class="qty-unit">قطعة</div></div>
     </div>
 
-    <!-- الرسوم البيانية -->
     <div class="charts-grid">
       <div class="chart-card"><h4>📊 توزيع الأصناف حسب الفئات</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
       <div class="chart-card"><h4>🎨 توزيع الألوان</h4><div class="chart-wrap"><canvas id="color-chart"></canvas></div></div>
     </div>
 
-    <!-- الجدول -->
     <div class="table-card">
       <div class="table-header">
         <h4 id="table-title">🔴 أصناف عاجلة</h4>
@@ -305,6 +285,13 @@
 </div>
 
 <script>
+// ===== روابط Google Sheets =====
+// رابط بيانات التوزيع (المخزون والمبيعات)
+const DATA_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv6qvL_jO4ZzQRpH2yqApn6WJNBH8P9Rm0wdPqVFPlI52AhUixarIB53Z17mN3JPonr-PEpFOdOtwj/pub?gid=155900399&single=true&output=csv";
+
+// رابط بيانات الباسوردات - ورقة "pas"
+const PASSWORDS_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vQv6qvL_jO4ZzQRpH2yqApn6WJNBH8P9Rm0wdPqVFPlI52AhUixarIB53Z17mN3JPonr-PEpFOdOtwj/pub?gid=1942182084&single=true&output=csv";
+
 const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران"];
 const ADMIN_MASTER_KEY = "101499";
 
@@ -336,11 +323,63 @@ function safeNumber(row, fields, defaultValue = 0) {
   return defaultValue;
 }
 
-window.onload = function() {
-  const select = document.getElementById('branch-select');
-  BRANCHES.forEach(b => { let opt = document.createElement('option'); opt.value = b; opt.textContent = b; select.appendChild(opt); });
-};
+// ===== تحميل الباسوردات من Google Sheets =====
+async function loadPasswordsFromSheet() {
+    try {
+        const response = await fetch(PASSWORDS_URL);
+        const csvText = await response.text();
+        const rows = csvText.split('\n');
+        const passwords = {};
+        for(let i = 1; i < rows.length; i++) { // الصف الأول هو عناوين الأعمدة
+            if(!rows[i].trim()) continue;
+            const [branch, pwd] = rows[i].split(',');
+            if(branch && pwd) passwords[branch.trim()] = pwd.trim().replace(/\r/g, '');
+        }
+        return passwords;
+    } catch(error) {
+        console.error("خطأ في تحميل الباسوردات:", error);
+        return {};
+    }
+}
 
+// ===== تحميل بيانات التوزيع من Google Sheets =====
+async function loadDataFromSheet() {
+    try {
+        const response = await fetch(DATA_URL);
+        const csvText = await response.text();
+        const rows = csvText.split('\n');
+        const headers = rows[0].split(',');
+        const allData = [];
+        for(let i = 1; i < rows.length; i++) {
+            if(!rows[i].trim()) continue;
+            const values = rows[i].split(',');
+            const row = {};
+            headers.forEach((header, idx) => {
+                row[header.trim()] = values[idx] ? values[idx].trim() : '';
+            });
+            allData.push(row);
+        }
+        
+        uploadedRows = allData.filter(r => {
+            let branchVal = String(safeGet(r, ['اسم الفرع', 'الفرع'], '')).trim();
+            return branchVal === currentBranch.trim();
+        });
+        
+        if(uploadedRows.length === 0) { 
+            console.log(`⚠️ لا توجد بيانات لفرع ${currentBranch}`); 
+            return false;
+        }
+        
+        processDataSegmentation();
+        return true;
+        
+    } catch(error) {
+        console.error("خطأ في تحميل البيانات:", error);
+        return false;
+    }
+}
+
+// ===== دوال الأدمن والصلاحيات =====
 function getBranchPasswords() {
   let stored = localStorage.getItem('tree_passwords');
   if(stored) return JSON.parse(stored);
@@ -349,29 +388,15 @@ function getBranchPasswords() {
   return defaults;
 }
 
-function doLogin() {
-  const branch = document.getElementById('branch-select').value;
-  const pwd = document.getElementById('password-input').value.trim();
-  const err = document.getElementById('login-error');
-  if(pwd === ADMIN_MASTER_KEY) { showAdmin(); return; }
-  if(!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع'; return; }
-  const pwds = getBranchPasswords();
-  if(pwds[branch] === pwd) { currentBranch = branch; err.style.display='none'; showApp(); }
-  else { err.style.display='block'; err.textContent='❌ كلمة مرور خاطئة'; }
-}
-
-function doLogout() { currentBranch = null; uploadedRows = []; document.getElementById('login-screen').style.display = 'flex'; document.getElementById('app-screen').style.display = 'none'; document.getElementById('admin-screen').style.display = 'none'; }
-
-function showApp() { document.getElementById('login-screen').style.display = 'none'; document.getElementById('app-screen').style.display = 'block'; document.getElementById('header-branch').textContent = '🏪 ' + currentBranch; document.getElementById('upload-screen').style.display = 'flex'; document.getElementById('dashboard-screen').style.display = 'none'; }
-
-function showAdmin() { document.getElementById('login-screen').style.display = 'none'; document.getElementById('admin-screen').style.display = 'block'; renderAdminList(); }
-
 function renderAdminList() {
   const listDiv = document.getElementById('admin-password-list');
   const selectNode = document.getElementById('admin-branch-select');
   listDiv.innerHTML = ''; selectNode.innerHTML = '<option value="">— اختر —</option>';
   const pwds = getBranchPasswords();
-  BRANCHES.forEach(b => { listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]}</span></div>`; selectNode.innerHTML += `<option value="${b}">${b}</option>`; });
+  BRANCHES.forEach(b => { 
+    listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]}</span></div>`; 
+    selectNode.innerHTML += `<option value="${b}">${b}</option>`; 
+  });
 }
 
 function updateBranchPassword() {
@@ -388,43 +413,80 @@ function updateBranchPassword() {
   setTimeout(() => toast.style.display = 'none', 3000);
 }
 
-function loadFile(input) {
-  const file = input.files[0];
-  if(!file) return;
-  document.getElementById('upload-status').textContent = '⏳ جاري التحميل...';
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const ws = wb.Sheets[wb.SheetNames[0]];
-      const allData = XLSX.utils.sheet_to_json(ws);
-      if(allData.length === 0) { document.getElementById('upload-status').textContent = '⚠️ الملف فارغ'; return; }
-      uploadedRows = allData.filter(r => { let branchVal = String(safeGet(r, ['اسم الفرع', 'الفرع'], '')).trim(); return branchVal === currentBranch.trim(); });
-      if(uploadedRows.length === 0) { document.getElementById('upload-status').textContent = `⚠️ لا توجد بيانات لفرع ${currentBranch}`; return; }
-      processDataSegmentation();
-      document.getElementById('upload-screen').style.display = 'none';
-      document.getElementById('dashboard-screen').style.display = 'block';
-      switchTab('urgent');
-    } catch(err) { console.error(err); document.getElementById('upload-status').textContent = '❌ خطأ: ' + err.message; }
-  };
-  reader.readAsArrayBuffer(file);
+function showAdmin() { 
+  document.getElementById('login-screen').style.display = 'none'; 
+  document.getElementById('admin-screen').style.display = 'block'; 
+  renderAdminList(); 
 }
 
+// ===== دوال الدخول والخروج =====
+async function doLogin() {
+    const branch = document.getElementById('branch-select').value;
+    const enteredPwd = document.getElementById('password-input').value.trim();
+    const err = document.getElementById('login-error');
+
+    if(enteredPwd === ADMIN_MASTER_KEY) { showAdmin(); return; }
+    if(!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع'; return; }
+
+    const serverPasswords = await loadPasswordsFromSheet();
+    
+    if(serverPasswords[branch] === enteredPwd) {
+        currentBranch = branch;
+        err.style.display='none';
+        showApp();
+    } else {
+        err.style.display='block';
+        err.textContent='❌ كلمة مرور خاطئة';
+    }
+}
+
+function doLogout() { 
+  currentBranch = null; 
+  uploadedRows = []; 
+  document.getElementById('login-screen').style.display = 'flex'; 
+  document.getElementById('app-screen').style.display = 'none'; 
+  document.getElementById('admin-screen').style.display = 'none'; 
+}
+
+function showApp() { 
+  document.getElementById('login-screen').style.display = 'none'; 
+  document.getElementById('app-screen').style.display = 'block'; 
+  document.getElementById('header-branch').textContent = '🏪 ' + currentBranch; 
+  document.getElementById('dashboard-screen').style.display = 'block'; 
+  loadDataFromSheet(); 
+}
+
+// ===== دوال معالجة البيانات =====
 function processDataSegmentation() {
   cachedLists = { urgent: [], review: [], substitute: [], balance: [] };
+  
   uploadedRows.forEach(row => {
     const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).trim();
     const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
-    if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل")) { cachedLists.substitute.push(row); return; }
-    if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "اطلب الان" || itemType === "جديد 2026 غير مكتمل") { cachedLists.urgent.push(row); }
-    else if(itemType === "جديد ٢٠٢٥ غير مكتمل" || itemType === "جديد 2025 غير مكتمل" || itemType.includes("جديد 2025")) { cachedLists.review.push(row); }
-    else if(itemType === "متوسطة" || itemType === "غير متوفر" || itemType === "تاريخ غير محدد") { cachedLists.balance.push(row); }
-    else if(itemType !== "" && itemType !== null) { cachedLists.review.push(row); }
+    
+    if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل")) {
+      cachedLists.substitute.push(row);
+      return;
+    }
+    if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "اطلب الان" || itemType === "جديد 2026 غير مكتمل") {
+      cachedLists.urgent.push(row);
+    } 
+    else if(itemType === "جديد ٢٠٢٥ غير مكتمل" || itemType === "جديد 2025 غير مكتمل" || itemType.includes("جديد 2025")) {
+      cachedLists.review.push(row);
+    } 
+    else if(itemType === "متوسطة" || itemType === "غير متوفر" || itemType === "تاريخ غير محدد") {
+      cachedLists.balance.push(row);
+    } 
+    else if(itemType !== "" && itemType !== null) {
+      cachedLists.review.push(row);
+    }
   });
+  
   document.getElementById('card-urgent').textContent = cachedLists.urgent.length;
   document.getElementById('card-review').textContent = cachedLists.review.length;
   document.getElementById('card-substitute').textContent = cachedLists.substitute.length;
   document.getElementById('card-balance').textContent = cachedLists.balance.length;
+  
   updateQuantityCards();
   updateCharts();
 }
@@ -451,7 +513,11 @@ function switchTab(tabKey) {
 function filterTable() {
   const search = document.getElementById('search-input').value.toLowerCase();
   const list = cachedLists[currentTab];
-  const filtered = list.filter(row => { const name = String(safeGet(row, ['إسم الصنف', 'اسم الصنف'], '')).toLowerCase(); const barcode = String(safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'], '')).toLowerCase(); return name.includes(search) || barcode.includes(search); });
+  const filtered = list.filter(row => { 
+    const name = String(safeGet(row, ['إسم الصنف', 'اسم الصنف'], '')).toLowerCase(); 
+    const barcode = String(safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'], '')).toLowerCase(); 
+    return name.includes(search) || barcode.includes(search); 
+  });
   renderTable(filtered);
 }
 
@@ -465,8 +531,10 @@ function getPriorityClass(priority) {
 function renderTable(list) {
   const container = document.getElementById('table-container');
   if(list.length === 0) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>'; return; }
+  
   let totalQty = 0;
   let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th><th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>مخزن ابيس</th></tr></thead><tbody>`;
+  
   list.forEach((row, i) => {
     const priority = safeNumber(row, ['درجة_أولوية_الفرع', 'درجة أولوية الفرع'], 0);
     const priorityClass = getPriorityClass(priority);
@@ -474,9 +542,11 @@ function renderTable(list) {
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
+    
     html += `<tr class="${priorityClass}"><td>${i+1}</td><td>${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
   });
-  html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجمالي</td><td><strong>${totalQty}</strong></td><td colspan="4"></td></tr>`;
+  
+  html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجمالي</td><td><strong>${totalQty}</strong></td><td colspan="4"> </tr>`;
   html += '</tbody></table>';
   container.innerHTML = html;
 }
@@ -487,8 +557,13 @@ function updateCategoriesChart() {
   else if(currentTab === 'review') { categoriesCount = [cachedLists.review.length]; categoriesLabels = ['🟢 مراجعة المخزون 2025']; }
   else if(currentTab === 'substitute') { categoriesCount = [cachedLists.substitute.length]; categoriesLabels = ['🔄 متوفر البديل']; }
   else { categoriesCount = [cachedLists.balance.length]; categoriesLabels = ['🟡 متابعة الرصيد']; }
+  
   if(categoriesChart) categoriesChart.destroy();
-  categoriesChart = new Chart(document.getElementById('categories-chart'), { type: 'doughnut', data: { labels: categoriesLabels, datasets: [{ data: categoriesCount, backgroundColor: currentTab === 'urgent' ? '#dc2626' : currentTab === 'review' ? '#1a6b3c' : currentTab === 'substitute' ? '#2563eb' : '#ca8a04', borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo', size: 12 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} صنف` } } } } });
+  categoriesChart = new Chart(document.getElementById('categories-chart'), {
+    type: 'doughnut',
+    data: { labels: categoriesLabels, datasets: [{ data: categoriesCount, backgroundColor: currentTab === 'urgent' ? '#dc2626' : currentTab === 'review' ? '#1a6b3c' : currentTab === 'substitute' ? '#2563eb' : '#ca8a04', borderWidth: 0, hoverOffset: 10 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo', size: 12 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} صنف` } } } }
+  });
 }
 
 function updateColorChart() {
@@ -498,7 +573,11 @@ function updateColorChart() {
   const sortedColors = Object.entries(colorMap).sort((a,b) => b[1] - a[1]).slice(0,8);
   const colorPalette = { 'أسود':'#1f2937','أبيض':'#f9fafb','رصاصي':'#6b7280','كحلي':'#1e3a5f','بيج':'#d4a853','أزرق':'#3b82f6','أخضر':'#16a34a','بني':'#92400e','أحمر':'#dc2626','موف':'#7c3aed','أصفر':'#eab308','وردي':'#ec4899','برتقالي':'#ea580c','مطبوع':'#8b5cf6','غير محدد':'#9ca3af' };
   if(colorChart) colorChart.destroy();
-  colorChart = new Chart(document.getElementById('color-chart'), { type: 'bar', data: { labels: sortedColors.map(([c]) => c), datasets: [{ label: 'عدد الأصناف', data: sortedColors.map(([,v]) => v), backgroundColor: sortedColors.map(([c]) => colorPalette[c] || '#1a6b3c'), borderRadius: 8, barPercentage: 0.7 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} صنف` } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'عدد الأصناف' } }, x: { ticks: { font: { size: 11 } } } } } });
+  colorChart = new Chart(document.getElementById('color-chart'), {
+    type: 'bar',
+    data: { labels: sortedColors.map(([c]) => c), datasets: [{ label: 'عدد الأصناف', data: sortedColors.map(([,v]) => v), backgroundColor: sortedColors.map(([c]) => colorPalette[c] || '#1a6b3c'), borderRadius: 8, barPercentage: 0.7 }] },
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw} صنف` } } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: true, text: 'عدد الأصناف' } }, x: { ticks: { font: { size: 11 } } } } }
+  });
 }
 
 function updateCharts() { updateCategoriesChart(); updateColorChart(); }
@@ -506,16 +585,31 @@ function updateCharts() { updateCategoriesChart(); updateColorChart(); }
 function exportToFourSheetsExcel() {
   if(uploadedRows.length === 0) return;
   const wb = XLSX.utils.book_new();
+  
   const formatSheet = (list, name, color) => {
-    const data = list.map((row, idx) => ({ "م": idx+1, "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود']), "اللون": safeGet(row, ['اللون']), "المجموعة الرئيسية": safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية']), "المجموعة الفرعية": safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية']), "الكمية المخصصة": safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0), "المبيعات": safeNumber(row, ['المبيعات'], 0), "الرصيد": safeNumber(row, ['رصيد'], 0), "نسبة البيع": (safeNumber(row, ['نسب البيع'], 0) * 100).toFixed(1) + '%', "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0) }));
+    const data = list.map((row, idx) => ({ 
+      "م": idx+1, 
+      "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), 
+      "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود']), 
+      "اللون": safeGet(row, ['اللون']), 
+      "المجموعة الرئيسية": safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية']),
+      "المجموعة الفرعية": safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية']), 
+      "الكمية المخصصة": safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0), 
+      "المبيعات": safeNumber(row, ['المبيعات'], 0), 
+      "الرصيد": safeNumber(row, ['رصيد'], 0),
+      "نسبة البيع": (safeNumber(row, ['نسب البيع'], 0) * 100).toFixed(1) + '%',
+      "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0)
+    }));
     const ws = XLSX.utils.json_to_sheet(data);
     ws['!cols'] = [{wch:5},{wch:35},{wch:20},{wch:12},{wch:20},{wch:25},{wch:12},{wch:12},{wch:10},{wch:10},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, `${color} ${name}`);
   };
+  
   formatSheet(cachedLists.urgent, "أصناف عاجلة", "🔴");
   formatSheet(cachedLists.review, "مراجعة المخزون 2025", "🟢");
   formatSheet(cachedLists.substitute, "متوفر البديل", "🔄");
   formatSheet(cachedLists.balance, "متابعة الرصيد", "🟡");
+  
   XLSX.writeFile(wb, `تقرير_فرع_${currentBranch}_${new Date().toLocaleDateString('ar-EG')}.xlsx`);
 }
 </script>
