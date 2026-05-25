@@ -239,7 +239,6 @@
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
-    <!-- كروت عدد الأصناف -->
     <div class="stats-grid">
       <div class="stat-card red" data-tab="urgent" onclick="switchTab('urgent')">
         <div class="stat-label">🔴 أصناف عاجلة</div>
@@ -263,7 +262,6 @@
       </div>
     </div>
 
-    <!-- كروت كمية القطع -->
     <div class="qty-stats-grid">
       <div class="qty-card"><div class="qty-label">🔴 إجمالي القطع العاجلة</div><div class="qty-value" id="qty-urgent">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🟢 إجمالي قطع مراجعة 2025</div><div class="qty-value" id="qty-review">0</div><div class="qty-unit">قطعة</div></div>
@@ -271,13 +269,11 @@
       <div class="qty-card"><div class="qty-label">🟡 إجمالي قطع المتابعة</div><div class="qty-value" id="qty-balance">0</div><div class="qty-unit">قطعة</div></div>
     </div>
 
-    <!-- الرسوم البيانية -->
     <div class="charts-grid">
       <div class="chart-card"><h4>📊 توزيع الأصناف حسب الفئات</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
       <div class="chart-card"><h4>🎨 توزيع الألوان</h4><div class="chart-wrap"><canvas id="color-chart"></canvas></div></div>
     </div>
 
-    <!-- الجدول -->
     <div class="table-card">
       <div class="table-header">
         <h4 id="table-title">🔴 أصناف عاجلة</h4>
@@ -307,6 +303,7 @@
 <script>
 const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران"];
 const ADMIN_MASTER_KEY = "101499";
+const PASSWORDS_URL = "passwords.json";
 
 let currentBranch = null;
 let uploadedRows = [];
@@ -336,27 +333,32 @@ function safeNumber(row, fields, defaultValue = 0) {
   return defaultValue;
 }
 
-window.onload = function() {
-  const select = document.getElementById('branch-select');
-  BRANCHES.forEach(b => { let opt = document.createElement('option'); opt.value = b; opt.textContent = b; select.appendChild(opt); });
-};
-
-function getBranchPasswords() {
-  let stored = localStorage.getItem('tree_passwords');
-  if(stored) return JSON.parse(stored);
-  let defaults = {};
-  BRANCHES.forEach((b, i) => { defaults[b] = 'tree' + String(i+1).padStart(3,'0'); });
-  return defaults;
+async function loadPasswordsFromFile() {
+    try {
+        const response = await fetch(PASSWORDS_URL);
+        if (!response.ok) throw new Error('ملف الباسوردات غير موجود');
+        const passwords = await response.json();
+        return passwords;
+    } catch(error) {
+        console.error("خطأ في تحميل الباسوردات:", error);
+        return {};
+    }
 }
 
-function doLogin() {
+async function doLogin() {
   const branch = document.getElementById('branch-select').value;
   const pwd = document.getElementById('password-input').value.trim();
   const err = document.getElementById('login-error');
+  
   if(pwd === ADMIN_MASTER_KEY) { showAdmin(); return; }
   if(!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع'; return; }
-  const pwds = getBranchPasswords();
-  if(pwds[branch] === pwd) { currentBranch = branch; err.style.display='none'; showApp(); }
+  
+  const passwords = await loadPasswordsFromFile();
+  if(passwords[branch] === pwd) { 
+    currentBranch = branch; 
+    err.style.display='none'; 
+    showApp(); 
+  }
   else { err.style.display='block'; err.textContent='❌ كلمة مرور خاطئة'; }
 }
 
@@ -372,6 +374,14 @@ function renderAdminList() {
   listDiv.innerHTML = ''; selectNode.innerHTML = '<option value="">— اختر —</option>';
   const pwds = getBranchPasswords();
   BRANCHES.forEach(b => { listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]}</span></div>`; selectNode.innerHTML += `<option value="${b}">${b}</option>`; });
+}
+
+function getBranchPasswords() {
+  let stored = localStorage.getItem('tree_passwords');
+  if(stored) return JSON.parse(stored);
+  let defaults = {};
+  BRANCHES.forEach((b, i) => { defaults[b] = 'tree' + String(i+1).padStart(3,'0'); });
+  return defaults;
 }
 
 function updateBranchPassword() {
