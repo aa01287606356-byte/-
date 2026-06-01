@@ -235,7 +235,7 @@
 
   <div id="dashboard-screen">
     <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToFourSheetsExcel()">📊 تصدير Excel (4 شيتات)</button>
+      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (5 شيتات)</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
@@ -373,7 +373,10 @@ function renderAdminList() {
   const selectNode = document.getElementById('admin-branch-select');
   listDiv.innerHTML = ''; selectNode.innerHTML = '<option value="">— اختر —</option>';
   const pwds = getBranchPasswords();
-  BRANCHES.forEach(b => { listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]}</span></div>`; selectNode.innerHTML += `<option value="${b}">${b}</option>`; });
+  BRANCHES.forEach(b => { 
+    listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]}</span></div>`; 
+    selectNode.innerHTML += `<option value="${b}">${b}</option>`; 
+  });
 }
 
 function getBranchPasswords() {
@@ -484,10 +487,10 @@ function renderTable(list) {
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
-    html += `<tr class="${priorityClass}"><td>${i+1}</td><td>${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
+    html += `<tr class="${priorityClass}"><td>${i+1}NonNull<td style="max-width:200px;">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
   });
   html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجمالي</td><td><strong>${totalQty}</strong></td><td colspan="4"></td></tr>`;
-  html += '</tbody></table>';
+  html += '</tbody><tr>';
   container.innerHTML = html;
 }
 
@@ -513,19 +516,45 @@ function updateColorChart() {
 
 function updateCharts() { updateCategoriesChart(); updateColorChart(); }
 
-function exportToFourSheetsExcel() {
+function exportToSheetsExcel() {
   if(uploadedRows.length === 0) return;
   const wb = XLSX.utils.book_new();
+  
   const formatSheet = (list, name, color) => {
-    const data = list.map((row, idx) => ({ "م": idx+1, "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود']), "اللون": safeGet(row, ['اللون']), "المجموعة الرئيسية": safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية']), "المجموعة الفرعية": safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية']), "الكمية المخصصة": safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0), "المبيعات": safeNumber(row, ['المبيعات'], 0), "الرصيد": safeNumber(row, ['رصيد'], 0), "نسبة البيع": (safeNumber(row, ['نسب البيع'], 0) * 100).toFixed(1) + '%', "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0) }));
+    const data = list.map((row, idx) => ({ 
+      "م": idx+1, 
+      "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), 
+      "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود']), 
+      "اللون": safeGet(row, ['اللون']), 
+      "المجموعة الرئيسية": safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية']),
+      "المجموعة الفرعية": safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية']), 
+      "الكمية المخصصة": safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0), 
+      "المبيعات": safeNumber(row, ['المبيعات'], 0), 
+      "الرصيد": safeNumber(row, ['رصيد'], 0),
+      "نسبة البيع": (safeNumber(row, ['نسب البيع'], 0) * 100).toFixed(1) + '%',
+      "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0)
+    }));
     const ws = XLSX.utils.json_to_sheet(data);
     ws['!cols'] = [{wch:5},{wch:35},{wch:20},{wch:12},{wch:20},{wch:25},{wch:12},{wch:12},{wch:10},{wch:10},{wch:12}];
     XLSX.utils.book_append_sheet(wb, ws, `${color} ${name}`);
   };
-  formatSheet(cachedLists.urgent, "أصناف عاجلة", "🔴");
+  
+  const new2026 = cachedLists.urgent.filter(row => {
+    const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
+    return itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "جديد 2026 غير مكتمل";
+  });
+  
+  const urgentShortage = cachedLists.urgent.filter(row => {
+    const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
+    return itemType === "اطلب الان";
+  });
+  
+  formatSheet(new2026, "جديد 2026", "🔴");
+  formatSheet(urgentShortage, "نواقص عاجلة", "🔴");
   formatSheet(cachedLists.review, "مراجعة المخزون 2025", "🟢");
-  formatSheet(cachedLists.substitute, "متوفر البديل", "🔄");
   formatSheet(cachedLists.balance, "متابعة الرصيد", "🟡");
+  formatSheet(cachedLists.substitute, "متوفر البديل", "🔄");
+  
   XLSX.writeFile(wb, `تقرير_فرع_${currentBranch}_${new Date().toLocaleDateString('ar-EG')}.xlsx`);
 }
 </script>
