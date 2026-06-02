@@ -27,6 +27,8 @@
     --blue-light: #eff6ff;
     --purple: #7c3aed;
     --purple-light: #f5f3ff;
+    --teal: #0d9488;
+    --teal-light: #f0fdfa;
     --text: #1a2e1a;
   }
 
@@ -100,7 +102,7 @@
   .btn-excel { background: #107c41; }
   .btn-print { background: var(--gold); }
   
-  .stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 28px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 28px; }
   .stat-card {
     background: white; border-radius: 16px; padding: 20px; text-align: center;
     cursor: pointer; transition: all 0.3s; border: 2px solid transparent;
@@ -118,11 +120,13 @@
   .stat-card.blue.active { border: 2px solid var(--blue); background: var(--blue-light); }
   .stat-card.yellow { border-right: 4px solid var(--yellow); }
   .stat-card.yellow.active { border: 2px solid var(--yellow); background: var(--yellow-light); }
+  .stat-card.teal { border-right: 4px solid var(--teal); }
+  .stat-card.teal.active { border: 2px solid var(--teal); background: var(--teal-light); }
   .stat-label { font-size: 16px; font-weight: 700; margin-bottom: 8px; }
   .stat-value { font-size: 36px; font-weight: 900; }
   .stat-sub { font-size: 12px; color: var(--gray); margin-top: 4px; }
 
-  .qty-stats-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 20px; margin-bottom: 28px; }
+  .qty-stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 28px; }
   .qty-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-right: 4px solid var(--gold); }
   .qty-label { font-size: 13px; color: var(--gray); margin-bottom: 4px; }
   .qty-value { font-size: 28px; font-weight: 900; }
@@ -204,6 +208,7 @@
         <option value="طنطا">طنطا</option>
         <option value="عجمى ستار">عجمى ستار</option>
         <option value="لوران">لوران</option>
+        <option value="مارينا">مارينا</option>
       </select>
     </div>
     <div class="form-group">
@@ -237,7 +242,7 @@
 
   <div id="dashboard-screen">
     <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (5 شيتات)</button>
+      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (6 شيتات)</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
@@ -257,6 +262,11 @@
         <div class="stat-value" id="card-review">0</div>
         <div class="stat-sub">صنف</div>
       </div>
+      <div class="stat-card teal" data-tab="stable" onclick="switchTab('stable')">
+        <div class="stat-label">📊 أصناف مستقرة</div>
+        <div class="stat-value" id="card-stable">0</div>
+        <div class="stat-sub">صنف</div>
+      </div>
       <div class="stat-card blue" data-tab="substitute" onclick="switchTab('substitute')">
         <div class="stat-label">🔄 متوفر البديل</div>
         <div class="stat-value" id="card-substitute">0</div>
@@ -273,6 +283,7 @@
       <div class="qty-card"><div class="qty-label">🔴 إجمالي قطع جديد 2026</div><div class="qty-value" id="qty-new2026">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🟠 إجمالي قطع نواقص عاجلة</div><div class="qty-value" id="qty-urgent">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🟢 إجمالي قطع مراجعة 2025</div><div class="qty-value" id="qty-review">0</div><div class="qty-unit">قطعة</div></div>
+      <div class="qty-card"><div class="qty-label">📊 إجمالي قطع مستقرة</div><div class="qty-value" id="qty-stable">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🔄 إجمالي قطع البدائل</div><div class="qty-value" id="qty-substitute">0</div><div class="qty-unit">قطعة</div></div>
       <div class="qty-card"><div class="qty-label">🟡 إجمالي قطع المتابعة</div><div class="qty-value" id="qty-balance">0</div><div class="qty-unit">قطعة</div></div>
     </div>
@@ -309,14 +320,14 @@
 </div>
 
 <script>
-const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران"];
+const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
 const ADMIN_MASTER_KEY = "101499";
 const PASSWORDS_URL = "passwords.json";
 
 let currentBranch = null;
 let uploadedRows = [];
 let currentTab = 'new2026';
-let cachedLists = { new2026: [], urgent: [], review: [], substitute: [], balance: [] };
+let cachedLists = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
 let categoriesChart = null, colorChart = null;
 
 function safeGet(row, fields, defaultValue = '—') {
@@ -432,20 +443,38 @@ function loadFile(input) {
 }
 
 function processDataSegmentation() {
-  cachedLists = { new2026: [], urgent: [], review: [], substitute: [], balance: [] };
+  cachedLists = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
   uploadedRows.forEach(row => {
     const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).trim();
     const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
-    if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل")) { cachedLists.substitute.push(row); return; }
-    if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "جديد 2026 غير مكتمل") { cachedLists.new2026.push(row); }
-    else if(itemType === "اطلب الان") { cachedLists.urgent.push(row); }
-    else if(itemType === "جديد ٢٠٢٥ غير مكتمل" || itemType === "جديد 2025 غير مكتمل" || itemType.includes("جديد 2025")) { cachedLists.review.push(row); }
-    else if(itemType === "متوسطة" || itemType === "غير متوفر" || itemType === "تاريخ غير محدد") { cachedLists.balance.push(row); }
-    else if(itemType !== "" && itemType !== null) { cachedLists.review.push(row); }
+    
+    if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل")) { 
+      cachedLists.substitute.push(row); 
+      return; 
+    }
+    if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "جديد 2026 غير مكتمل") { 
+      cachedLists.new2026.push(row); 
+    }
+    else if(itemType === "اطلب الان") { 
+      cachedLists.urgent.push(row); 
+    }
+    else if(itemType === "جديد ٢٠٢٥ غير مكتمل" || itemType === "جديد 2025 غير مكتمل" || itemType.includes("جديد 2025")) { 
+      cachedLists.review.push(row); 
+    }
+    else if(itemType === "متوسطة" || itemType === "متوفر" || itemType === "مستقر") { 
+      cachedLists.stable.push(row); 
+    }
+    else if(itemType === "غير متوفر" || itemType === "تاريخ غير محدد") { 
+      cachedLists.balance.push(row); 
+    }
+    else if(itemType !== "" && itemType !== null) { 
+      cachedLists.review.push(row); 
+    }
   });
   document.getElementById('card-new2026').textContent = cachedLists.new2026.length;
   document.getElementById('card-urgent').textContent = cachedLists.urgent.length;
   document.getElementById('card-review').textContent = cachedLists.review.length;
+  document.getElementById('card-stable').textContent = cachedLists.stable.length;
   document.getElementById('card-substitute').textContent = cachedLists.substitute.length;
   document.getElementById('card-balance').textContent = cachedLists.balance.length;
   updateQuantityCards();
@@ -457,6 +486,7 @@ function updateQuantityCards() {
   document.getElementById('qty-new2026').textContent = totalQty(cachedLists.new2026);
   document.getElementById('qty-urgent').textContent = totalQty(cachedLists.urgent);
   document.getElementById('qty-review').textContent = totalQty(cachedLists.review);
+  document.getElementById('qty-stable').textContent = totalQty(cachedLists.stable);
   document.getElementById('qty-substitute').textContent = totalQty(cachedLists.substitute);
   document.getElementById('qty-balance').textContent = totalQty(cachedLists.balance);
 }
@@ -469,6 +499,7 @@ function switchTab(tabKey) {
     new2026: "🔴 جديد 2026", 
     urgent: "🟠 نواقص عاجلة", 
     review: "🟢 مراجعة المخزون 2025", 
+    stable: "📊 أصناف مستقرة", 
     substitute: "🔄 متوفر البديل", 
     balance: "🟡 متابعة الرصيد" 
   };
@@ -500,7 +531,7 @@ function renderTable(list) {
   const container = document.getElementById('table-container');
   if(list.length === 0) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>'; return; }
   let totalQty = 0;
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th><th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>مخزن ابيس</th></tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th><th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>مخزن ابيس</th></table></thead><tbody>`;
   list.forEach((row, i) => {
     const priority = safeNumber(row, ['درجة_أولوية_الفرع', 'درجة أولوية الفرع'], 0);
     const priorityClass = getPriorityClass(priority);
@@ -508,9 +539,9 @@ function renderTable(list) {
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
-    html += `<tr class="${priorityClass}"><td>${i+1}NonNull<td style="max-width:200px;">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
+    html += `<tr class="${priorityClass}"><td style="text-align:center;">${i+1}</td><td style="max-width:200px;">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
   });
-  html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجماليNonNull<td><strong>${totalQty}</strong>NonNull<td colspan="4">NonNull</tr>`;
+  html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجمالي</td><td><strong>${totalQty}</strong></td><td colspan="4"></td></tr>`;
   html += '</tbody></table>';
   container.innerHTML = html;
 }
@@ -520,10 +551,11 @@ function updateCategoriesChart() {
   if(currentTab === 'new2026') { categoriesCount = [cachedLists.new2026.length]; categoriesLabels = ['🔴 جديد 2026']; }
   else if(currentTab === 'urgent') { categoriesCount = [cachedLists.urgent.length]; categoriesLabels = ['🟠 نواقص عاجلة']; }
   else if(currentTab === 'review') { categoriesCount = [cachedLists.review.length]; categoriesLabels = ['🟢 مراجعة المخزون 2025']; }
+  else if(currentTab === 'stable') { categoriesCount = [cachedLists.stable.length]; categoriesLabels = ['📊 أصناف مستقرة']; }
   else if(currentTab === 'substitute') { categoriesCount = [cachedLists.substitute.length]; categoriesLabels = ['🔄 متوفر البديل']; }
   else { categoriesCount = [cachedLists.balance.length]; categoriesLabels = ['🟡 متابعة الرصيد']; }
   if(categoriesChart) categoriesChart.destroy();
-  categoriesChart = new Chart(document.getElementById('categories-chart'), { type: 'doughnut', data: { labels: categoriesLabels, datasets: [{ data: categoriesCount, backgroundColor: currentTab === 'new2026' ? '#dc2626' : currentTab === 'urgent' ? '#ea580c' : currentTab === 'review' ? '#1a6b3c' : currentTab === 'substitute' ? '#2563eb' : '#ca8a04', borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo', size: 12 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} صنف` } } } } });
+  categoriesChart = new Chart(document.getElementById('categories-chart'), { type: 'doughnut', data: { labels: categoriesLabels, datasets: [{ data: categoriesCount, backgroundColor: currentTab === 'new2026' ? '#dc2626' : currentTab === 'urgent' ? '#ea580c' : currentTab === 'review' ? '#1a6b3c' : currentTab === 'stable' ? '#0d9488' : currentTab === 'substitute' ? '#2563eb' : '#ca8a04', borderWidth: 0, hoverOffset: 10 }] }, options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { family: 'Cairo', size: 12 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${ctx.raw} صنف` } } } } });
 }
 
 function updateColorChart() {
@@ -564,8 +596,9 @@ function exportToSheetsExcel() {
   formatSheet(cachedLists.new2026, "جديد 2026", "🔴");
   formatSheet(cachedLists.urgent, "نواقص عاجلة", "🟠");
   formatSheet(cachedLists.review, "مراجعة المخزون 2025", "🟢");
-  formatSheet(cachedLists.balance, "متابعة الرصيد", "🟡");
+  formatSheet(cachedLists.stable, "أصناف مستقرة", "📊");
   formatSheet(cachedLists.substitute, "متوفر البديل", "🔄");
+  formatSheet(cachedLists.balance, "متابعة الرصيد", "🟡");
   
   XLSX.writeFile(wb, `تقرير_فرع_${currentBranch}_${new Date().toLocaleDateString('ar-EG')}.xlsx`);
 }
