@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TREE — إدارة المخزون</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght=300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -143,8 +143,8 @@
   .search-box input { border: none; background: transparent; outline: none; width: 250px; font-family: 'Cairo'; }
 
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-  .data-table th { background: var(--gray-light); padding: 12px; text-align: right; font-weight: 700; }
-  .data-table td { padding: 12px; border-bottom: 1px solid var(--gray-light); }
+  .data-table th { background: var(--gray-light); padding: 12px; text-align: right; font-weight: 700; border-bottom: 2px solid #e5e7eb; }
+  .data-table td { padding: 12px; border-bottom: 1px solid var(--gray-light); text-align: right; }
   .data-table tr:hover td { background: var(--gray-light); }
   .data-table tr.priority-1 td { background-color: #fef2f2; }
   .data-table tr.priority-2 td { background-color: #fff7ed; }
@@ -531,7 +531,26 @@ function renderTable(list) {
   const container = document.getElementById('table-container');
   if(list.length === 0) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>'; return; }
   let totalQty = 0;
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th><th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>مخزن ابيس</th></table></thead><tbody>`;
+  
+  // هنا تم تصحيح بناء الجدول وحذف الـ </table> الزائد الذي تسبب بالمشكلة
+  let html = `<table class="data-table">
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th>إسم الصنف</th>
+                    <th>الباركود</th>
+                    <th>اللون</th>
+                    <th>المجموعة الرئيسية</th>
+                    <th>المجموعة الفرعية</th>
+                    <th>الكمية</th>
+                    <th>المبيعات</th>
+                    <th>الرصيد</th>
+                    <th>نسبة البيع</th>
+                    <th>مخزن ابيس</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+                
   list.forEach((row, i) => {
     const priority = safeNumber(row, ['درجة_أولوية_الفرع', 'درجة أولوية الفرع'], 0);
     const priorityClass = getPriorityClass(priority);
@@ -539,9 +558,27 @@ function renderTable(list) {
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
-    html += `<tr class="${priorityClass}"><td style="text-align:center;">${i+1}</td><td style="max-width:200px;">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td><td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td><td>${safeGet(row, ['اللون'])}</td><td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td><td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td><td><span class="qty-badge">${qty}</span></td><td>${safeNumber(row, ['المبيعات'], 0)}</td><td>${safeNumber(row, ['رصيد'], 0)}</td><td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td><td>${safeNumber(row, ['مخزن ابيس'], 0)}</td></tr>`;
+    
+    html += `<tr class="${priorityClass}">
+              <td style="text-align:center;">${i+1}</td>
+              <td style="max-width:200px;">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td>
+              <td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td>
+              <td>${safeGet(row, ['اللون'])}</td>
+              <td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td>
+              <td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td>
+              <td><span class="qty-badge">${qty}</span></td>
+              <td>${safeNumber(row, ['المبيعات'], 0)}</td>
+              <td>${safeNumber(row, ['رصيد'], 0)}</td>
+              <td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td>
+              <td>${safeNumber(row, ['مخزن ابيس'], 0)}</td>
+            </tr>`;
   });
-  html += `<tr class="total-row"><td colspan="6" style="text-align:center;">الإجمالي</td><td><strong>${totalQty}</strong></td><td colspan="4"></td></tr>`;
+  
+  html += `<tr class="total-row">
+            <td colspan="6" style="text-align:center;">الإجمالي</td>
+            <td><strong>${totalQty}</strong></td>
+            <td colspan="4"></td>
+           </tr>`;
   html += '</tbody></table>';
   container.innerHTML = html;
 }
