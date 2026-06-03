@@ -165,7 +165,6 @@
     display: inline-block;
     cursor: pointer;
     transition: all 0.2s;
-    text-align: center;
   }
   .substitute-badge:hover {
     transform: scale(1.05);
@@ -173,11 +172,10 @@
   }
   .no-substitute {
     color: var(--gray);
-    text-align: center;
     font-size: 16px;
   }
 
-  /* Modal styles */
+  /* Modal */
   .modal {
     display: none;
     position: fixed;
@@ -187,20 +185,13 @@
     width: 100%;
     height: 100%;
     background-color: rgba(0,0,0,0.5);
-    animation: fadeIn 0.3s;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
   }
   .modal-content {
     background: var(--white);
     margin: 5% auto;
-    padding: 0;
-    width: 500px;
+    width: 450px;
     max-width: 90%;
     border-radius: 20px;
-    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     animation: slideDown 0.3s;
   }
   @keyframes slideDown {
@@ -212,41 +203,28 @@
     color: white;
     padding: 20px;
     border-radius: 20px 20px 0 0;
-    font-size: 18px;
-    font-weight: 700;
     display: flex;
     justify-content: space-between;
     align-items: center;
   }
-  .modal-body {
-    padding: 24px;
-    max-height: 60vh;
-    overflow-y: auto;
-  }
+  .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
   .modal-detail-row {
     display: flex;
-    padding: 12px 0;
+    padding: 10px 0;
     border-bottom: 1px solid var(--gray-light);
   }
   .modal-detail-label {
     font-weight: 700;
-    width: 130px;
+    width: 120px;
     color: var(--green);
   }
-  .modal-detail-value {
-    flex: 1;
-    color: var(--text);
-  }
+  .modal-detail-value { flex: 1; }
   .close-modal {
     cursor: pointer;
     font-size: 28px;
-    font-weight: bold;
-    transition: 0.2s;
     line-height: 1;
   }
-  .close-modal:hover {
-    opacity: 0.7;
-  }
+  .close-modal:hover { opacity: 0.7; }
 
   #admin-screen { display: none; }
   .admin-container { padding: 32px; }
@@ -382,14 +360,14 @@
     </div>
 
     <div class="charts-grid">
-      <div class="chart-card"><h4>📊 توزيع إجمالي الأصناف حسب الفئات</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
+      <div class="chart-card"><h4>📊 توزيع الأصناف حسب الفئات</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
       <div class="chart-card"><h4>🎨 توزيع الألوان (للتبويب الحالي)</h4><div class="chart-wrap"><canvas id="color-chart"></canvas></div></div>
     </div>
 
     <div class="table-card">
       <div class="table-header">
         <h4 id="table-title">🔴 جديد 2026</h4>
-        <div class="search-box">🔍 <input type="text" id="search-input" placeholder="بحث باسم الصنف أو الباركود..." oninput="filterTable()"></div>
+        <div class="search-box">🔍 <input type="text" id="search-input" placeholder="بحث..." oninput="filterTable()"></div>
       </div>
       <div style="overflow-x:auto;" id="table-container"></div>
     </div>
@@ -400,28 +378,25 @@
   <header class="app-header"><h2>🌳 لوحة الإدارة</h2><button class="btn-logout" onclick="doLogout()">خروج</button></header>
   <div class="admin-container">
     <div class="admin-grid">
-      <div class="chart-card" style="max-height: 500px; overflow-y: auto;"><h3>🔐 كلمات مرور الفروع الحالية</h3><div id="admin-password-list"></div></div>
+      <div class="chart-card"><h3>🔐 كلمات مرور الفروع</h3><div id="admin-password-list"></div></div>
       <div class="chart-card">
         <h3>✏️ تحديث كلمة مرور فرع</h3>
-        <select id="admin-branch-select" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; font-family:'Cairo'"></select>
-        <input type="text" id="admin-new-password" placeholder="كلمة المرور الجديدة" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px; font-family:'Cairo'">
-        <button class="btn-login" onclick="updateBranchPassword()">💾 حفظ وتحديث التخزين</button>
-        <p id="admin-toast" style="margin-top:12px; color:var(--green); display:none; font-weight: bold;"></p>
+        <select id="admin-branch-select" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px;"></select>
+        <input type="text" id="admin-new-password" placeholder="كلمة المرور الجديدة" style="width:100%; padding:12px; margin-bottom:15px; border-radius:10px;">
+        <button class="btn-login" onclick="updateBranchPassword()">💾 حفظ</button>
+        <p id="admin-toast" style="margin-top:12px; color:var(--green); display:none;"></p>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Modal for substitute details -->
 <div id="substituteModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
       <span>🔄 تفاصيل البديل</span>
       <span class="close-modal" onclick="closeModal()">&times;</span>
     </div>
-    <div class="modal-body" id="modalBody">
-      <!-- Dynamic content -->
-    </div>
+    <div class="modal-body" id="modalBody"></div>
   </div>
 </div>
 
@@ -435,7 +410,6 @@ let uploadedRows = [];
 let currentTab = 'new2026';
 let cachedLists = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
 let categoriesChart = null, colorChart = null;
-let substituteDetailsMap = new Map();
 
 function safeGet(row, fields, defaultValue = '—') {
   if (!Array.isArray(fields)) fields = [fields];
@@ -459,10 +433,15 @@ function safeNumber(row, fields, defaultValue = 0) {
   return defaultValue;
 }
 
+function hasSubstitute(row) {
+  const reason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).toLowerCase();
+  const type = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
+  return reason.includes('بديل') || type.includes('متوفر البديل');
+}
+
 async function getBranchPasswords() {
   let stored = localStorage.getItem('tree_passwords');
   if (stored) return JSON.parse(stored);
-
   try {
     const response = await fetch(PASSWORDS_URL);
     if (response.ok) {
@@ -470,10 +449,7 @@ async function getBranchPasswords() {
       localStorage.setItem('tree_passwords', JSON.stringify(serverPasswords));
       return serverPasswords;
     }
-  } catch(e) {
-    console.warn("تعذر جلب ملف passwords.json، سيتم إنشاء كلمات افتراضية.");
-  }
-
+  } catch(e) {}
   let defaults = {};
   BRANCHES.forEach((b, i) => { defaults[b] = 'tree' + String(i+1).padStart(3,'0'); });
   localStorage.setItem('tree_passwords', JSON.stringify(defaults));
@@ -484,10 +460,8 @@ async function doLogin() {
   const branch = document.getElementById('branch-select').value;
   const pwd = document.getElementById('password-input').value.trim();
   const err = document.getElementById('login-error');
-  
   if(pwd === ADMIN_MASTER_KEY) { showAdmin(); return; }
   if(!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع أولاً'; return; }
-  
   const passwords = await getBranchPasswords();
   if(passwords[branch] && passwords[branch] === pwd) { 
     currentBranch = branch; 
@@ -502,7 +476,6 @@ async function doLogin() {
 function doLogout() { 
   currentBranch = null; 
   uploadedRows = []; 
-  document.getElementById('password-input').value = '';
   document.getElementById('login-screen').style.display = 'flex'; 
   document.getElementById('app-screen').style.display = 'none'; 
   document.getElementById('admin-screen').style.display = 'none'; 
@@ -528,11 +501,10 @@ async function renderAdminList() {
   const listDiv = document.getElementById('admin-password-list');
   const selectNode = document.getElementById('admin-branch-select');
   listDiv.innerHTML = ''; 
-  selectNode.innerHTML = '<option value="">— اختر الفرع المراد تعديله —</option>';
-  
+  selectNode.innerHTML = '<option value="">— اختر الفرع —</option>';
   const pwds = await getBranchPasswords();
   BRANCHES.forEach(b => { 
-    listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span><code>${pwds[b] || 'غير محدد'}</code></span></div>`; 
+    listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b] || 'غير محدد'}</span></div>`; 
     selectNode.innerHTML += `<option value="${b}">${b}</option>`; 
   });
 }
@@ -541,15 +513,12 @@ async function updateBranchPassword() {
   const branch = document.getElementById('admin-branch-select').value;
   const newPwd = document.getElementById('admin-new-password').value.trim();
   if(!branch || !newPwd) return;
-  
   let pwds = await getBranchPasswords();
   pwds[branch] = newPwd;
   localStorage.setItem('tree_passwords', JSON.stringify(pwds));
-  
   const toast = document.getElementById('admin-toast');
   toast.style.display = 'block'; 
-  toast.textContent = '✅ تم تحديث كلمة المرور بنجاح';
-  
+  toast.textContent = '✅ تم التحديث';
   await renderAdminList();
   document.getElementById('admin-new-password').value = '';
   setTimeout(() => toast.style.display = 'none', 3000);
@@ -558,14 +527,14 @@ async function updateBranchPassword() {
 function loadFile(input) {
   const file = input.files[0];
   if(!file) return;
-  document.getElementById('upload-status').textContent = '⏳ جاري قراءة وتصفية البيانات...';
+  document.getElementById('upload-status').textContent = '⏳ جاري القراءة...';
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
       const allData = XLSX.utils.sheet_to_json(ws, { defval: "" });
-      if(allData.length === 0) { document.getElementById('upload-status').textContent = '⚠️ الملف المرفوع فارغ تماماً'; return; }
+      if(allData.length === 0) { document.getElementById('upload-status').textContent = '⚠️ الملف فارغ'; return; }
       
       uploadedRows = allData.filter(r => { 
         let branchVal = String(safeGet(r, ['اسم الفرع', 'الفرع'], '')).trim(); 
@@ -573,52 +542,19 @@ function loadFile(input) {
       });
       
       if(uploadedRows.length === 0) { 
-        document.getElementById('upload-status').textContent = `⚠️ عذراً، لا توجد أي بيانات تخص فرع (${currentBranch}) في هذا الملف.`; 
+        document.getElementById('upload-status').textContent = `⚠️ لا توجد بيانات لفرع ${currentBranch}`; 
         return; 
       }
       
-      buildSubstituteDetailsMap();
       processDataSegmentation();
       document.getElementById('upload-screen').style.display = 'none';
       document.getElementById('dashboard-screen').style.display = 'block';
       switchTab('new2026');
     } catch(err) { 
-      console.error(err); 
-      document.getElementById('upload-status').textContent = '❌ حدث خطأ أثناء تحليل ملف الاكسيل: ' + err.message; 
+      document.getElementById('upload-status').textContent = '❌ خطأ: ' + err.message; 
     }
   };
   reader.readAsArrayBuffer(file);
-}
-
-function hasSubstitute(row) {
-  const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).toLowerCase();
-  const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
-  
-  return decReason.includes('بديل') || decReason.includes('البديل') || itemType.includes('متوفر البديل');
-}
-
-function buildSubstituteDetailsMap() {
-  substituteDetailsMap.clear();
-  
-  // Build map of substitute items
-  uploadedRows.forEach(row => {
-    const itemName = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-    const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-    
-    if (hasSubstitute(row)) {
-      substituteDetailsMap.set(itemName, row);
-      if (barcode !== '—') substituteDetailsMap.set(barcode, row);
-    }
-  });
-}
-
-function getSubstituteDetails(row) {
-  const itemName = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-  const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-  
-  if (substituteDetailsMap.has(itemName)) return substituteDetailsMap.get(itemName);
-  if (substituteDetailsMap.has(barcode)) return substituteDetailsMap.get(barcode);
-  return null;
 }
 
 function processDataSegmentation() {
@@ -627,7 +563,6 @@ function processDataSegmentation() {
   uploadedRows.forEach(row => {
     const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
     
-    // Original classification
     if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "جديد 2026 غير مكتمل") { 
       cachedLists.new2026.push(row); 
     }
@@ -646,18 +581,13 @@ function processDataSegmentation() {
     else if(itemType === "متوفر البديل") { 
       cachedLists.substitute.push(row); 
     }
-    else if(itemType !== "" && itemType !== null) { 
-      cachedLists.review.push(row); 
-    }
   });
   
-  // Add items that have substitute to substitute tab (same item appears in both places)
+  // 🔥 إضافة الأصناف التي لها بديل إلى تبويب "متوفر البديل" أيضاً
   uploadedRows.forEach(row => {
     if (hasSubstitute(row)) {
       const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
-      // Only add if not already in substitute tab and not already added
       if (itemType !== "متوفر البديل") {
-        // Check if already exists in substitute list
         const exists = cachedLists.substitute.some(r => 
           safeGet(r, ['إسم الصنف', 'اسم الصنف']) === safeGet(row, ['إسم الصنف', 'اسم الصنف'])
         );
@@ -692,21 +622,15 @@ function updateQuantityCards() {
 function switchTab(tabKey) {
   currentTab = tabKey;
   document.querySelectorAll('.stat-card').forEach(card => card.classList.remove('active'));
-  
   const targetCard = document.querySelector(`.stat-card[data-tab="${tabKey}"]`);
   if (targetCard) targetCard.classList.add('active');
   
   const titles = { 
-    new2026: "🔴 جديد 2026", 
-    urgent: "🟠 نواقص عاجلة", 
-    review: "🟢 مراجعة المخزون 2025", 
-    stable: "📊 أصناف مستقرة", 
-    substitute: "🔄 متوفر البديل", 
-    balance: "🟡 متابعة الرصيد" 
+    new2026: "🔴 جديد 2026", urgent: "🟠 نواقص عاجلة", review: "🟢 مراجعة 2025", 
+    stable: "📊 أصناف مستقرة", substitute: "🔄 متوفر البديل", balance: "🟡 متابعة الرصيد" 
   };
   document.getElementById('table-title').textContent = titles[tabKey] || '';
   document.getElementById('search-input').value = '';
-  
   filterTable();
   updateColorChart();
 }
@@ -714,7 +638,6 @@ function switchTab(tabKey) {
 function filterTable() {
   const search = document.getElementById('search-input').value.toLowerCase().trim();
   const list = cachedLists[currentTab] || [];
-  
   const filtered = list.filter(row => { 
     const name = String(safeGet(row, ['إسم الصنف', 'اسم الصنف'], '')).toLowerCase(); 
     const barcode = String(safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'], '')).toLowerCase(); 
@@ -723,60 +646,16 @@ function filterTable() {
   renderTable(filtered);
 }
 
-function getPriorityClass(priority) {
-  if(priority >= 1000) return 'priority-1';
-  if(priority >= 200) return 'priority-2';
-  if(priority > 0) return 'priority-3';
-  return 'priority-4';
-}
-
 function showSubstituteDetails(row) {
-  const substituteRow = getSubstituteDetails(row);
-  if (!substituteRow) {
-    alert("لا توجد تفاصيل إضافية للبديل");
-    return;
-  }
-  
   const modalBody = document.getElementById('modalBody');
   modalBody.innerHTML = `
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">🔄 اسم البديل:</div>
-      <div class="modal-detail-value">${safeGet(substituteRow, ['إسم الصنف', 'اسم الصنف'], '—')}</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">🏷️ الباركود:</div>
-      <div class="modal-detail-value">${safeGet(substituteRow, ['باركود الوحدة المخزنية', 'باركود'], '—')}</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">🎨 اللون:</div>
-      <div class="modal-detail-value">${safeGet(substituteRow, ['اللون'], '—')}</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">📦 الكمية المتاحة:</div>
-      <div class="modal-detail-value">${safeNumber(substituteRow, ['الكمية_المخصصة', 'الكمية المخصصة'], 0)} قطعة</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">🏪 مخزن ابيس:</div>
-      <div class="modal-detail-value">${safeNumber(substituteRow, ['مخزن ابيس'], 0)} قطعة</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">📊 المبيعات:</div>
-      <div class="modal-detail-value">${safeNumber(substituteRow, ['المبيعات'], 0)} قطعة</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">💰 الرصيد:</div>
-      <div class="modal-detail-value">${safeNumber(substituteRow, ['رصيد'], 0)} قطعة</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">💡 سبب القرار:</div>
-      <div class="modal-detail-value" style="font-size:12px;">${safeGet(substituteRow, ['سبب_القرار', 'سبب القرار'], '—')}</div>
-    </div>
-    <div class="modal-detail-row">
-      <div class="modal-detail-label">📌 المجموعة:</div>
-      <div class="modal-detail-value">${safeGet(substituteRow, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], '—')} / ${safeGet(substituteRow, ['المجموعة الفرعية.2', 'المجموعة الفرعية'], '—')}</div>
-    </div>
+    <div class="modal-detail-row"><div class="modal-detail-label">🔄 اسم البديل:</div><div class="modal-detail-value">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</div></div>
+    <div class="modal-detail-row"><div class="modal-detail-label">🏷️ الباركود:</div><div class="modal-detail-value">${safeGet(row, ['باركود الوحدة المخزنية', 'باركود'])}</div></div>
+    <div class="modal-detail-row"><div class="modal-detail-label">🎨 اللون:</div><div class="modal-detail-value">${safeGet(row, ['اللون'])}</div></div>
+    <div class="modal-detail-row"><div class="modal-detail-label">📦 الكمية:</div><div class="modal-detail-value">${safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0)} قطعة</div></div>
+    <div class="modal-detail-row"><div class="modal-detail-label">🏪 مخزن ابيس:</div><div class="modal-detail-value">${safeNumber(row, ['مخزن ابيس'], 0)} قطعة</div></div>
+    <div class="modal-detail-row"><div class="modal-detail-label">💡 سبب القرار:</div><div class="modal-detail-value">${safeGet(row, ['سبب_القرار', 'سبب القرار'])}</div></div>
   `;
-  
   document.getElementById('substituteModal').style.display = 'block';
 }
 
@@ -786,104 +665,69 @@ function closeModal() {
 
 window.onclick = function(event) {
   const modal = document.getElementById('substituteModal');
-  if (event.target == modal) {
-    modal.style.display = 'none';
-  }
+  if (event.target == modal) modal.style.display = 'none';
 }
 
 function renderTable(list) {
   const container = document.getElementById('table-container');
   if(!list || list.length === 0) { 
-    container.innerHTML = '<p style="text-align:center; padding:40px; color: var(--gray);">📭 لا توجد أصناف تطابق هذا البحث في هذا القسم</p>'; 
+    container.innerHTML = '<p style="text-align:center; padding:40px;">📭 لا توجد أصناف</p>'; 
     return; 
   }
   
   let totalQty = 0;
   let html = `<table class="data-table" style="width:100%;">
-                <thead>
-                  <tr>
-                    <th style="text-align:center; width:40px;">#</th>
-                    <th style="text-align:right; min-width:200px;">إسم الصنف</th>
-                    <th style="text-align:right; min-width:130px;">الباركود</th>
-                    <th style="text-align:right; width:80px;">اللون</th>
-                    <th style="text-align:right; min-width:150px;">المجموعة الرئيسية</th>
-                    <th style="text-align:right; min-width:150px;">المجموعة الفرعية</th>
-                    <th style="text-align:center; width:80px;">الكمية</th>
-                    <th style="text-align:center; width:80px;">المبيعات</th>
-                    <th style="text-align:center; width:70px;">الرصيد</th>
-                    <th style="text-align:center; width:80px;">نسبة البيع</th>
-                    <th style="text-align:center; width:80px;">مخزن ابيس</th>
-                    <th style="text-align:center; width:130px;">🔄 متوفر بديل</th>
-                  </tr>
-                </thead>
-                <tbody>`;
+                <thead><tr>
+                  <th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th>
+                  <th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th>
+                  <th>الكمية</th><th>المبيعات</th><th>الرصيد</th>
+                  <th>نسبة البيع</th><th>مخزن ابيس</th>
+                  <th style="background:#ede9fe;">🔄 متوفر بديل</th>
+                </tr></thead><tbody>`;
                 
   list.forEach((row, i) => {
-    const priority = safeNumber(row, ['درجة_أولوية_الفرع', 'درجة أولوية الفرع'], 0);
-    const priorityClass = getPriorityClass(priority);
     const qty = safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0);
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
     const hasSub = hasSubstitute(row);
-    const rowData = JSON.stringify(row).replace(/"/g, '&quot;');
+    const rowData = encodeURIComponent(JSON.stringify(row));
     
-    html += `<tr class="${priorityClass}">
-              <td style="text-align:center;">${i+1}</td>
-              <td title="${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}">${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td>
-              <td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود'])}</td>
+    html += `<tr>
+              <td>${i+1}</td>
+              <td>${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td>
+              <td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'باركود'])}</td>
               <td>${safeGet(row, ['اللون'])}</td>
               <td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td>
               <td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td>
               <td style="text-align:center;"><span class="qty-badge">${qty}</span></td>
               <td style="text-align:center;">${safeNumber(row, ['المبيعات'], 0)}</td>
               <td style="text-align:center;">${safeNumber(row, ['رصيد'], 0)}</td>
-              <td style="text-align:center; font-weight:bold; color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td>
+              <td style="text-align:center; color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td>
               <td style="text-align:center;">${safeNumber(row, ['مخزن ابيس'], 0)}</td>
-              <td style="text-align:center;">${hasSub ? `<span class="substitute-badge" onclick="showSubstituteDetails(${rowData})">✅ يوجد بديل متوفر</span>` : '<span class="no-substitute">—</span>'}</td>
+              <td style="text-align:center; background:#f5f3ff;">${hasSub ? `<span class="substitute-badge" onclick='showSubstituteDetails(${JSON.stringify(row).replace(/'/g, "&#39;")})'>✅ يوجد بديل</span>` : '<span class="no-substitute">—</span>'}</td>
              </tr>`;
   });
   
-  html += `<tr class="total-row">
-            <td colspan="6" style="text-align:center; font-weight:bold;">إجمالي القطع المخصصة في هذا التبويب</td>
-            <td style="text-align:center;"><strong style="font-size:15px; color:var(--green-dark);">${totalQty}</strong></td>
-            <td colspan="5"></td>
-           </tr>`;
+  html += `<tr class="total-row"><td colspan="6" style="text-align:center;">إجمالي القطع</td>
+           <td style="text-align:center;"><strong>${totalQty}</strong></td><td colspan="5"></td></tr>`;
   html += '</tbody></table>';
   container.innerHTML = html;
 }
 
 function updateTotalCategoriesChart() {
   const counts = [
-    cachedLists.new2026.length,
-    cachedLists.urgent.length,
-    cachedLists.review.length,
-    cachedLists.stable.length,
-    cachedLists.substitute.length,
-    cachedLists.balance.length
+    cachedLists.new2026.length, cachedLists.urgent.length, cachedLists.review.length,
+    cachedLists.stable.length, cachedLists.substitute.length, cachedLists.balance.length
   ];
-  
   if(categoriesChart) categoriesChart.destroy();
-  
   categoriesChart = new Chart(document.getElementById('categories-chart'), { 
     type: 'doughnut', 
     data: { 
-      labels: ['جديد 2026', 'نواقص عاجلة', 'مراجعة 2025', 'مستقرة', 'البديل', 'متابعة الرصيد'], 
-      datasets: [{ 
-        data: counts, 
-        backgroundColor: ['#dc2626', '#ea580c', '#1a6b3c', '#0d9488', '#2563eb', '#ca8a04'], 
-        borderWidth: 1, 
-        hoverOffset: 8 
-      }] 
+      labels: ['جديد 2026', 'نواقص عاجلة', 'مراجعة 2025', 'مستقرة', 'البديل', 'متابعة'], 
+      datasets: [{ data: counts, backgroundColor: ['#dc2626', '#ea580c', '#1a6b3c', '#0d9488', '#2563eb', '#ca8a04'] }] 
     }, 
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      plugins: { 
-        legend: { position: 'bottom', labels: { font: { family: 'Cairo', size: 11 } } }, 
-        tooltip: { callbacks: { label: (ctx) => ` ${ctx.label}: ${ctx.raw} صنف` } } 
-      } 
-    } 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'bottom', labels: { font: { size: 10 } } } } } 
   });
 }
 
@@ -892,71 +736,42 @@ function updateColorChart() {
   const colorMap = {};
   list.forEach(row => { const color = safeGet(row, ['اللون'], 'غير محدد'); colorMap[color] = (colorMap[color] || 0) + 1; });
   const sortedColors = Object.entries(colorMap).sort((a,b) => b[1] - a[1]).slice(0,8);
-  
-  const colorPalette = { 'أسود':'#1f2937','أبيض':'#f9fafb','رصاصي':'#6b7280','كحلي':'#1e3a5f','بيج':'#d4a853','أزرق':'#3b82f6','أخضر':'#16a34a','بني':'#92400e','أحمر':'#dc2626','موف':'#7c3aed','أصفر':'#eab308','وردي':'#ec4899','برتقالي':'#ea580c','مطبوع':'#8b5cf6','غير محدد':'#9ca3af' };
-  
+  const colorPalette = { 'أسود':'#1f2937','أبيض':'#f9fafb','كحلي':'#1e3a5f','بيج':'#d4a853','أزرق':'#3b82f6' };
   if(colorChart) colorChart.destroy();
   if (sortedColors.length === 0) return;
-
   colorChart = new Chart(document.getElementById('color-chart'), { 
-    type: 'bar', 
-    data: { 
-      labels: sortedColors.map(([c]) => c), 
-      datasets: [{ 
-        label: 'عدد الأصناف', 
-        data: sortedColors.map(([,v]) => v), 
-        backgroundColor: sortedColors.map(([c]) => colorPalette[c] || '#1a6b3c'), 
-        borderRadius: 6, 
-        barPercentage: 0.6 
-      }] 
-    }, 
-    options: { 
-      responsive: true, 
-      maintainAspectRatio: false, 
-      plugins: { 
-        legend: { display: false }, 
-        tooltip: { callbacks: { label: (ctx) => ` ${ctx.raw} صنف` } } 
-      }, 
-      scales: { 
-        y: { beginAtZero: true, ticks: { stepSize: 1 }, title: { display: false } }, 
-        x: { ticks: { font: { family: 'Cairo', size: 11 } } } 
-      } 
-    } 
+    type: 'bar', data: { labels: sortedColors.map(([c]) => c), datasets: [{ label: 'عدد الأصناف', data: sortedColors.map(([,v]) => v), backgroundColor: sortedColors.map(([c]) => colorPalette[c] || '#1a6b3c'), borderRadius: 6 }] }, 
+    options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } 
   });
 }
 
 function exportToSheetsExcel() {
   if(uploadedRows.length === 0) return;
   const wb = XLSX.utils.book_new();
-  
   const formatSheet = (list, name, color) => {
     const data = list.map((row, idx) => ({ 
-      "م": idx+1, 
-      "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), 
-      "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'الباركود', 'باركود']), 
+      "م": idx+1, "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), 
+      "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'باركود']), 
       "اللون": safeGet(row, ['اللون']), 
       "المجموعة الرئيسية": safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية']),
       "المجموعة الفرعية": safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية']), 
-      "الكمية المخصصة": safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0), 
+      "الكمية": safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة'], 0), 
       "المبيعات": safeNumber(row, ['المبيعات'], 0), 
       "الرصيد": safeNumber(row, ['رصيد'], 0),
       "نسبة البيع": (safeNumber(row, ['نسب البيع'], 0) * 100).toFixed(1) + '%',
       "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0),
-      "متوفر بديل": hasSubstitute(row) ? "✅ يوجد بديل متوفر" : "—"
+      "متوفر بديل": hasSubstitute(row) ? "✅ يوجد بديل" : "—"
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = [{wch:5},{wch:35},{wch:20},{wch:12},{wch:20},{wch:25},{wch:12},{wch:12},{wch:10},{wch:10},{wch:12},{wch:15}];
     XLSX.utils.book_append_sheet(wb, ws, `${color} ${name}`);
   };
-  
   formatSheet(cachedLists.new2026, "جديد 2026", "🔴");
   formatSheet(cachedLists.urgent, "نواقص عاجلة", "🟠");
-  formatSheet(cachedLists.review, "مراجعة المخزون 2025", "🟢");
-  formatSheet(cachedLists.stable, "أصناف مستقرة", "📊");
+  formatSheet(cachedLists.review, "مراجعة 2025", "🟢");
+  formatSheet(cachedLists.stable, "مستقرة", "📊");
   formatSheet(cachedLists.substitute, "متوفر البديل", "🔄");
   formatSheet(cachedLists.balance, "متابعة الرصيد", "🟡");
-  
-  XLSX.writeFile(wb, `تقرير_مخزون_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 </script>
 </body>
