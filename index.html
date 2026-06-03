@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TREE — إدارة المخزون</title>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght=300;400;600;700;900&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
@@ -142,9 +142,9 @@
   .search-box { background: var(--gray-light); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
   .search-box input { border: none; background: transparent; outline: none; width: 250px; font-family: 'Cairo'; }
 
-  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; table-layout: fixed; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .data-table th { background: var(--gray-light); padding: 12px; text-align: right; font-weight: 700; border-bottom: 2px solid #e5e7eb; }
-  .data-table td { padding: 12px; border-bottom: 1px solid var(--gray-light); text-align: right; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .data-table td { padding: 12px; border-bottom: 1px solid var(--gray-light); text-align: right; }
   .data-table tr:hover td { background: var(--gray-light); }
   .data-table tr.priority-1 td { background-color: #fef2f2; }
   .data-table tr.priority-2 td { background-color: #fff7ed; }
@@ -152,8 +152,95 @@
   .data-table tr.priority-4 td { background-color: #f0fdf4; }
   .data-table .total-row td { background: var(--gray-light); font-weight: 700; border-top: 2px solid var(--gray); }
   
-  .qty-badge { background: var(--green); color: white; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 12px; }
+  .qty-badge { background: var(--green); color: white; padding: 4px 10px; border-radius: 20px; font-weight: 700; font-size: 12px; display: inline-block; }
   .barcode-text { font-family: monospace; font-size: 12px; color: var(--text); font-weight: bold; }
+  
+  .substitute-badge {
+    background: linear-gradient(135deg, var(--blue), var(--purple));
+    color: white;
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .substitute-badge:hover {
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+  }
+  .no-substitute {
+    color: var(--gray);
+    text-align: center;
+    font-size: 16px;
+  }
+
+  /* Modal styles */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    animation: fadeIn 0.3s;
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .modal-content {
+    background: var(--white);
+    margin: 10% auto;
+    padding: 0;
+    width: 450px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: slideDown 0.3s;
+  }
+  @keyframes slideDown {
+    from { transform: translateY(-50px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .modal-header {
+    background: linear-gradient(135deg, var(--green), var(--green-light));
+    color: white;
+    padding: 20px;
+    border-radius: 20px 20px 0 0;
+    font-size: 18px;
+    font-weight: 700;
+  }
+  .modal-body {
+    padding: 24px;
+  }
+  .modal-detail-row {
+    display: flex;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--gray-light);
+  }
+  .modal-detail-label {
+    font-weight: 700;
+    width: 120px;
+    color: var(--green);
+  }
+  .modal-detail-value {
+    flex: 1;
+    color: var(--text);
+  }
+  .close-modal {
+    float: left;
+    cursor: pointer;
+    font-size: 24px;
+    font-weight: bold;
+    transition: 0.2s;
+  }
+  .close-modal:hover {
+    opacity: 0.7;
+  }
 
   #admin-screen { display: none; }
   .admin-container { padding: 32px; }
@@ -319,6 +406,19 @@
   </div>
 </div>
 
+<!-- Modal for substitute details -->
+<div id="substituteModal" class="modal">
+  <div class="modal-content">
+    <div class="modal-header">
+      <span class="close-modal" onclick="closeModal()">&times;</span>
+      <span>🔄 تفاصيل البديل</span>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Dynamic content -->
+    </div>
+  </div>
+</div>
+
 <script>
 const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
 const ADMIN_MASTER_KEY = "101499";
@@ -329,6 +429,7 @@ let uploadedRows = [];
 let currentTab = 'new2026';
 let cachedLists = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
 let categoriesChart = null, colorChart = null;
+let substituteDetailsMap = new Map();
 
 function safeGet(row, fields, defaultValue = '—') {
   if (!Array.isArray(fields)) fields = [fields];
@@ -457,7 +558,7 @@ function loadFile(input) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const allData = XLSX.utils.sheet_to_json(ws, { defval: "" }); // إجبار النظام على ملء الخلايا الفارغة لمنع تداخل الأعمدة
+      const allData = XLSX.utils.sheet_to_json(ws, { defval: "" });
       if(allData.length === 0) { document.getElementById('upload-status').textContent = '⚠️ الملف المرفوع فارغ تماماً'; return; }
       
       uploadedRows = allData.filter(r => { 
@@ -470,6 +571,7 @@ function loadFile(input) {
         return; 
       }
       
+      buildSubstituteDetailsMap();
       processDataSegmentation();
       document.getElementById('upload-screen').style.display = 'none';
       document.getElementById('dashboard-screen').style.display = 'block';
@@ -482,17 +584,46 @@ function loadFile(input) {
   reader.readAsArrayBuffer(file);
 }
 
+function hasSubstitute(row) {
+  const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).toLowerCase();
+  const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
+  
+  return decReason.includes('بديل') || itemType.includes('متوفر البديل');
+}
+
+function buildSubstituteDetailsMap() {
+  substituteDetailsMap.clear();
+  
+  uploadedRows.forEach(row => {
+    const itemName = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
+    const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
+    const decReason = safeGet(row, ['سبب_القرار', 'سبب القرار'], '');
+    const itemType = safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '');
+    
+    if (hasSubstitute(row)) {
+      substituteDetailsMap.set(itemName, row);
+      substituteDetailsMap.set(barcode, row);
+    }
+  });
+}
+
+function getSubstituteDetails(row) {
+  const itemName = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
+  const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
+  
+  if (substituteDetailsMap.has(itemName)) return substituteDetailsMap.get(itemName);
+  if (substituteDetailsMap.has(barcode)) return substituteDetailsMap.get(barcode);
+  return null;
+}
+
 function processDataSegmentation() {
   cachedLists = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
   
   uploadedRows.forEach(row => {
-    const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).trim();
     const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
+    const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).trim();
     
-    if(decReason.includes("تم إلغاء التخصيص") || decReason.includes("بديل")) { 
-      cachedLists.substitute.push(row); 
-      return; 
-    }
+    // التصنيف الأصلي
     if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "جديد 2026 غير مكتمل") { 
       cachedLists.new2026.push(row); 
     }
@@ -508,8 +639,13 @@ function processDataSegmentation() {
     else if(itemType === "غير متوفر" || itemType === "تاريخ غير محدد") { 
       cachedLists.balance.push(row); 
     }
-    else if(itemType !== "" && itemType !== null) { 
-      cachedLists.review.push(row); 
+    else if(itemType === "متوفر البديل") { 
+      cachedLists.substitute.push(row); 
+    }
+    
+    // إضافة نفس الصنف إلى تبويب البدائل إذا كان عنده بديل
+    if (hasSubstitute(row) && itemType !== "متوفر البديل") {
+      cachedLists.substitute.push(row);
     }
   });
   
@@ -575,6 +711,60 @@ function getPriorityClass(priority) {
   return 'priority-4';
 }
 
+function showSubstituteDetails(row) {
+  const substituteRow = getSubstituteDetails(row);
+  if (!substituteRow) return;
+  
+  const modalBody = document.getElementById('modalBody');
+  modalBody.innerHTML = `
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">🔄 اسم البديل:</div>
+      <div class="modal-detail-value">${safeGet(substituteRow, ['إسم الصنف', 'اسم الصنف'], '—')}</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">🏷️ الباركود:</div>
+      <div class="modal-detail-value">${safeGet(substituteRow, ['باركود الوحدة المخزنية', 'باركود'], '—')}</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">🎨 اللون:</div>
+      <div class="modal-detail-value">${safeGet(substituteRow, ['اللون'], '—')}</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">📦 الكمية المتاحة:</div>
+      <div class="modal-detail-value">${safeNumber(substituteRow, ['الكمية_المخصصة', 'الكمية المخصصة'], 0)} قطعة</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">🏪 المخزن:</div>
+      <div class="modal-detail-value">${safeNumber(substituteRow, ['مخزن ابيس'], 0)} قطعة</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">📊 المبيعات:</div>
+      <div class="modal-detail-value">${safeNumber(substituteRow, ['المبيعات'], 0)} قطعة</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">💡 سبب القرار:</div>
+      <div class="modal-detail-value">${safeGet(substituteRow, ['سبب_القرار', 'سبب القرار'], '—')}</div>
+    </div>
+    <div class="modal-detail-row">
+      <div class="modal-detail-label">📌 المجموعة:</div>
+      <div class="modal-detail-value">${safeGet(substituteRow, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], '—')} > ${safeGet(substituteRow, ['المجموعة الفرعية.2', 'المجموعة الفرعية'], '—')}</div>
+    </div>
+  `;
+  
+  document.getElementById('substituteModal').style.display = 'block';
+}
+
+function closeModal() {
+  document.getElementById('substituteModal').style.display = 'none';
+}
+
+window.onclick = function(event) {
+  const modal = document.getElementById('substituteModal');
+  if (event.target == modal) {
+    modal.style.display = 'none';
+  }
+}
+
 function renderTable(list) {
   const container = document.getElementById('table-container');
   if(!list || list.length === 0) { 
@@ -583,33 +773,21 @@ function renderTable(list) {
   }
   
   let totalQty = 0;
-  let html = `<table class="data-table">
-                colgroup>
-                  <col style="width: 50px;">
-                  <col style="width: 250px;">
-                  <col style="width: 140px;">
-                  <col style="width: 90px;">
-                  <col style="width: 150px;">
-                  <col style="width: 150px;">
-                  <col style="width: 80px;">
-                  <col style="width: 80px;">
-                  <col style="width: 80px;">
-                  <col style="width: 90px;">
-                  <col style="width: 100px;">
-                </colgroup>
+  let html = `<table class="data-table" style="width:100%;">
                 <thead>
                   <tr>
-                    <th style="text-align:center;">#</th>
-                    <th>إسم الصنف</th>
-                    <th>الباركود</th>
-                    <th>اللون</th>
-                    <th>المجموعة الرئيسية</th>
-                    <th>المجموعة الفرعية</th>
-                    <th>الكمية</th>
-                    <th>المبيعات</th>
-                    <th>الرصيد</th>
-                    <th>نسبة البيع</th>
-                    <th>مخزن ابيس</th>
+                    <th style="text-align:center; width:40px;">#</th>
+                    <th style="text-align:right; min-width:200px;">إسم الصنف</th>
+                    <th style="text-align:right; min-width:120px;">الباركود</th>
+                    <th style="text-align:right; width:80px;">اللون</th>
+                    <th style="text-align:right; min-width:150px;">المجموعة الرئيسية</th>
+                    <th style="text-align:right; min-width:150px;">المجموعة الفرعية</th>
+                    <th style="text-align:center; width:80px;">الكمية</th>
+                    <th style="text-align:center; width:80px;">المبيعات</th>
+                    <th style="text-align:center; width:70px;">الرصيد</th>
+                    <th style="text-align:center; width:80px;">نسبة البيع</th>
+                    <th style="text-align:center; width:80px;">مخزن ابيس</th>
+                    <th style="text-align:center; width:120px;">🔄 متوفر بديل</th>
                   </tr>
                 </thead>
                 <tbody>`;
@@ -621,6 +799,7 @@ function renderTable(list) {
     totalQty += qty;
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
+    const hasSub = hasSubstitute(row);
     
     html += `<tr class="${priorityClass}">
               <td style="text-align:center;">${i+1}</td>
@@ -629,18 +808,19 @@ function renderTable(list) {
               <td>${safeGet(row, ['اللون'])}</td>
               <td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'])}</td>
               <td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'])}</td>
-              <td><span class="qty-badge">${qty}</span></td>
-              <td>${safeNumber(row, ['المبيعات'], 0)}</td>
-              <td>${safeNumber(row, ['رصيد'], 0)}</td>
-              <td style="font-weight:bold; color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td>
-              <td>${safeNumber(row, ['مخزن ابيس'], 0)}</td>
-            </tr>`;
+              <td style="text-align:center;"><span class="qty-badge">${qty}</span></td>
+              <td style="text-align:center;">${safeNumber(row, ['المبيعات'], 0)}</td>
+              <td style="text-align:center;">${safeNumber(row, ['رصيد'], 0)}</td>
+              <td style="text-align:center; font-weight:bold; color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td>
+              <td style="text-align:center;">${safeNumber(row, ['مخزن ابيس'], 0)}</td>
+              <td style="text-align:center;">${hasSub ? `<span class="substitute-badge" onclick="showSubstituteDetails(${JSON.stringify(row).replace(/"/g, '&quot;')})">✅ يوجد بديل متوفر</span>` : '<span class="no-substitute">—</span>'}</td>
+             </tr>`;
   });
   
   html += `<tr class="total-row">
             <td colspan="6" style="text-align:center; font-weight:bold;">إجمالي القطع المخصصة في هذا التبويب</td>
-            <td><strong style="font-size:15px; color:var(--green-dark);">${totalQty}</strong></td>
-            <td colspan="4"></td>
+            <td style="text-align:center;"><strong style="font-size:15px; color:var(--green-dark);">${totalQty}</strong></td>
+            <td colspan="5"></td>
            </tr>`;
   html += '</tbody></table>';
   container.innerHTML = html;
@@ -734,10 +914,11 @@ function exportToSheetsExcel() {
       "المبيعات": safeNumber(row, ['المبيعات'], 0), 
       "الرصيد": safeNumber(row, ['رصيد'], 0),
       "نسبة البيع": (safeNumber(row, ['نسب البيع'], 0) * 100).toFixed(1) + '%',
-      "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0)
+      "مخزن ابيس": safeNumber(row, ['مخزن ابيس'], 0),
+      "متوفر بديل": hasSubstitute(row) ? "✅ يوجد بديل متوفر" : "—"
     }));
     const ws = XLSX.utils.json_to_sheet(data);
-    ws['!cols'] = [{wch:5},{wch:35},{wch:20},{wch:12},{wch:20},{wch:25},{wch:12},{wch:12},{wch:10},{wch:10},{wch:12}];
+    ws['!cols'] = [{wch:5},{wch:35},{wch:20},{wch:12},{wch:20},{wch:25},{wch:12},{wch:12},{wch:10},{wch:10},{wch:12},{wch:15}];
     XLSX.utils.book_append_sheet(wb, ws, `${color} ${name}`);
   };
   
