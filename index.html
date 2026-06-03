@@ -195,9 +195,10 @@
   }
   .modal-content {
     background: var(--white);
-    margin: 10% auto;
+    margin: 5% auto;
     padding: 0;
-    width: 450px;
+    width: 500px;
+    max-width: 90%;
     border-radius: 20px;
     box-shadow: 0 20px 60px rgba(0,0,0,0.3);
     animation: slideDown 0.3s;
@@ -213,9 +214,14 @@
     border-radius: 20px 20px 0 0;
     font-size: 18px;
     font-weight: 700;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .modal-body {
     padding: 24px;
+    max-height: 60vh;
+    overflow-y: auto;
   }
   .modal-detail-row {
     display: flex;
@@ -224,7 +230,7 @@
   }
   .modal-detail-label {
     font-weight: 700;
-    width: 120px;
+    width: 130px;
     color: var(--green);
   }
   .modal-detail-value {
@@ -232,11 +238,11 @@
     color: var(--text);
   }
   .close-modal {
-    float: left;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 28px;
     font-weight: bold;
     transition: 0.2s;
+    line-height: 1;
   }
   .close-modal:hover {
     opacity: 0.7;
@@ -410,8 +416,8 @@
 <div id="substituteModal" class="modal">
   <div class="modal-content">
     <div class="modal-header">
-      <span class="close-modal" onclick="closeModal()">&times;</span>
       <span>🔄 تفاصيل البديل</span>
+      <span class="close-modal" onclick="closeModal()">&times;</span>
     </div>
     <div class="modal-body" id="modalBody">
       <!-- Dynamic content -->
@@ -588,21 +594,20 @@ function hasSubstitute(row) {
   const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).toLowerCase();
   const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
   
-  return decReason.includes('بديل') || itemType.includes('متوفر البديل');
+  return decReason.includes('بديل') || decReason.includes('البديل') || itemType.includes('متوفر البديل');
 }
 
 function buildSubstituteDetailsMap() {
   substituteDetailsMap.clear();
   
+  // Build map of substitute items
   uploadedRows.forEach(row => {
     const itemName = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
     const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-    const decReason = safeGet(row, ['سبب_القرار', 'سبب القرار'], '');
-    const itemType = safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '');
     
     if (hasSubstitute(row)) {
       substituteDetailsMap.set(itemName, row);
-      substituteDetailsMap.set(barcode, row);
+      if (barcode !== '—') substituteDetailsMap.set(barcode, row);
     }
   });
 }
@@ -621,9 +626,8 @@ function processDataSegmentation() {
   
   uploadedRows.forEach(row => {
     const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
-    const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).trim();
     
-    // التصنيف الأصلي
+    // Original classification
     if(itemType === "جديد ٢٠٢٦ غير مكتمل" || itemType === "جديد 2026 غير مكتمل") { 
       cachedLists.new2026.push(row); 
     }
@@ -642,10 +646,25 @@ function processDataSegmentation() {
     else if(itemType === "متوفر البديل") { 
       cachedLists.substitute.push(row); 
     }
-    
-    // إضافة نفس الصنف إلى تبويب البدائل إذا كان عنده بديل
-    if (hasSubstitute(row) && itemType !== "متوفر البديل") {
-      cachedLists.substitute.push(row);
+    else if(itemType !== "" && itemType !== null) { 
+      cachedLists.review.push(row); 
+    }
+  });
+  
+  // Add items that have substitute to substitute tab (same item appears in both places)
+  uploadedRows.forEach(row => {
+    if (hasSubstitute(row)) {
+      const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).trim();
+      // Only add if not already in substitute tab and not already added
+      if (itemType !== "متوفر البديل") {
+        // Check if already exists in substitute list
+        const exists = cachedLists.substitute.some(r => 
+          safeGet(r, ['إسم الصنف', 'اسم الصنف']) === safeGet(row, ['إسم الصنف', 'اسم الصنف'])
+        );
+        if (!exists) {
+          cachedLists.substitute.push(row);
+        }
+      }
     }
   });
   
@@ -713,7 +732,10 @@ function getPriorityClass(priority) {
 
 function showSubstituteDetails(row) {
   const substituteRow = getSubstituteDetails(row);
-  if (!substituteRow) return;
+  if (!substituteRow) {
+    alert("لا توجد تفاصيل إضافية للبديل");
+    return;
+  }
   
   const modalBody = document.getElementById('modalBody');
   modalBody.innerHTML = `
@@ -734,7 +756,7 @@ function showSubstituteDetails(row) {
       <div class="modal-detail-value">${safeNumber(substituteRow, ['الكمية_المخصصة', 'الكمية المخصصة'], 0)} قطعة</div>
     </div>
     <div class="modal-detail-row">
-      <div class="modal-detail-label">🏪 المخزن:</div>
+      <div class="modal-detail-label">🏪 مخزن ابيس:</div>
       <div class="modal-detail-value">${safeNumber(substituteRow, ['مخزن ابيس'], 0)} قطعة</div>
     </div>
     <div class="modal-detail-row">
@@ -742,12 +764,16 @@ function showSubstituteDetails(row) {
       <div class="modal-detail-value">${safeNumber(substituteRow, ['المبيعات'], 0)} قطعة</div>
     </div>
     <div class="modal-detail-row">
+      <div class="modal-detail-label">💰 الرصيد:</div>
+      <div class="modal-detail-value">${safeNumber(substituteRow, ['رصيد'], 0)} قطعة</div>
+    </div>
+    <div class="modal-detail-row">
       <div class="modal-detail-label">💡 سبب القرار:</div>
-      <div class="modal-detail-value">${safeGet(substituteRow, ['سبب_القرار', 'سبب القرار'], '—')}</div>
+      <div class="modal-detail-value" style="font-size:12px;">${safeGet(substituteRow, ['سبب_القرار', 'سبب القرار'], '—')}</div>
     </div>
     <div class="modal-detail-row">
       <div class="modal-detail-label">📌 المجموعة:</div>
-      <div class="modal-detail-value">${safeGet(substituteRow, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], '—')} > ${safeGet(substituteRow, ['المجموعة الفرعية.2', 'المجموعة الفرعية'], '—')}</div>
+      <div class="modal-detail-value">${safeGet(substituteRow, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], '—')} / ${safeGet(substituteRow, ['المجموعة الفرعية.2', 'المجموعة الفرعية'], '—')}</div>
     </div>
   `;
   
@@ -778,7 +804,7 @@ function renderTable(list) {
                   <tr>
                     <th style="text-align:center; width:40px;">#</th>
                     <th style="text-align:right; min-width:200px;">إسم الصنف</th>
-                    <th style="text-align:right; min-width:120px;">الباركود</th>
+                    <th style="text-align:right; min-width:130px;">الباركود</th>
                     <th style="text-align:right; width:80px;">اللون</th>
                     <th style="text-align:right; min-width:150px;">المجموعة الرئيسية</th>
                     <th style="text-align:right; min-width:150px;">المجموعة الفرعية</th>
@@ -787,7 +813,7 @@ function renderTable(list) {
                     <th style="text-align:center; width:70px;">الرصيد</th>
                     <th style="text-align:center; width:80px;">نسبة البيع</th>
                     <th style="text-align:center; width:80px;">مخزن ابيس</th>
-                    <th style="text-align:center; width:120px;">🔄 متوفر بديل</th>
+                    <th style="text-align:center; width:130px;">🔄 متوفر بديل</th>
                   </tr>
                 </thead>
                 <tbody>`;
@@ -800,6 +826,7 @@ function renderTable(list) {
     const ratio = safeNumber(row, ['نسب البيع'], 0);
     const ratioPercent = (ratio * 100).toFixed(1);
     const hasSub = hasSubstitute(row);
+    const rowData = JSON.stringify(row).replace(/"/g, '&quot;');
     
     html += `<tr class="${priorityClass}">
               <td style="text-align:center;">${i+1}</td>
@@ -813,7 +840,7 @@ function renderTable(list) {
               <td style="text-align:center;">${safeNumber(row, ['رصيد'], 0)}</td>
               <td style="text-align:center; font-weight:bold; color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioPercent}%</td>
               <td style="text-align:center;">${safeNumber(row, ['مخزن ابيس'], 0)}</td>
-              <td style="text-align:center;">${hasSub ? `<span class="substitute-badge" onclick="showSubstituteDetails(${JSON.stringify(row).replace(/"/g, '&quot;')})">✅ يوجد بديل متوفر</span>` : '<span class="no-substitute">—</span>'}</td>
+              <td style="text-align:center;">${hasSub ? `<span class="substitute-badge" onclick="showSubstituteDetails(${rowData})">✅ يوجد بديل متوفر</span>` : '<span class="no-substitute">—</span>'}</td>
              </tr>`;
   });
   
