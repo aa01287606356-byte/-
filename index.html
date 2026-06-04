@@ -104,24 +104,11 @@
   .sub-item-value { font-size:13px; font-weight:700; color:var(--green); }
   @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 
+  /* BADGE FOR ITEM THAT HAS A SUBSTITUTE */
+  .has-sub-badge { background:rgba(37, 99, 235, 0.1); color: var(--blue); padding: 2px 6px; border-radius: 6px; font-size: 10px; font-weight: 700; margin-right: 6px; display: inline-block; border: 1px solid rgba(37, 99, 235, 0.2); }
+
   .donor-row { background-color:#f0fdf4 !important; }
   .beneficiary-row { background-color:#fef2f2 !important; }
-
-  /* MODAL */
-  .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
-  .modal-content { background:white; margin:5% auto; width:450px; max-width:90%; border-radius:20px; }
-  .modal-header { background:linear-gradient(135deg,var(--green),var(--green-light)); color:white; padding:20px; border-radius:20px 20px 0 0; display:flex; justify-content:space-between; align-items:center; }
-  .modal-body { padding:20px; max-height:60vh; overflow-y:auto; }
-  .modal-detail-row { display:flex; padding:10px 0; border-bottom:1px solid var(--gray-light); }
-  .modal-detail-label { font-weight:700; width:120px; color:var(--green); }
-  .modal-detail-value { flex:1; }
-  .close-modal { cursor:pointer; font-size:28px; line-height:1; }
-
-  /* ADMIN */
-  #admin-screen { display:none; }
-  .admin-container { padding:32px; }
-  .admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
-  .password-item { display:flex; justify-content:space-between; background:var(--gray-light); padding:10px 15px; border-radius:8px; margin-bottom:8px; }
 
   @media print { .app-header,.action-buttons,.stats-grid,.qty-stats-grid,.charts-grid,.search-box,.tabs-nav { display:none !important; } }
 </style>
@@ -225,7 +212,7 @@
     <div id="tab-urgent" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div><div id="table-urgent"></div></div></div>
     <div id="tab-review" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div><div id="table-review"></div></div></div>
     <div id="tab-stable" class="tab-content"><div class="table-card"><div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div><div id="table-stable"></div></div></div>
-    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
+    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 بديل (كل البدائل المتاحة)</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
     <div id="tab-balance" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div id="table-balance"></div></div></div>
 
     <div id="tab-transfer-donor" class="tab-content">
@@ -244,21 +231,6 @@
   </div>
 </div>
 
-<div id="admin-screen">
-  <header class="app-header"><h2>🌳 لوحة الإدارة</h2><button class="btn-logout" onclick="doLogout()">خروج</button></header>
-  <div class="admin-container">
-    <div class="admin-grid">
-      <div class="chart-card"><h3>🔐 كلمات مرور الفروع</h3><div id="admin-password-list"></div></div>
-      <div class="chart-card">
-        <h3>✏️ تحديث كلمة مرور</h3>
-        <select id="admin-branch-select" style="width:100%;padding:12px;margin-bottom:15px;border-radius:10px;font-family:'Cairo';"></select>
-        <input type="text" id="admin-new-password" placeholder="كلمة المرور الجديدة" style="width:100%;padding:12px;margin-bottom:15px;border-radius:10px;font-family:'Cairo';">
-        <button class="btn-login" onclick="updateBranchPassword()">💾 حفظ</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
 const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
 const ADMIN_KEY = "101499";
@@ -271,7 +243,6 @@ let filteredDonorData = [];
 let filteredBeneficiaryData = [];
 let categoriesChart = null, colorChart = null;
 
-// خريطة البدائل
 let substituteMap = new Map(); 
 
 function safeGet(row, fields, def='—') {
@@ -363,7 +334,7 @@ async function doLogin() {
   const branch = document.getElementById('branch-select').value;
   const pwd = document.getElementById('password-input').value.trim();
   const err = document.getElementById('login-error');
-  if (pwd === ADMIN_KEY) { showAdmin(); return; }
+  if (pwd === ADMIN_KEY) { alert('عفواً، لوحة الإدارة معطلة في هذا الإصدار.'); return; }
   if (!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع'; return; }
   const pwds = await getBranchPasswords();
   if (pwds[branch] && pwds[branch] === pwd) {
@@ -381,30 +352,6 @@ function showApp() {
   document.getElementById('header-branch').textContent='🏪 فرع ' + currentBranch;
   document.getElementById('upload-screen').style.display='flex';
   document.getElementById('dashboard-screen').style.display='none';
-}
-
-async function showAdmin() {
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('admin-screen').style.display='block';
-  const pwds = await getBranchPasswords();
-  const listDiv = document.getElementById('admin-password-list');
-  const sel = document.getElementById('admin-branch-select');
-  listDiv.innerHTML=''; sel.innerHTML='<option value="">— اختر —</option>';
-  BRANCHES.forEach(b => {
-    listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]||'—'}</span></div>`;
-    sel.innerHTML += `<option value="${b}">${b}</option>`;
-  });
-}
-
-async function updateBranchPassword() {
-  const branch = document.getElementById('admin-branch-select').value;
-  const newPwd = document.getElementById('admin-new-password').value.trim();
-  if (!branch || !newPwd) return;
-  let pwds = await getBranchPasswords();
-  pwds[branch] = newPwd;
-  localStorage.setItem('tree_passwords', JSON.stringify(pwds));
-  alert('✅ تم التحديث');
-  showAdmin();
 }
 
 function loadFile(input) {
@@ -457,7 +404,6 @@ function processClassification(branchRows) {
 
     if (reason.includes('بديل')) {
       classifiedData.substitute.push(row);
-      return; 
     }
 
     if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) {
@@ -495,19 +441,13 @@ function processClassification(branchRows) {
 function processTransferData() {
   filteredDonorData = [];
   filteredBeneficiaryData = [];
-  
   if (!transferData || !transferData.length) return;
   
   transferData.forEach(row => {
     const donorBranch = safeGet(row, ['الفرع المانح', 'الفرع_المانح', 'مانح']);
     const beneficiaryBranch = safeGet(row, ['الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل']);
-    
-    if (donorBranch === currentBranch) {
-      filteredDonorData.push(row);
-    }
-    if (beneficiaryBranch === currentBranch) {
-      filteredBeneficiaryData.push(row);
-    }
+    if (donorBranch === currentBranch) filteredDonorData.push(row);
+    if (beneficiaryBranch === currentBranch) filteredBeneficiaryData.push(row);
   });
 }
 
@@ -532,14 +472,17 @@ function renderTable(list, containerId) {
     const ratio = stock > 0 ? sales/stock : (sales > 0 ? 999 : 0);
     const ratioText = ratio === 999 ? '🔴 نفد' : (ratio*100).toFixed(1)+'%';
     const ratioColor = ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280';
+    
     const hasSub = hasSubstitute(row);
     const subRow = hasSub ? getSubstitute(row) : null;
     const btnId = `btn-sub-${containerId}-${i}`;
     const panelId = `panel-sub-${containerId}-${i}`;
 
+    const subBadgeHtml = hasSub ? `<span class="has-sub-badge">🔄 متوفر بديل</span>` : '';
+
     html += `<tr>
       <td style="text-align:center;">${i+1}</td>
-      <td>${safeGet(row,['إسم الصنف','اسم الصنف'])}</td>
+      <td><strong>${safeGet(row,['إسم الصنف','اسم الصنف'])}</strong> ${subBadgeHtml}</td>
       <td>${safeGet(row,['باركود الوحدة المخزنية','باركود'],'—')}</td>
       <td>${safeGet(row,['اللون'],'—')}</td>
       <td>${safeGet(row,['المجموعة الرئيسية.2','المجموعة الرئيسية'],'—')}</td>
@@ -569,7 +512,7 @@ function renderTransferTable(data, containerId, rowClass) {
   const container = document.getElementById(containerId);
   if (!container) return;
   if (!data.length) {
-    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات تحويلات متطابقة في هذا التبويب</p>';
+    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات تحويلات متطابقة</p>';
     return;
   }
 
@@ -677,7 +620,7 @@ function updateCharts(rows) {
 function exportToExcel() {
   let wb = XLSX.utils.book_new();
   
-  // 1. شيت المخزون الرئيسي للفرع الحالي
+  // شيت 1: المخزون الموزع (يحتوي التكرار)
   let mainRows = [];
   Object.keys(classifiedData).forEach(k => { mainRows = mainRows.concat(classifiedData[k]); });
   if (mainRows.length) {
@@ -685,22 +628,27 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, ws, "مخزون الفرع الموزع");
   }
   
-  // 2. شيت الترانزيت الصادر (المانح)
+  // شيت 2: ترانزيت مانح (الفرع الحالي رازل)
   if (filteredDonorData.length) {
     let wsDonor = XLSX.utils.json_to_sheet(filteredDonorData);
     XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - فرع مانح");
+  } else {
+    let wsEmpty = XLSX.utils.json_to_sheet([{ "ملاحظة": "لا توجد تحويلات صادرة من هذا الفرع" }]);
+    XLSX.utils.book_append_sheet(wb, wsEmpty, "ترانزيت - فرع مانح");
   }
   
-  // 3. شيت الترانزيت الوارد (المستقبل)
+  // شيت 3: ترانزيت مستقبل (الفرع الحالي مستلم)
   if (filteredBeneficiaryData.length) {
     let wsBeneficiary = XLSX.utils.json_to_sheet(filteredBeneficiaryData);
     XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - فرع مستقبل");
+  } else {
+    let wsEmpty = XLSX.utils.json_to_sheet([{ "ملاحظة": "لا توجد تحويلات واردة لهذا الفرع" }]);
+    XLSX.utils.book_append_sheet(wb, wsEmpty, "ترانزيت - فرع مستقبل");
   }
   
   XLSX.writeFile(wb, `TREE_${currentBranch}_Report.xlsx`);
 }
 
-// إدارة التنقل بين التبويبات التفاعلية
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -709,28 +657,23 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     this.classList.add('active');
     const targetTab = this.getAttribute('data-tab');
     
-    // إذا ضغطنا على أزرار الترانزيت نضمن تفعيل المحتوى المقابل لها
     if(targetTab === 'tab-transfer-donor') {
       document.getElementById('tab-transfer-donor').classList.add('active');
     } else if(targetTab === 'tab-transfer-beneficiary') {
       document.getElementById('tab-transfer-beneficiary').classList.add('active');
     } else {
-      // التبويبات القياسية الأخرى تعمل من خلال الشاشة الرئيسية الافتراضية لربط الـ Stats
       document.getElementById('tab-new2026').classList.add('active');
       document.querySelectorAll('#tab-new2026 .table-card').forEach(card => card.style.display = 'none');
       
       const specificTableCard = document.querySelector(`#${targetTab} .table-card`);
       if(specificTableCard) {
         const clone = specificTableCard.cloneNode(true);
-        // تحديث وظيفة الحذف والفلترة للنسخة المستنسخة بشكل ديناميكي
         const input = clone.querySelector('input');
         if(input) {
           const tabName = targetTab.replace('tab-', '');
           input.oninput = () => filterTable(tabName);
         }
         
-        // إظهار الجدول المستهدف في الحاوية الرئيسية للتبويبات
-        let container = document.getElementById('table-new2026');
         if(targetTab === 'tab-new2026') {
           document.querySelectorAll('#tab-new2026 > div').forEach(d => d.style.display = '');
           filterTable('new2026');
