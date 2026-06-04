@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TREE — إدارة المخزون + ترانزيت</title>
+<title>TREE — إدارة المخزون + ترانزيت (مطابق للبيانات)</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
@@ -432,19 +432,21 @@ function safeNumber(row, fields, defaultValue = 0) {
   return defaultValue;
 }
 
+// ✅ دالة التحقق من وجود بديل (تعتمد فقط على البيانات الموجودة في الملف)
 function hasSubstitute(row) {
-  const reason = String(safeGet(row, ['سبب_القرار', 'سبب قرار'], '')).toLowerCase();
-  const type = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
-  const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-  const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-  return reason.includes('بديل') || type.includes('متوفر البديل') || substituteMap.has(name) || substituteMap.has(barcode);
+  const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '').toLowerCase();
+  const type = safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '').toLowerCase();
+  
+  // فقط إذا كان سبب القرار أو التصنيف يحتوي على كلمة "بديل"
+  return reason.includes('بديل') || type.includes('متوفر البديل');
 }
 
+// ✅ بناء خريطة البدائل من البيانات فقط
 function buildSubstituteMap() {
   substituteMap.clear();
   allBranchData.forEach(row => {
-    const reason = String(safeGet(row, ['سبب_القرار', 'سبب قرار'], '')).toLowerCase();
-    const type = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
+    const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '').toLowerCase();
+    const type = safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '').toLowerCase();
     if (reason.includes('بديل') || type.includes('متوفر البديل')) {
       const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
       const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
@@ -586,15 +588,33 @@ function processClassification(branchRows) {
   branchRows.forEach(row => {
     const type = safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '');
     const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '').toLowerCase();
-    if(reason.includes('بديل')) classifiedData.substitute.push(row);
-    else if(type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) classifiedData.new2026.push(row);
-    else if(type === 'اطلب الان') classifiedData.urgent.push(row);
-    else if(type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) classifiedData.review.push(row);
-    else if(type === 'متوسطة' || type === 'متوفر' || type === 'مستقر') classifiedData.stable.push(row);
-    else if(type === 'غير متوفر' || type === 'تاريخ غير محدد') classifiedData.balance.push(row);
-    else if(type === 'متوفر البديل') classifiedData.substitute.push(row);
-    else classifiedData.review.push(row);
+    
+    // ✅ إضافة إلى تبويب "بديل" إذا كان له بديل
+    if(reason.includes('بديل') || type.includes('متوفر البديل')) {
+      classifiedData.substitute.push(row);
+    }
+    
+    // ✅ إضافة إلى التبويب الأصلي حسب التصنيف (يظهر في مكانين)
+    if(type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) { 
+      classifiedData.new2026.push(row); 
+    }
+    else if(type === 'اطلب الان') { 
+      classifiedData.urgent.push(row); 
+    }
+    else if(type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) { 
+      classifiedData.review.push(row); 
+    }
+    else if(type === 'متوسطة' || type === 'متوفر' || type === 'مستقر') { 
+      classifiedData.stable.push(row); 
+    }
+    else if(type === 'غير متوفر' || type === 'تاريخ غير محدد') { 
+      classifiedData.balance.push(row); 
+    }
+    else if(type !== '' && !reason.includes('بديل')) { 
+      classifiedData.review.push(row); 
+    }
   });
+  
   const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
   setText('card-new2026', classifiedData.new2026.length);
   setText('card-urgent', classifiedData.urgent.length);
@@ -602,6 +622,7 @@ function processClassification(branchRows) {
   setText('card-stable', classifiedData.stable.length);
   setText('card-substitute', classifiedData.substitute.length);
   setText('card-balance', classifiedData.balance.length);
+  
   const totalQty = list => list.reduce((s, r) => s + safeNumber(r, ['الكمية_المخصصة', 'الكمية المخصصة']), 0);
   setText('qty-new2026', totalQty(classifiedData.new2026));
   setText('qty-urgent', totalQty(classifiedData.urgent));
@@ -667,8 +688,8 @@ function renderTransferDonor() {
     return; 
   }
   const allKeys = Object.keys(donor[0]);
-  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</tr></thead><tbody>`;
-  donor.forEach(row => { html += `<tr class="donor-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`; });
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</table></thead><tbody>`;
+  donor.forEach(row => { html += `<tr class="donor-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}<tr>`; });
   html += '</tbody></table>';
   container.innerHTML = html;
 }
@@ -696,9 +717,9 @@ function renderTransferBeneficiary() {
     return; 
   }
   const allKeys = Object.keys(ben[0]);
-  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}<tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</table></thead><tbody>`;
   ben.forEach(row => { html += `<tr class="beneficiary-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`; });
-  html += '</tbody></table>';
+  html += '</tbody></td>';
   container.innerHTML = html;
 }
 
@@ -710,7 +731,7 @@ function filterTransferBeneficiary() {
   if (search) ben = ben.filter(row => Object.values(row).some(v => String(v).toLowerCase().includes(search)));
   if (!ben.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد نتائج</p>'; return; }
   const allKeys = Object.keys(ben[0]);
-  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</table></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</td></thead><tbody>`;
   ben.forEach(row => { html += `<tr class="beneficiary-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`; });
   html += '</tbody></table>';
   container.innerHTML = html;
