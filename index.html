@@ -104,18 +104,8 @@
   .sub-item-value { font-size:13px; font-weight:700; color:var(--green); }
   @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 
-  .donor-row { background-color:#f0fdf4; }
-  .beneficiary-row { background-color:#fef2f2; }
-
-  /* MODAL */
-  .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
-  .modal-content { background:white; margin:5% auto; width:450px; max-width:90%; border-radius:20px; }
-  .modal-header { background:linear-gradient(135deg,var(--green),var(--green-light)); color:white; padding:20px; border-radius:20px 20px 0 0; display:flex; justify-content:space-between; align-items:center; }
-  .modal-body { padding:20px; max-height:60vh; overflow-y:auto; }
-  .modal-detail-row { display:flex; padding:10px 0; border-bottom:1px solid var(--gray-light); }
-  .modal-detail-label { font-weight:700; width:120px; color:var(--green); }
-  .modal-detail-value { flex:1; }
-  .close-modal { cursor:pointer; font-size:28px; line-height:1; }
+  .donor-row { background-color:#f0fdf4 !important; }
+  .beneficiary-row { background-color:#fef2f2 !important; }
 
   /* ADMIN */
   #admin-screen { display:none; }
@@ -184,24 +174,13 @@
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
-    <div class="tabs-nav">
-      <button class="tab-btn active" data-tab="tab-new2026">🔴 جديد 2026</button>
-      <button class="tab-btn" data-tab="tab-urgent">🟠 نواقص عاجلة</button>
-      <button class="tab-btn" data-tab="tab-review">🟢 مراجعة 2025</button>
-      <button class="tab-btn" data-tab="tab-stable">📊 مستقرة</button>
-      <button class="tab-btn" data-tab="tab-substitute">🔄 بديل</button>
-      <button class="tab-btn" data-tab="tab-balance">🟡 متابعة</button>
-      <button class="tab-btn donor-tab" data-tab="tab-transfer-donor">🟢 ترانزيت - مانح</button>
-      <button class="tab-btn beneficiary-tab" data-tab="tab-transfer-beneficiary">🔴 ترانزيت - مستقبل</button>
-    </div>
-
-    <div id="tab-new2026" class="tab-content active">
+    <div id="dashboard-summary-widgets">
       <div class="stats-grid">
         <div class="stat-card red"><div class="stat-label">🔴 جديد 2026</div><div class="stat-value" id="card-new2026">0</div><div class="stat-sub">صنف</div></div>
         <div class="stat-card orange"><div class="stat-label">🟠 نواقص عاجلة</div><div class="stat-value" id="card-urgent">0</div><div class="stat-sub">صنف</div></div>
         <div class="stat-card green"><div class="stat-label">🟢 مراجعة 2025</div><div class="stat-value" id="card-review">0</div><div class="stat-sub">صنف</div></div>
         <div class="stat-card teal"><div class="stat-label">📊 مستقرة</div><div class="stat-value" id="card-stable">0</div><div class="stat-sub">صنف</div></div>
-        <div class="stat-card blue"><div class="stat-label">🔄 بديل</div><div class="stat-value" id="card-substitute">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card blue"><div class="stat-label">🔄 متوفر بديل</div><div class="stat-value" id="card-substitute">0</div><div class="stat-sub">صنف</div></div>
         <div class="stat-card yellow"><div class="stat-label">🟡 متابعة</div><div class="stat-value" id="card-balance">0</div><div class="stat-sub">صنف</div></div>
       </div>
       <div class="qty-stats-grid">
@@ -216,6 +195,20 @@
         <div class="chart-card"><h4>📊 توزيع الأصناف</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
         <div class="chart-card"><h4>🎨 توزيع الألوان</h4><div class="chart-wrap"><canvas id="color-chart"></canvas></div></div>
       </div>
+    </div>
+
+    <div class="tabs-nav">
+      <button class="tab-btn active" data-tab="tab-new2026">🔴 جديد 2026</button>
+      <button class="tab-btn" data-tab="tab-urgent">🟠 نواقص عاجلة</button>
+      <button class="tab-btn" data-tab="tab-review">🟢 مراجعة 2025</button>
+      <button class="tab-btn" data-tab="tab-stable">📊 مستقرة</button>
+      <button class="tab-btn" data-tab="tab-substitute">🔄 متوفر بديل</button>
+      <button class="tab-btn" data-tab="tab-balance">🟡 متابعة</button>
+      <button class="tab-btn donor-tab" data-tab="tab-transfer-donor">🟢 ترانزيت - مانح</button>
+      <button class="tab-btn beneficiary-tab" data-tab="tab-transfer-beneficiary">🔴 ترانزيت - مستقبل</button>
+    </div>
+
+    <div id="tab-new2026" class="tab-content active">
       <div class="table-card">
         <div class="table-header"><h4>🔴 جديد 2026</h4><div class="search-box">🔍 <input type="text" id="search-new2026" placeholder="بحث..." oninput="filterTable('new2026')"></div></div>
         <div id="table-new2026"></div>
@@ -225,19 +218,19 @@
     <div id="tab-urgent" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div><div id="table-urgent"></div></div></div>
     <div id="tab-review" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div><div id="table-review"></div></div></div>
     <div id="tab-stable" class="tab-content"><div class="table-card"><div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div><div id="table-stable"></div></div></div>
-    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
+    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 متوفر بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
     <div id="tab-balance" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div id="table-balance"></div></div></div>
 
     <div id="tab-transfer-donor" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🟢 ترانزيت - مانح</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
+        <div class="table-header"><h4>🟢 ترانزيت - فرع مانح (الصادر من فرعك)</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث بالإسم أو الباركود..." oninput="filterTransferDonor()"></div></div>
         <div id="table-transfer-donor"></div>
       </div>
     </div>
 
     <div id="tab-transfer-beneficiary" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🔴 ترانزيت - مستقبل</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
+        <div class="table-header"><h4>🔴 ترانزيت - فرع مستقبل (الوارد إلى فرعك)</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث بالإسم أو الباركود..." oninput="filterTransferBeneficiary()"></div></div>
         <div id="table-transfer-beneficiary"></div>
       </div>
     </div>
@@ -406,26 +399,41 @@ async function updateBranchPassword() {
 function loadFile(input) {
   const file = input.files[0];
   if (!file) return;
-  document.getElementById('upload-status').textContent = '⏳ جاري قراءة الملف...';
+  document.getElementById('upload-status').textContent = '⏳ جاري قراءة الملف وتحليل الترانزيت...';
   const reader = new FileReader();
   reader.onload = function(e) {
     try {
       const wb = XLSX.read(e.target.result, { type:'array' });
       const wsInv = wb.Sheets[wb.SheetNames[0]];
       const inventoryData = XLSX.utils.sheet_to_json(wsInv, { defval:'' });
-      let transferSheetData = [];
-      if (wb.SheetNames.includes('ترانزيت')) {
-        transferSheetData = XLSX.utils.sheet_to_json(wb.Sheets['ترانزيت'], { defval:'' });
-      }
+      
       if (!inventoryData.length) throw new Error('الملف فارغ');
+      
+      let transferSheetData = [];
+      let foundTransfer = false;
+      for (let sName of wb.SheetNames) {
+        if (sName.trim() === 'ترانزيت' || sName.toLowerCase().includes('transit') || sName.trim() === 'الترانزيت') {
+          transferSheetData = XLSX.utils.sheet_to_json(wb.Sheets[sName], { defval:'' });
+          foundTransfer = true;
+          break;
+        }
+      }
+      if (!foundTransfer && wb.SheetNames.length > 1) {
+        transferSheetData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { defval:'' });
+      }
+
       allBranchData = inventoryData;
-      transferData = transferSheetData;
+      transferData = transferSheetData.length ? transferSheetData : inventoryData;
+      
       buildSubstituteMap();
+      
       const branchRows = inventoryData.filter(r => safeGet(r,['اسم الفرع','الفرع'],'') === currentBranch);
-      if (!branchRows.length) throw new Error(`لا توجد بيانات لفرع ${currentBranch}`);
+      
       processClassification(branchRows);
+      
       document.getElementById('upload-screen').style.display='none';
       document.getElementById('dashboard-screen').style.display='block';
+      
       renderAllTables();
       updateCharts(branchRows);
       document.getElementById('upload-status').textContent='✅ تم التحميل';
@@ -441,14 +449,20 @@ function processClassification(branchRows) {
   branchRows.forEach(row => {
     const type = safeGet(row, ['تصنيف_المنتج_معدل','تصنيف المنتج معدل'], '');
     const reason = safeGet(row, ['سبب_القرار','سبب قرار'], '');
-    if (reason.includes('بديل')) { classifiedData.substitute.push(row); return; }
+    
+    // التعديل: فحص البديل بشكل منفصل دون منع إدراجه في الأيقونة الأساسية للمنتج
+    if (reason.includes('بديل')) { 
+      classifiedData.substitute.push(row); 
+    }
+    
     if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) { classifiedData.new2026.push(row); }
     else if (type === 'اطلب الان') { classifiedData.urgent.push(row); }
     else if (type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) { classifiedData.review.push(row); }
-    else if (['متوسطة','متوفر','مستقر'].includes(type)) { classifiedData.stable.push(row); }
+    else if (['منخفضة','متوسطة','متوفر','مستقر'].includes(type)) { classifiedData.stable.push(row); }
     else if (['غير متوفر','تاريخ غير محدد'].includes(type)) { classifiedData.balance.push(row); }
     else if (type !== '') { classifiedData.review.push(row); }
   });
+  
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent=v; };
   set('card-new2026', classifiedData.new2026.length);
   set('card-urgent', classifiedData.urgent.length);
@@ -456,6 +470,7 @@ function processClassification(branchRows) {
   set('card-stable', classifiedData.stable.length);
   set('card-substitute', classifiedData.substitute.length);
   set('card-balance', classifiedData.balance.length);
+  
   const totalQty = list => list.reduce((s,r) => s + safeNum(r,['الكمية_المخصصة','الكمية المخصصة']), 0);
   set('qty-new2026', totalQty(classifiedData.new2026));
   set('qty-urgent', totalQty(classifiedData.urgent));
@@ -467,8 +482,9 @@ function processClassification(branchRows) {
 
 function renderTable(list, containerId) {
   const container = document.getElementById(containerId);
+  if (!container) return;
   if (!list || !list.length) {
-    if (container) container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>';
+    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>';
     return;
   }
   let html = `<table class="data-table"><thead><tr>
@@ -477,6 +493,7 @@ function renderTable(list, containerId) {
     <th>الكمية</th><th>المبيعات</th><th>الرصيد</th>
     <th>نسبة البيع</th><th>مخزن ابيس</th><th>🔄 بديل</th>
   </tr></thead><tbody>`;
+  
   list.forEach((row, i) => {
     const qty   = safeNum(row, ['الكمية_المخصصة','الكمية المخصصة']);
     const sales = safeNum(row, ['المبيعات']);
@@ -489,10 +506,11 @@ function renderTable(list, containerId) {
     const subRow = hasSub ? getSubstitute(row) : null;
     const btnId = `btn-sub-${containerId}-${i}`;
     const panelId = `panel-sub-${containerId}-${i}`;
+    
     html += `<tr>
       <td style="text-align:center;">${i+1}</td>
-      <td>${safeGet(row,['إسم الصنف','اسم الصنف'])}</td>
-      <td>${safeGet(row,['باركود الوحدة المخزنية','باركود'],'—')}</td>
+      <td><strong>${safeGet(row,['إسم الصنف','اسم الصنف'])}</strong></td>
+      <td>${safeGet(row,['كود الوحدة المخزنية','باركود الوحدة المخزنية','باركود'],'—')}</td>
       <td>${safeGet(row,['اللون'],'—')}</td>
       <td>${safeGet(row,['المجموعة الرئيسية.2','المجموعة الرئيسية'],'—')}</td>
       <td>${safeGet(row,['المجموعة الفرعية.2','المجموعة الفرعية'],'—')}</td>
@@ -515,6 +533,42 @@ function renderTable(list, containerId) {
   container.innerHTML = html;
 }
 
+function renderTransferTable(data, containerId, rowClass) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!data.length) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد تحويلات مسجلة لهذا الفرع</p>'; return; }
+  
+  const keys = Object.keys(data[0]);
+  let html = `<table class="data-table"><thead><tr><th>#</th>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>`;
+  data.forEach((row, idx) => { 
+    html += `<tr class="${rowClass}"><td style="text-align:center;font-weight:bold;">${idx+1}</td>${keys.map(k=>`<td>${safeGet(row,k,'—')}</td>`).join('')}</tr>`; 
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function renderAllTables() {
+  renderTable(classifiedData.new2026, 'table-new2026');
+  renderTable(classifiedData.urgent, 'table-urgent');
+  renderTable(classifiedData.review, 'table-review');
+  renderTable(classifiedData.stable, 'table-stable');
+  renderTable(classifiedData.substitute, 'table-substitute');
+  renderTable(classifiedData.balance, 'table-balance');
+  
+  renderTransferDonor();
+  renderTransferBeneficiary();
+}
+
+function renderTransferDonor() {
+  const data = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
+  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
+}
+
+function renderTransferBeneficiary() {
+  const data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
+  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
+}
+
 function filterTable(tab) {
   const search = (document.getElementById(`search-${tab}`)?.value || '').toLowerCase();
   const list = classifiedData[tab] || [];
@@ -526,115 +580,109 @@ function filterTable(tab) {
   renderTable(filtered, `table-${tab}`);
 }
 
-function renderTransferTable(data, containerId, rowClass) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  if (!data.length) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات</p>'; return; }
-  const keys = Object.keys(data[0]);
-  let html = `<table class="data-table"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>`;
-  data.forEach(row => { html += `<tr class="${rowClass}">${keys.map(k=>`<td>${safeGet(row,k,'—')}</td>`).join('')}</tr>`; });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-function renderTransferDonor() {
-  const data = transferData.filter(r => (r['اسم الفرع']||r['فرع_مصدر']||'') === currentBranch);
-  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
-}
-
-function renderTransferBeneficiary() {
-  const data = transferData.filter(r => (r['فرع_مستقبل']||'') === currentBranch);
-  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
-}
-
 function filterTransferDonor() {
   const search = (document.getElementById('search-transfer-donor')?.value||'').toLowerCase();
-  let data = transferData.filter(r => (r['اسم الفرع']||r['فرع_مصدر']||'') === currentBranch);
-  if (search) data = data.filter(r => Object.values(r).some(v=>String(v).toLowerCase().includes(search)));
+  let data = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
+  if (search) data = data.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
   renderTransferTable(data, 'table-transfer-donor', 'donor-row');
 }
 
 function filterTransferBeneficiary() {
   const search = (document.getElementById('search-transfer-beneficiary')?.value||'').toLowerCase();
-  let data = transferData.filter(r => (r['فرع_مستقبل']||'') === currentBranch);
-  if (search) data = data.filter(r => Object.values(r).some(v=>String(v).toLowerCase().includes(search)));
+  let data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
+  if (search) data = data.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
   renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
 }
 
-function renderAllTables() {
-  renderTable(classifiedData.new2026, 'table-new2026');
-  renderTable(classifiedData.urgent, 'table-urgent');
-  renderTable(classifiedData.review, 'table-review');
-  renderTable(classifiedData.stable, 'table-stable');
-  renderTable(classifiedData.substitute, 'table-substitute');
-  renderTable(classifiedData.balance, 'table-balance');
-  renderTransferDonor();
-  renderTransferBeneficiary();
-}
-
-function updateCharts(branchRows) {
-  const counts = [classifiedData.new2026.length, classifiedData.urgent.length, classifiedData.review.length, classifiedData.stable.length, classifiedData.substitute.length, classifiedData.balance.length];
+function updateCharts(rows) {
   if (categoriesChart) categoriesChart.destroy();
-  const ctx1 = document.getElementById('categories-chart')?.getContext('2d');
-  if (ctx1) {
-    categoriesChart = new Chart(ctx1, {
-      type:'doughnut',
-      data:{ labels:['جديد 2026','نواقص عاجلة','مراجعة 2025','مستقرة','بديل','متابعة'], datasets:[{ data:counts, backgroundColor:['#dc2626','#ea580c','#1a6b3c','#0d9488','#2563eb','#ca8a04'] }] },
-      options:{ responsive:true, maintainAspectRatio:false }
-    });
-  }
-  const colorMap = {};
-  branchRows.forEach(r => { const c = safeGet(r,['اللون'],'غير محدد'); colorMap[c]=(colorMap[c]||0)+1; });
-  const sorted = Object.entries(colorMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
   if (colorChart) colorChart.destroy();
-  const ctx2 = document.getElementById('color-chart')?.getContext('2d');
-  if (ctx2 && sorted.length) {
-    colorChart = new Chart(ctx2, {
-      type:'bar',
-      data:{ labels:sorted.map(a=>a[0]), datasets:[{ label:'عدد', data:sorted.map(a=>a[1]), backgroundColor:'#1a6b3c', borderRadius:6 }] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+  let catMap = {}, colorMap = {};
+  rows.forEach(r => {
+    let cat = safeGet(r, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], 'أخرى');
+    let color = safeGet(r, ['اللون'], 'غير محدد');
+    catMap[cat] = (catMap[cat] || 0) + 1;
+    colorMap[color] = (colorMap[color] || 0) + 1;
+  });
+  const makeChart = (canvasId, dataMap) => {
+    const el = document.getElementById(canvasId);
+    if(!el) return null;
+    const ctx = el.getContext('2d');
+    return new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(dataMap),
+        datasets: [{ data: Object.values(dataMap), backgroundColor: ['#1a6b3c','#c9a84c','#ea580c','#2563eb','#7c3aed','#0d9488','#dc2626','#ca8a04'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Cairo', size: 11 } } } } }
     });
-  }
+  };
+  categoriesChart = makeChart('categories-chart', catMap);
+  colorChart = makeChart('color-chart', colorMap);
 }
 
 function exportToExcel() {
-  if (!allBranchData.length) return;
-  const wb = XLSX.utils.book_new();
-  const addSheet = (list, name) => { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(list.map((r,i)=>({'م':i+1,...r}))), name); };
-  addSheet(classifiedData.new2026, 'جديد 2026');
-  addSheet(classifiedData.urgent, 'نواقص عاجلة');
-  addSheet(classifiedData.review, 'مراجعة 2025');
-  addSheet(classifiedData.stable, 'مستقرة');
-  addSheet(classifiedData.substitute, 'بديل');
-  addSheet(classifiedData.balance, 'متابعة');
-  const donor = transferData.filter(r=>(r['اسم الفرع']||r['فرع_مصدر']||'')===currentBranch);
-  const ben = transferData.filter(r=>(r['فرع_مستقبل']||'')===currentBranch);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(donor.length?donor:[{'تنبيه':'لا توجد توصيات'}]), 'ترانزيت - مانح');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ben.length?ben:[{'تنبيه':'لا توجد توصيات'}]), 'ترانزيت - مستقبل');
-  XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  let wb = XLSX.utils.book_new();
+  
+  // التعديل: تجميع شيت كامل بكل القوائم والأصناف (ما عدا شيتات الترانزيت) وضبطه ليكون أول شيت
+  let allCombinedItems = [
+    ...classifiedData.new2026,
+    ...classifiedData.urgent,
+    ...classifiedData.review,
+    ...classifiedData.stable,
+    ...classifiedData.substitute,
+    ...classifiedData.balance
+  ];
+  
+  let wsAll = XLSX.utils.json_to_sheet(allCombinedItems.length ? allCombinedItems : [{"تنبيه": "لا توجد أصناف"}]);
+  XLSX.utils.book_append_sheet(wb, wsAll, "📊 التقرير الشامل للفرع");
+  
+  // إضافة بقية شيتات الأيقونات المفصلة تلقائياً
+  const tabsConfig = [
+    { key: "new2026", name: "🔴 جديد 2026" },
+    { key: "urgent", name: "🟠 نواقص عاجلة" },
+    { key: "review", name: "🟢 مراجعة 2025" },
+    { key: "stable", name: "📊 مستقرة" },
+    { key: "substitute", name: "🔄 متوفر بديل" },
+    { key: "balance", name: "🟡 متابعة" }
+  ];
+  tabsConfig.forEach(tab => {
+    let list = classifiedData[tab.key] || [];
+    let ws = XLSX.utils.json_to_sheet(list.length ? list : [{"تنبيه": "لا توجد أصناف"}]);
+    XLSX.utils.book_append_sheet(wb, ws, tab.name);
+  });
+  
+  let donorData = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
+  let beneficiaryData = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
+  
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(donorData.length ? donorData : [{"ملاحظة": "لا يوجد"}]), "🟢 ترانزيت - فرع مانح");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(beneficiaryData.length ? beneficiaryData : [{"ملاحظة": "لا يوجد"}]), "🔴 ترانزيت - فرع مستقبل");
+  
+  XLSX.writeFile(wb, `TREE_${currentBranch}_Report.xlsx`);
 }
 
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-    const tabId = btn.getAttribute('data-tab');
-    if (tabId) document.getElementById(tabId).classList.add('active');
-    if (tabId === 'tab-transfer-donor') renderTransferDonor();
-    if (tabId === 'tab-transfer-beneficiary') renderTransferBeneficiary();
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      this.classList.add('active');
+      const tabId = this.getAttribute('data-tab');
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) targetContent.classList.add('active');
+      
+      const summaryWidgets = document.getElementById('dashboard-summary-widgets');
+      if(summaryWidgets) {
+        if(tabId.includes('transfer')) {
+          summaryWidgets.style.display = 'none';
+        } else {
+          summaryWidgets.style.display = 'block';
+        }
+      }
+    });
   });
 });
-
-window.toggleSubstitute = toggleSubstitute;
-window.doLogin = doLogin;
-window.doLogout = doLogout;
-window.loadFile = loadFile;
-window.exportToExcel = exportToExcel;
-window.updateBranchPassword = updateBranchPassword;
-window.filterTable = filterTable;
-window.filterTransferDonor = filterTransferDonor;
-window.filterTransferBeneficiary = filterTransferBeneficiary;
 </script>
 </body>
 </html>
