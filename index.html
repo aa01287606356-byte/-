@@ -270,7 +270,7 @@
 
   <div id="dashboard-screen">
     <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (7 شيتات)</button>
+      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (8 شيتات)</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
@@ -281,7 +281,8 @@
       <button class="tab-btn" data-tab="tab-stable">📊 مستقرة</button>
       <button class="tab-btn" data-tab="tab-substitute">🔄 بديل</button>
       <button class="tab-btn" data-tab="tab-balance">🟡 متابعة</button>
-      <button class="tab-btn" data-tab="tab-transfer">🚚 ترانزيت</button>
+      <button class="tab-btn donor-tab" data-tab="tab-transfer-donor">🟢 ترانزيت - مانح</button>
+      <button class="tab-btn beneficiary-tab" data-tab="tab-transfer-beneficiary">🔴 ترانزيت - مستقبل</button>
     </div>
 
     <div id="tab-new2026" class="tab-content active">
@@ -331,10 +332,19 @@
       <div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div style="overflow-x:auto;" id="table-balance"></div></div>
     </div>
 
-    <div id="tab-transfer" class="tab-content">
+    <!-- ترانزيت - مانح (الفرع الحالي هو المصدر) -->
+    <div id="tab-transfer-donor" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🚚 مقترحات الترانزيت - لفرع <span id="current-branch-name"></span></h4><div class="search-box">🔍 <input type="text" id="search-transfer" placeholder="بحث..." oninput="filterTransferTable()"></div></div>
-        <div style="overflow-x:auto;" id="table-transfer"></div>
+        <div class="table-header"><h4>🟢 ترانزيت - مانح: الأصناف اللي عندك فائض و ممكن تنقلها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
+        <div style="overflow-x:auto;" id="table-transfer-donor"></div>
+      </div>
+    </div>
+
+    <!-- ترانزيت - مستقبل (الفرع الحالي هو المستهدف) -->
+    <div id="tab-transfer-beneficiary" class="tab-content">
+      <div class="table-card">
+        <div class="table-header"><h4>🔴 ترانزيت - مستقبل: الأصناف اللي رصيدك ضعيف و محتاج تستلمها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
+        <div style="overflow-x:auto;" id="table-transfer-beneficiary"></div>
       </div>
     </div>
 
@@ -363,8 +373,8 @@ const ADMIN_MASTER_KEY = "101499";
 const PASSWORDS_URL = "passwords.json";
 
 let currentBranch = null;
-let allBranchData = [];     // بيانات كل الفروع (للمستفيد والمانح)
-let transferData = [];      // بيانات الترانزيت المقروءة من شيت "ترانزيت"
+let allBranchData = [];
+let transferData = [];
 let classifiedData = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
 
 function safeGet(row, fields, defaultValue = '—') {
@@ -484,11 +494,9 @@ function loadFile(input) {
     try {
       const wb = XLSX.read(e.target.result, { type: 'array' });
       
-      // 1. قراءة بيانات المخزون (أول شيت)
       const wsInventory = wb.Sheets[wb.SheetNames[0]];
       const inventoryData = XLSX.utils.sheet_to_json(wsInventory, { defval: "" });
       
-      // 2. قراءة شيت الترانزيت (لو موجود)
       let transferSheetData = [];
       if (wb.SheetNames.includes("ترانزيت")) {
         const wsTransfer = wb.Sheets["ترانزيت"];
@@ -503,11 +511,9 @@ function loadFile(input) {
         return; 
       }
       
-      // حفظ كل البيانات
       allBranchData = inventoryData;
       transferData = transferSheetData;
       
-      // تصفية بيانات الفرع الحالي
       const branchRows = inventoryData.filter(r => { 
         let branchVal = String(safeGet(r, ['اسم الفرع', 'الفرع'], '')).trim(); 
         return branchVal === currentBranch.trim(); 
@@ -582,31 +588,20 @@ function processClassification(branchRows) {
   document.getElementById('qty-balance').textContent = totalQty(classifiedData.balance);
 }
 
-function renderTransferTable() {
-  const container = document.getElementById('table-transfer');
+// عرض جدول المانحين (الفرع الحالي هو المصدر)
+function renderTransferDonor() {
+  const container = document.getElementById('table-transfer-donor');
   
-  // تصفية الترانزيت للفرع الحالي فقط
-  let filteredTransfer = [];
-  
+  let donorData = [];
   if (transferData && transferData.length > 0) {
-    // محاولة تحديد أسماء الأعمدة
-    const firstRow = transferData[0];
-    let sourceCol = null, targetCol = null;
-    
-    for (let key in firstRow) {
-      if (key.includes('فرع_مصدر') || key.includes('اسم الفرع') || key.includes('مانح')) sourceCol = key;
-      if (key.includes('فرع_مستقبل') || key.includes('فرع_المستقبل') || key.includes('مستفيد')) targetCol = key;
-    }
-    
-    filteredTransfer = transferData.filter(row => {
-      const sourceBranch = String(row[sourceCol] || row['فرع_مصدر'] || row['اسم الفرع'] || '');
-      const targetBranch = String(row[targetCol] || row['فرع_مستقبل'] || '');
-      return sourceBranch === currentBranch || targetBranch === currentBranch;
+    donorData = transferData.filter(row => {
+      const sourceBranch = String(row['فرع_مصدر'] || row['اسم الفرع'] || '');
+      return sourceBranch === currentBranch;
     });
   }
   
-  if (!filteredTransfer || filteredTransfer.length === 0) {
-    container.innerHTML = '<p style="text-align:center; padding:40px;">📭 لا توجد مقترحات ترانزيت لهذا الفرع</p>';
+  if (donorData.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد أصناف لديك فائض فيها يمكن نقله</p>';
     return;
   }
   
@@ -614,75 +609,150 @@ function renderTransferTable() {
                 <thead>
                   <tr>
                     <th>#</th><th>إسم الصنف</th><th>الباركود</th>
-                    <th>فرع المصدر</th><th>رصيد المصدر</th>
-                    <th>فرع المستهدف</th><th>رصيد المستهدف</th>
-                    <th>كمية مقترحة</th><th>التفاصيل</th>
+                    <th>رصيدك الحالي</th><th>الحد الأدنى (ريشيو)</th>
+                    <th>الفرع المستهدف</th><th>رصيد المستهدف</th>
+                    <th>كمية مقترحة للنقل</th><th>التفاصيل</th>
                   </tr>
                 </thead>
                 <tbody>`;
   
-  filteredTransfer.forEach((item, idx) => {
-    const isDonor = (String(item['فرع_مصدر'] || item['اسم الفرع'] || '') === currentBranch);
-    const rowClass = isDonor ? 'donor-row' : 'beneficiary-row';
-    const roleIcon = isDonor ? '🟢 مانح' : '🔴 مستفيد';
-    
-    html += `<tr class="${rowClass}">
-              <td>${idx+1} ${roleIcon}</td>
+  donorData.forEach((item, idx) => {
+    html += `<tr class="donor-row">
+              <td>${idx+1}</td>
               <td>${safeGet(item, ['إسم الصنف', 'product'], '—')}</td>
               <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية', 'barcode'], '—')}</td>
-              <td>${safeGet(item, ['فرع_مصدر', 'اسم الفرع'], '—')}</td>
-              <td>${safeNumber(item, ['رصيد_مصدر', 'رصيد'], 0)}</td>
+              <td><span class="qty-badge">${safeNumber(item, ['رصيد_مصدر', 'رصيد'], 0)}</span></td>
+              <td>${safeNumber(item, ['ريشيو_المصدر', 'ريشيو'], 3)}</td>
               <td>${safeGet(item, ['فرع_مستقبل', 'فرع_المستقبل'], '—')}</td>
               <td>${safeNumber(item, ['رصيد_مستقبل', 'رصيد_المستقبل'], 0)}</td>
               <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة', 'كمية_الترانزيت'], 0)}</span></td>
-              <td><span class="${isDonor ? 'transfer-badge' : 'warning-badge'}">${safeGet(item, ['تفسير', 'الإجراء'], '—')}</span></td>
+              <td><span class="transfer-badge">📦 انقل</span></td>
               </tr>`;
   });
   
+  html += '</tbody></td>';
+  container.innerHTML = html;
+}
+
+function filterTransferDonor() {
+  const search = document.getElementById('search-transfer-donor')?.value.toLowerCase() || '';
+  let donorData = transferData.filter(row => {
+    const sourceBranch = String(row['فرع_مصدر'] || row['اسم الفرع'] || '');
+    return sourceBranch === currentBranch;
+  });
+  
+  if (search) {
+    donorData = donorData.filter(item => 
+      String(item['إسم الصنف'] || '').toLowerCase().includes(search) ||
+      String(item['باركود الوحدة المخزنية'] || '').includes(search)
+    );
+  }
+  
+  const container = document.getElementById('table-transfer-donor');
+  if (donorData.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد نتائج</p>';
+    return;
+  }
+  
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>ريشيو</th><th>الفرع المستهدف</th><th>رصيده</th><th>كمية</th><th>الإجراء</th></tr></thead><tbody>`;
+  donorData.forEach((item, idx) => {
+    html += `<tr class="donor-row">
+              <td>${idx+1}</td>
+              <td>${safeGet(item, ['إسم الصنف'], '—')}</td>
+              <td>${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مصدر'], 0)}</td>
+              <td>${safeNumber(item, ['ريشيو_المصدر'], 3)}</td>
+              <td>${safeGet(item, ['فرع_مستقبل'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مستقبل'], 0)}</td>
+              <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
+              <td><span class="transfer-badge">📦 انقل</span></td>
+              </tr>`;
+  });
   html += '</tbody></table>';
   container.innerHTML = html;
 }
 
-function filterTransferTable() {
-  const search = document.getElementById('search-transfer')?.value.toLowerCase() || '';
-  if (!search) {
-    renderTransferTable();
-    return;
+// عرض جدول المستفيدين (الفرع الحالي هو المستهدف)
+function renderTransferBeneficiary() {
+  const container = document.getElementById('table-transfer-beneficiary');
+  
+  let beneficiaryData = [];
+  if (transferData && transferData.length > 0) {
+    beneficiaryData = transferData.filter(row => {
+      const targetBranch = String(row['فرع_مستقبل'] || row['فرع_المستقبل'] || '');
+      return targetBranch === currentBranch;
+    });
   }
-  // نعيد نفس المنطق مع فلترة إضافية
-  let filteredTransfer = transferData.filter(row => {
-    const sourceBranch = String(row['فرع_مصدر'] || row['اسم الفرع'] || '');
-    const targetBranch = String(row['فرع_مستقبل'] || '');
-    return (sourceBranch === currentBranch || targetBranch === currentBranch);
-  });
   
-  filteredTransfer = filteredTransfer.filter(item => 
-    String(item['إسم الصنف'] || '').toLowerCase().includes(search) ||
-    String(item['باركود الوحدة المخزنية'] || '').includes(search)
-  );
-  
-  const container = document.getElementById('table-transfer');
-  if (filteredTransfer.length === 0) {
-    container.innerHTML = '<p style="text-align:center; padding:40px;">📭 لا توجد نتائج</p>';
+  if (beneficiaryData.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد أصناف رصيدك فيها ضعيف وتحتاج ترانزيت</p>';
     return;
   }
   
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>فرع المصدر</th><th>رصيد المصدر</th><th>فرع المستهدف</th><th>رصيد المستهدف</th><th>كمية</th><th>التفاصيل</th></tr></thead><tbody>`;
-  filteredTransfer.forEach((item, idx) => {
-    const isDonor = (String(item['فرع_مصدر'] || '') === currentBranch);
-    html += `<tr class="${isDonor ? 'donor-row' : 'beneficiary-row'}">
-              <td>${idx+1} ${isDonor ? '🟢 مانح' : '🔴 مستفيد'}</td>
-              <td>${safeGet(item, ['إسم الصنف'], '—')}</td>
-              <td>${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
-              <td>${safeGet(item, ['فرع_مصدر'], '—')}</td>
-              <td>${safeNumber(item, ['رصيد_مصدر'], 0)}</td>
-              <td>${safeGet(item, ['فرع_مستقبل'], '—')}</td>
-              <td>${safeNumber(item, ['رصيد_مستقبل'], 0)}</td>
-              <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
-              <td><span>${safeGet(item, ['تفسير'], '—')}</span></td>
+  let html = `<table class="data-table" style="width:100%;">
+                <thead>
+                  <tr>
+                    <th>#</th><th>إسم الصنف</th><th>الباركود</th>
+                    <th>رصيدك الحالي</th><th>الحد الأدنى (ريشيو)</th>
+                    <th>الفرع المانح</th><th>رصيد المانح</th>
+                    <th>كمية مقترحة للإستلام</th><th>التفاصيل</th>
+                  </tr>
+                </thead>
+                <tbody>`;
+  
+  beneficiaryData.forEach((item, idx) => {
+    html += `<tr class="beneficiary-row">
+              <td>${idx+1}</td>
+              <td>${safeGet(item, ['إسم الصنف', 'product'], '—')}</td>
+              <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية', 'barcode'], '—')}</td>
+              <td><span class="qty-badge">${safeNumber(item, ['رصيد_مستقبل', 'رصيد_المستقبل'], 0)}</span></td>
+              <td>${safeNumber(item, ['ريشيو_المستقبل', 'ريشيو'], 3)}</td>
+              <td>${safeGet(item, ['فرع_مصدر', 'اسم الفرع'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مصدر', 'رصيد'], 0)}</td>
+              <td><span class="warning-badge">${safeNumber(item, ['كمية_مقترحة', 'كمية_الترانزيت'], 0)}</span></td>
+              <td><span class="warning-badge">📦 استلم</span></td>
               </tr>`;
   });
-  html += '</tbody><tr>';
+  
+  html += '</tbody></tr>';
+  container.innerHTML = html;
+}
+
+function filterTransferBeneficiary() {
+  const search = document.getElementById('search-transfer-beneficiary')?.value.toLowerCase() || '';
+  let beneficiaryData = transferData.filter(row => {
+    const targetBranch = String(row['فرع_مستقبل'] || row['فرع_المستقبل'] || '');
+    return targetBranch === currentBranch;
+  });
+  
+  if (search) {
+    beneficiaryData = beneficiaryData.filter(item => 
+      String(item['إسم الصنف'] || '').toLowerCase().includes(search) ||
+      String(item['باركود الوحدة المخزنية'] || '').includes(search)
+    );
+  }
+  
+  const container = document.getElementById('table-transfer-beneficiary');
+  if (beneficiaryData.length === 0) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد نتائج</p>';
+    return;
+  }
+  
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>ريشيو</th><th>الفرع المانح</th><th>رصيده</th><th>كمية</th><th>الإجراء</th></tr></thead><tbody>`;
+  beneficiaryData.forEach((item, idx) => {
+    html += `<tr class="beneficiary-row">
+              <td>${idx+1}</td>
+              <td>${safeGet(item, ['إسم الصنف'], '—')}</td>
+              <td>${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مستقبل'], 0)}</td>
+              <td>${safeNumber(item, ['ريشيو_المستقبل'], 3)}</td>
+              <td>${safeGet(item, ['فرع_مصدر'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مصدر'], 0)}</td>
+              <td><span class="warning-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
+              <td><span class="warning-badge">📦 استلم</span></td>
+              </tr>`;
+  });
+  html += '</tbody></table>';
   container.innerHTML = html;
 }
 
@@ -721,7 +791,7 @@ function renderTable(list, containerId, searchInputId) {
               <td>${sales}</td>
               <td>${stock}</td>
               <td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioText}</td>
-             </tr>`;
+              </tr>`;
   });
   
   html += '</tbody></table>';
@@ -747,8 +817,8 @@ function renderAllTables() {
   renderTable(classifiedData.stable, 'table-stable', 'search-stable');
   renderTable(classifiedData.substitute, 'table-substitute', 'search-substitute');
   renderTable(classifiedData.balance, 'table-balance', 'search-balance');
-  document.getElementById('current-branch-name').textContent = currentBranch;
-  renderTransferTable();
+  renderTransferDonor();
+  renderTransferBeneficiary();
 }
 
 let categoriesChart = null, colorChart = null;
@@ -804,13 +874,17 @@ function exportToSheetsExcel() {
   formatSheet(classifiedData.balance, "متابعة");
   
   if (transferData && transferData.length > 0) {
-    const transferForExport = transferData.filter(item => {
-      const source = String(item['فرع_مصدر'] || item['اسم الفرع'] || '');
-      const target = String(item['فرع_مستقبل'] || '');
-      return source === currentBranch || target === currentBranch;
-    });
-    const wsTransfer = XLSX.utils.json_to_sheet(transferForExport);
-    XLSX.utils.book_append_sheet(wb, wsTransfer, "ترانزيت");
+    const donorExport = transferData.filter(row => String(row['فرع_مصدر'] || row['اسم الفرع'] || '') === currentBranch);
+    const beneficiaryExport = transferData.filter(row => String(row['فرع_مستقبل'] || row['فرع_المستقبل'] || '') === currentBranch);
+    
+    if (donorExport.length > 0) {
+      const wsDonor = XLSX.utils.json_to_sheet(donorExport);
+      XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - مانح");
+    }
+    if (beneficiaryExport.length > 0) {
+      const wsBeneficiary = XLSX.utils.json_to_sheet(beneficiaryExport);
+      XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - مستقبل");
+    }
   }
   
   XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
@@ -822,8 +896,11 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
     document.getElementById(btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'tab-transfer') {
-      renderTransferTable();
+    if (btn.dataset.tab === 'tab-transfer-donor') {
+      renderTransferDonor();
+    }
+    if (btn.dataset.tab === 'tab-transfer-beneficiary') {
+      renderTransferBeneficiary();
     }
   });
 });
