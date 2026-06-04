@@ -411,12 +411,13 @@ function loadFile(input) {
       buildSubstituteMap();
       
       const branchRows = inventoryData.filter(r => safeGet(r,['اسم الفرع','الفرع'],'') === currentBranch);
-      if (!branchRows.length && !transferData.length) {
-        throw new Error(`لا توجد بيانات لفرع ${currentBranch} في صفحة المخزون أو الترانزيت`);
-      }
       
       processClassification(branchRows);
       processTransferData();
+      
+      if (!branchRows.length && !filteredDonorData.length && !filteredBeneficiaryData.length) {
+        throw new Error(`لا توجد بيانات لفرع ${currentBranch} في صفحة المخزون أو الترانزيت`);
+      }
       
       document.getElementById('upload-screen').style.display='none';
       document.getElementById('dashboard-screen').style.display='block';
@@ -453,7 +454,7 @@ function processClassification(branchRows) {
       classifiedData.review.push(row);
     } else if (['متوسطة','متوفر','مستقر'].includes(type)) {
       classifiedData.stable.push(row);
-    } else if (['غير متوفر','تاريخ غير مححدد'].includes(type)) {
+    } else if (['غير متوفر','تاريخ غير محدد'].includes(type)) {
       classifiedData.balance.push(row);
     } else if (type !== '') {
       classifiedData.review.push(row);
@@ -483,8 +484,10 @@ function processTransferData() {
   if (!transferData || !transferData.length) return;
   
   transferData.forEach(row => {
-    const donorBranch = safeGet(row, ['الفرع المانح', 'الفرع_المانح', 'مانح']);
-    const beneficiaryBranch = safeGet(row, ['الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل']);
+    // تحديث ذكي ومطابق تماماً للصورة المرفقة
+    const donorBranch = safeGet(row, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح']);
+    const beneficiaryBranch = safeGet(row, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل']);
+    
     if (donorBranch === currentBranch) filteredDonorData.push(row);
     if (beneficiaryBranch === currentBranch) filteredBeneficiaryData.push(row);
   });
@@ -551,23 +554,24 @@ function renderTransferTable(data, containerId, rowClass) {
   const container = document.getElementById(containerId);
   if (!container) return;
   if (!data.length) {
-    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات تحويلات متطابقة</p>';
+    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات تحويلات متطابقة لفرعك الحالي</p>';
     return;
   }
 
   let html = `<table class="data-table"><thead><tr>
     <th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th>
-    <th>الفرع المانح</th><th>الفرع المستقبل</th><th>كمية الترانزيت</th><th>السبب / الملاحظات</th>
+    <th>الفرع المانح (الراسل)</th><th>الفرع المستقبل (المستلم)</th><th>كمية الترانزيت</th><th>التوصية / الملاحظات</th>
   </tr></thead><tbody>`;
 
   data.forEach((row, i) => {
-    const name = safeGet(row, ['إسم الصنف', 'اسم الصنف', 'الصنف']);
-    const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود', 'الباركود'], '—');
+    // مطابقة الحقول من الصورة المرفقة مباشرة لضمان عدم حدوث أي قيم فارغة
+    const name = safeGet(row, ['إسم الصنف', 'اسم الصنف', 'الصنف', 'م الصنف']);
+    const barcode = safeGet(row, ['كود الوحدة المخزنية', 'باركود الوحدة المخزنية', 'باركود', 'الباركود'], '—');
     const color = safeGet(row, ['اللون'], '—');
-    const donor = safeGet(row, ['الفرع المانح', 'الفرع_المانح', 'مانح'], '—');
-    const beneficiary = safeGet(row, ['الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل'], '—');
-    const qty = safeNum(row, ['كمية التحويل', 'كمية_التحويل', 'الكمية', 'الكمية المخصصة']);
-    const notes = safeGet(row, ['السبب', 'سبب القرار', 'ملاحظات'], '—');
+    const donor = safeGet(row, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح'], '—');
+    const beneficiary = safeGet(row, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل'], '—');
+    const qty = safeNum(row, ['الكمية_المقترحة', 'كمية التحويل', 'كمية_التحويل', 'الكمية']);
+    const notes = safeGet(row, ['التوصية', 'السبب', 'سبب القرار', 'ملاحظات'], '—');
 
     html += `<tr class="${rowClass}">
       <td style="text-align:center;">${i+1}</td>
@@ -612,8 +616,8 @@ function filterTransferDonor() {
   const search = (document.getElementById('search-transfer-donor')?.value || '').toLowerCase();
   const filtered = search
     ? filteredDonorData.filter(r =>
-        safeGet(r,['إسم الصنف','اسم الصنف','الصنف'],'').toLowerCase().includes(search) ||
-        safeGet(r,['باركود الوحدة المخزنية','باركود','الباركود'],'').toLowerCase().includes(search))
+        safeGet(r,['إسم الصنف','اسم الصنف','الصنف','م الصنف'],'').toLowerCase().includes(search) ||
+        safeGet(r,['كود الوحدة المخزنية','باركود الوحدة المخزنية','باركود'],'').toLowerCase().includes(search))
     : filteredDonorData;
   renderTransferTable(filtered, 'container-transfer-donor', 'donor-row');
 }
@@ -622,8 +626,8 @@ function filterTransferBeneficiary() {
   const search = (document.getElementById('search-transfer-beneficiary')?.value || '').toLowerCase();
   const filtered = search
     ? filteredBeneficiaryData.filter(r =>
-        safeGet(r,['إسم الصنف','اسم الصنف','الصنف'],'').toLowerCase().includes(search) ||
-        safeGet(r,['باركود الوحدة المخزنية','باركود','الباركود'],'').toLowerCase().includes(search))
+        safeGet(r,['إسم الصنف','اسم الصنف','الصنف','م الصنف'],'').toLowerCase().includes(search) ||
+        safeGet(r,['كود الوحدة المخزنية','باركود الوحدة المخزنية','باركود'],'').toLowerCase().includes(search))
     : filteredBeneficiaryData;
   renderTransferTable(filtered, 'container-transfer-beneficiary', 'beneficiary-row');
 }
@@ -702,7 +706,6 @@ function exportToExcel() {
   XLSX.writeFile(wb, `TREE_${currentBranch}_Detailed_Report.xlsx`);
 }
 
-// الكود المصلح والمسؤول عن التبديل السلس بين الصفحات والتبويبات المخصصة
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', function() {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
