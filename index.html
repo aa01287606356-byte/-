@@ -239,6 +239,8 @@ let currentBranch = null;
 let allBranchData = [];
 let transferData = [];
 let classifiedData = { new2026:[], urgent:[], review:[], stable:[], substitute:[], balance:[] };
+// سنحتفظ هنا بالقائمة النظيفة بدون أي تكرار لأغراض التصدير
+let cleanSummaryData = []; 
 let filteredDonorData = [];
 let filteredBeneficiaryData = [];
 let categoriesChart = null, colorChart = null;
@@ -398,14 +400,21 @@ function loadFile(input) {
 
 function processClassification(branchRows) {
   classifiedData = { new2026:[], urgent:[], review:[], stable:[], substitute:[], balance:[] };
+  cleanSummaryData = []; // لتوليد الشيت المجمع النظيف
+
   branchRows.forEach(row => {
     const type = safeGet(row, ['تصنيف_المنتج_معدل','تصنيف المنتج معدل'], '');
     const reason = safeGet(row, ['سبب_القرار','سبب قرار'], '');
 
+    // حفظ نسخة نظيفة تماماً في القائمة المجمعة بدون تكرار
+    cleanSummaryData.push(row);
+
+    // إذا كان يحتوي على بديل، يظهر في شيت البدائل بالتبويب التفاعلي
     if (reason.includes('بديل')) {
       classifiedData.substitute.push(row);
     }
 
+    // يظهر في التبويب الأساسي الخاص به لتكرار العرض في الموقع
     if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) {
       classifiedData.new2026.push(row);
     } else if (type === 'اطلب الان') {
@@ -620,33 +629,51 @@ function updateCharts(rows) {
 function exportToExcel() {
   let wb = XLSX.utils.book_new();
   
-  // شيت 1: المخزون الموزع (يحتوي التكرار)
-  let mainRows = [];
-  Object.keys(classifiedData).forEach(k => { mainRows = mainRows.concat(classifiedData[k]); });
-  if (mainRows.length) {
-    let ws = XLSX.utils.json_to_sheet(mainRows);
-    XLSX.utils.book_append_sheet(wb, ws, "مخزون الفرع الموزع");
+  // 1. الشيت المجمع النظيف (بدون ترانزيت وبدون تكرار أصناف البديل)
+  if (cleanSummaryData.length) {
+    let ws = XLSX.utils.json_to_sheet(cleanSummaryData);
+    XLSX.utils.book_append_sheet(wb, ws, "📊 مخزون الفرع مجمع (نظيف)");
   }
   
-  // شيت 2: ترانزيت مانح (الفرع الحالي رازل)
+  // 2. شيت منفصل لكل تصنيف فرعي
+  const tabsConfig = [
+    { key: "new2026", name: "🔴 جديد 2026" },
+    { key: "urgent", name: "🟠 نواقص عاجلة" },
+    { key: "review", name: "🟢 مراجعة 2025" },
+    { key: "stable", name: "📊 مستقرة" },
+    { key: "substitute", name: "🔄 بديل" },
+    { key: "balance", name: "🟡 متابعة" }
+  ];
+  
+  tabsConfig.forEach(tab => {
+    if (classifiedData[tab.key].length) {
+      let wsTab = XLSX.utils.json_to_sheet(classifiedData[tab.key]);
+      XLSX.utils.book_append_sheet(wb, wsTab, tab.name);
+    } else {
+      let wsEmpty = XLSX.utils.json_to_sheet([{ "تنبيه": "لا توجد أصناف في هذا التبويب" }]);
+      XLSX.utils.book_append_sheet(wb, wsEmpty, tab.name);
+    }
+  });
+  
+  // 3. شيت ترانزيت مانح
   if (filteredDonorData.length) {
     let wsDonor = XLSX.utils.json_to_sheet(filteredDonorData);
-    XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - فرع مانح");
+    XLSX.utils.book_append_sheet(wb, wsDonor, "🟢 ترانزيت - فرع مانح");
   } else {
-    let wsEmpty = XLSX.utils.json_to_sheet([{ "ملاحظة": "لا توجد تحويلات صادرة من هذا الفرع" }]);
-    XLSX.utils.book_append_sheet(wb, wsEmpty, "ترانزيت - فرع مانح");
+    let wsEmpty = XLSX.utils.json_to_sheet([{ "ملاحظة": "لا توجد تحويلات صادرة" }]);
+    XLSX.utils.book_append_sheet(wb, wsEmpty, "🟢 ترانزيت - فرع مانح");
   }
   
-  // شيت 3: ترانزيت مستقبل (الفرع الحالي مستلم)
+  // 4. شيت ترانزيت مستقبل
   if (filteredBeneficiaryData.length) {
     let wsBeneficiary = XLSX.utils.json_to_sheet(filteredBeneficiaryData);
-    XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - فرع مستقبل");
+    XLSX.utils.book_append_sheet(wb, wsBeneficiary, "🔴 ترانزيت - فرع مستقبل");
   } else {
-    let wsEmpty = XLSX.utils.json_to_sheet([{ "ملاحظة": "لا توجد تحويلات واردة لهذا الفرع" }]);
-    XLSX.utils.book_append_sheet(wb, wsEmpty, "ترانزيت - فرع مستقبل");
+    let wsEmpty = XLSX.utils.json_to_sheet([{ "ملاحظة": "لا توجد تحويلات واردة" }]);
+    XLSX.utils.book_append_sheet(wb, wsEmpty, "🔴 ترانزيت - فرع مستقبل");
   }
   
-  XLSX.writeFile(wb, `TREE_${currentBranch}_Report.xlsx`);
+  XLSX.writeFile(wb, `TREE_${currentBranch}_Detailed_Report.xlsx`);
 }
 
 document.querySelectorAll('.tab-btn').forEach(btn => {
