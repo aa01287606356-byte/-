@@ -276,7 +276,7 @@
 
   <div id="dashboard-screen">
     <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel</button>
+      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (8 شيتات)</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
@@ -632,13 +632,13 @@ function renderTransferDonor() {
   donorData.forEach((item, idx) => {
     html += `<tr class="donor-row">
               <td>${idx+1}</td>
-              <td>${safeGet(item, ['إسم الصنف', 'product'], '—')}</td>
-              <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية', 'barcode'], '—')}</td>
-              <td><span class="qty-badge">${safeNumber(item, ['رصيد_مصدر', 'رصيد'], 0)}</span></td>
-              <td>${safeNumber(item, ['ريشيو_المصدر', 'ريشيو'], 3)}</td>
-              <td>${safeGet(item, ['فرع_مستقبل', 'فرع_المستقبل'], '—')}</td>
-              <td>${safeNumber(item, ['رصيد_مستقبل', 'رصيد_المستقبل'], 0)}</td>
-              <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة', 'كمية_الترانزيت'], 0)}</span></td>
+              <td>${safeGet(item, ['إسم الصنف'], '—')}</td>
+              <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
+              <td><span class="qty-badge">${safeNumber(item, ['رصيد_مصدر'], 0)}</span></td>
+              <td>${safeNumber(item, ['ريشيو_المصدر'], 3)}</td>
+              <td>${safeGet(item, ['فرع_مستقبل'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مستقبل'], 0)}</td>
+              <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
               </tr>`;
   });
   
@@ -679,7 +679,7 @@ function filterTransferDonor() {
               <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
               </tr>`;
   });
-  html += '</tbody><table>';
+  html += '</tbody></table>';
   container.innerHTML = html;
 }
 
@@ -690,7 +690,7 @@ function renderTransferBeneficiary() {
   let beneficiaryData = [];
   if (transferData && transferData.length > 0) {
     beneficiaryData = transferData.filter(row => {
-      const targetBranch = String(row['فرع_مستقبل'] || row['فرع_المستقبل'] || '');
+      const targetBranch = String(row['فرع_مستقبل'] || '');
       return targetBranch === currentBranch;
     });
   }
@@ -714,24 +714,24 @@ function renderTransferBeneficiary() {
   beneficiaryData.forEach((item, idx) => {
     html += `<tr class="beneficiary-row">
               <td>${idx+1}</td>
-              <td>${safeGet(item, ['إسم الصنف', 'product'], '—')}</td>
-              <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية', 'barcode'], '—')}</td>
-              <td><span class="qty-badge">${safeNumber(item, ['رصيد_مستقبل', 'رصيد_المستقبل'], 0)}</span></td>
-              <td>${safeNumber(item, ['ريشيو_المستقبل', 'ريشيو'], 3)}</td>
-              <td>${safeGet(item, ['فرع_مصدر', 'اسم الفرع'], '—')}</td>
-              <td>${safeNumber(item, ['رصيد_مصدر', 'رصيد'], 0)}</td>
-              <td><span class="warning-badge">${safeNumber(item, ['كمية_مقترحة', 'كمية_الترانزيت'], 0)}</span></td>
+              <td>${safeGet(item, ['إسم الصنف'], '—')}</td>
+              <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
+              <td><span class="qty-badge">${safeNumber(item, ['رصيد_مستقبل'], 0)}</span></td>
+              <td>${safeNumber(item, ['ريشيو_المستقبل'], 3)}</td>
+              <td>${safeGet(item, ['فرع_مصدر'], '—')}</td>
+              <td>${safeNumber(item, ['رصيد_مصدر'], 0)}</td>
+              <td><span class="warning-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
               </tr>`;
   });
   
-  html += '</tbody><table>';
+  html += '</tbody></table>';
   container.innerHTML = html;
 }
 
 function filterTransferBeneficiary() {
   const search = document.getElementById('search-transfer-beneficiary')?.value.toLowerCase() || '';
   let beneficiaryData = transferData.filter(row => {
-    const targetBranch = String(row['فرع_مستقبل'] || row['فرع_المستقبل'] || '');
+    const targetBranch = String(row['فرع_مستقبل'] || '');
     return targetBranch === currentBranch;
   });
   
@@ -861,9 +861,11 @@ function exportToSheetsExcel() {
   if(allBranchData.length === 0) return;
   const wb = XLSX.utils.book_new();
   
+  // 6 شيتات التصنيفات
   const formatSheet = (list, name) => {
     const data = list.map((row, idx) => ({ 
-      "م": idx+1, "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), 
+      "م": idx+1, 
+      "إسم الصنف": safeGet(row, ['إسم الصنف', 'اسم الصنف']), 
       "الباركود": safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '—'), 
       "اللون": safeGet(row, ['اللون'], '—'), 
       "الفرع": safeGet(row, ['اسم الفرع', 'الفرع'], '—'),
@@ -882,18 +884,33 @@ function exportToSheetsExcel() {
   formatSheet(classifiedData.substitute, "بديل");
   formatSheet(classifiedData.balance, "متابعة");
   
+  // شيتين الترانزيت (مانح + مستقبل)
   if (transferData && transferData.length > 0) {
     const donorExport = transferData.filter(row => String(row['فرع_مصدر'] || row['اسم الفرع'] || '') === currentBranch);
-    const beneficiaryExport = transferData.filter(row => String(row['فرع_مستقبل'] || row['فرع_المستقبل'] || '') === currentBranch);
+    const beneficiaryExport = transferData.filter(row => String(row['فرع_مستقبل'] || '') === currentBranch);
     
     if (donorExport.length > 0) {
       const wsDonor = XLSX.utils.json_to_sheet(donorExport);
       XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - مانح");
+    } else {
+      // شيت فارغ في حالة عدم وجود بيانات
+      const wsDonor = XLSX.utils.json_to_sheet([{ "تنبيه": "لا توجد أصناف لديك فائض فيها" }]);
+      XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - مانح");
     }
+    
     if (beneficiaryExport.length > 0) {
       const wsBeneficiary = XLSX.utils.json_to_sheet(beneficiaryExport);
       XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - مستقبل");
+    } else {
+      const wsBeneficiary = XLSX.utils.json_to_sheet([{ "تنبيه": "لا توجد أصناف رصيدك فيها ضعيف" }]);
+      XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - مستقبل");
     }
+  } else {
+    // لو مفيش شيت ترانزيت في الملف الأصلي
+    const wsDonor = XLSX.utils.json_to_sheet([{ "تنبيه": "لا يوجد شيت ترانزيت في الملف المرفوع" }]);
+    XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - مانح");
+    const wsBeneficiary = XLSX.utils.json_to_sheet([{ "تنبيه": "لا يوجد شيت ترانزيت في الملف المرفوع" }]);
+    XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - مستقبل");
   }
   
   XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
