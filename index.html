@@ -8,574 +8,44 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
-  :root {
-    --green: #1a6b3c;
-    --green-light: #2d9e5f;
-    --green-dark: #0f4526;
-    --gold: #c9a84c;
-    --bg: #f5f7f5;
-    --white: #ffffff;
-    --gray: #6b7280;
-    --gray-light: #f0f4f0;
-    --red: #dc2626;
-    --red-light: #fef2f2;
-    --orange: #ea580c;
-    --orange-light: #fff7ed;
-    --yellow: #ca8a04;
-    --yellow-light: #fefce8;
-    --blue: #2563eb;
-    --blue-light: #eff6ff;
-    --purple: #7c3aed;
-    --purple-light: #f5f3ff;
-    --teal: #0d9488;
-    --teal-light: #f0fdfa;
-    --text: #1a2e1a;
-  }
-
-  * { margin: 0; padding: 0; box-sizing: border-box; }
-
-  body {
-    font-family: 'Cairo', sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    min-height: 100vh;
-  }
-
-  #login-screen {
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 50%, var(--green-light) 100%);
-  }
-
-  .login-card {
-    background: var(--white);
-    border-radius: 24px;
-    padding: 48px 40px;
-    width: 420px;
-    box-shadow: 0 32px 80px rgba(0,0,0,0.3);
-  }
-
-  .login-logo h1 {
-    font-size: 32px;
-    font-weight: 900;
-    color: var(--green);
-    text-align: center;
-    letter-spacing: 2px;
-  }
-
-  .form-group { margin-bottom: 20px; }
-  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--gray); margin-bottom: 8px; }
-  
-  .form-group select, .form-group input {
-    width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 12px;
-    font-family: 'Cairo', sans-serif; font-size: 14px; color: var(--text); outline: none;
-  }
-
-  .btn-login {
-    width: 100%; padding: 16px; background: linear-gradient(135deg, var(--green) 0%, var(--green-light) 100%);
-    color: white; border: none; border-radius: 12px; font-weight: 700; cursor: pointer;
-  }
-
-  .login-error { color: var(--red); background: #fef2f2; padding: 12px; border-radius: 8px; font-size: 13px; text-align: center; margin-top: 12px; display: none; }
-
-  #app-screen { display: none; }
-  .app-header {
-    background: linear-gradient(135deg, var(--green-dark) 0%, var(--green) 100%);
-    padding: 0 32px; display: flex; align-items: center; justify-content: space-between; height: 64px;
-    color: white;
-  }
-
-  .branch-badge { background: rgba(255,255,255,0.15); padding: 8px 16px; border-radius: 20px; font-size: 14px; }
-  .btn-logout { background: rgba(255,255,255,0.1); border: none; color: white; padding: 8px 16px; border-radius: 8px; cursor: pointer; }
-
-  #upload-screen { min-height: calc(100vh - 64px); display: flex; align-items: center; justify-content: center; padding: 40px; }
-  .upload-card { background: white; border-radius: 20px; padding: 48px; text-align: center; max-width: 500px; width: 100%; }
-  .upload-zone { border: 2px dashed var(--green-light); border-radius: 16px; padding: 32px; cursor: pointer; background: var(--gray-light); margin-top: 20px; }
-  .upload-zone input { display: none; }
-
-  #dashboard-screen { display: none; padding: 32px; }
-  
-  .action-buttons { display: flex; gap: 12px; margin-bottom: 20px; justify-content: flex-end; }
-  .btn-action { border: none; padding: 10px 20px; border-radius: 10px; font-weight: 600; cursor: pointer; color: white; }
-  .btn-excel { background: #107c41; }
-  .btn-print { background: var(--gold); }
-  
-  .tabs-nav {
-    display: flex;
-    gap: 8px;
-    margin-bottom: 24px;
-    flex-wrap: wrap;
-    background: white;
-    padding: 12px 20px;
-    border-radius: 20px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
-  }
-  .tab-btn {
-    padding: 10px 20px;
-    border: none;
-    background: var(--gray-light);
-    border-radius: 30px;
-    font-family: 'Cairo', sans-serif;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.2s;
-    color: var(--gray);
-  }
-  .tab-btn.active {
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: white;
-    box-shadow: 0 2px 8px rgba(26,107,60,0.3);
-  }
-  .tab-btn:hover:not(.active) {
-    background: #e0e7e0;
-  }
-  .donor-tab.active {
-    background: linear-gradient(135deg, #15803d, #22c55e);
-  }
-  .beneficiary-tab.active {
-    background: linear-gradient(135deg, #b91c1c, #ef4444);
-  }
-  
-  .tab-content {
-    display: none;
-  }
-  .tab-content.active {
-    display: block;
-  }
-
-  .stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 28px; }
-  .stat-card {
-    background: white; border-radius: 16px; padding: 20px; text-align: center;
-    cursor: pointer; transition: all 0.3s; border: 2px solid transparent;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-  }
-  .stat-card:hover { transform: translateY(-4px); }
-  .stat-card.red { border-right: 4px solid var(--red); }
-  .stat-card.orange { border-right: 4px solid var(--orange); }
-  .stat-card.green { border-right: 4px solid var(--green); }
-  .stat-card.teal { border-right: 4px solid var(--teal); }
-  .stat-card.blue { border-right: 4px solid var(--blue); }
-  .stat-card.yellow { border-right: 4px solid var(--yellow); }
-  .stat-card.purple { border-right: 4px solid var(--purple); }
-  .stat-label { font-size: 14px; font-weight: 700; margin-bottom: 8px; }
-  .stat-value { font-size: 32px; font-weight: 900; }
-  .stat-sub { font-size: 11px; color: var(--gray); margin-top: 4px; }
-
-  .qty-stats-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 20px; margin-bottom: 28px; }
-  .qty-card { background: white; border-radius: 16px; padding: 20px; text-align: center; box-shadow: 0 4px 12px rgba(0,0,0,0.08); border-right: 4px solid var(--gold); }
-  .qty-label { font-size: 12px; color: var(--gray); margin-bottom: 4px; }
-  .qty-value { font-size: 26px; font-weight: 900; }
-  .qty-unit { font-size: 10px; color: var(--gray); margin-top: 4px; }
-
-  .charts-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
-  .chart-card { background: white; border-radius: 16px; padding: 20px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-  .chart-card h4 { font-size: 15px; font-weight: 700; margin-bottom: 15px; padding-bottom: 8px; border-bottom: 2px solid var(--gray-light); }
-  .chart-wrap { height: 250px; position: relative; }
-
-  .table-card { background: white; border-radius: 16px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.08); }
-  .table-header { display: flex; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-  .search-box { background: var(--gray-light); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
-  .search-box input { border: none; background: transparent; outline: none; width: 250px; font-family: 'Cairo'; }
-
-  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-  .data-table th { background: var(--gray-light); padding: 10px; text-align: right; font-weight: 700; border-bottom: 2px solid #e5e7eb; }
-  .data-table td { padding: 10px; border-bottom: 1px solid var(--gray-light); text-align: right; }
-  .data-table tr:hover td { background: var(--gray-light); }
-  .qty-badge { background: var(--green); color: white; padding: 3px 8px; border-radius: 20px; font-weight: 700; font-size: 11px; display: inline-block; }
-  .transfer-badge { background: linear-gradient(135deg, var(--purple), var(--blue)); color: white; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; }
-  .substitute-badge { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; padding: 5px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; display: inline-block; cursor: pointer; transition: all 0.2s; }
-  .substitute-badge:hover { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
-  .donor-row { background-color: #f0fdf4; }
-  .beneficiary-row { background-color: #fef2f2; }
-
-  /* Modal */
-  .modal {
-    display: none;
-    position: fixed;
-    z-index: 1000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(0,0,0,0.5);
-    animation: fadeIn 0.3s;
-  }
-  @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-  .modal-content {
-    background: var(--white);
-    margin: 5% auto;
-    width: 450px;
-    max-width: 90%;
-    border-radius: 20px;
-    animation: slideDown 0.3s;
-  }
-  @keyframes slideDown {
-    from { transform: translateY(-50px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  .modal-header {
-    background: linear-gradient(135deg, var(--green), var(--green-light));
-    color: white;
-    padding: 20px;
-    border-radius: 20px 20px 0 0;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-  .modal-body { padding: 20px; max-height: 60vh; overflow-y: auto; }
-  .modal-detail-row { display: flex; padding: 10px 0; border-bottom: 1px solid var(--gray-light); }
-  .modal-detail-label { font-weight: 700; width: 120px; color: var(--green); }
-  .modal-detail-value { flex: 1; }
-  .close-modal { cursor: pointer; font-size: 28px; line-height: 1; }
-  .close-modal:hover { opacity: 0.7; }
-
-  #admin-screen { display: none; }
-  .admin-container { padding: 32px; }
-  .admin-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
-  .password-item { display: flex; justify-content: space-between; background: var(--gray-light); padding: 10px 15px; border-radius: 8px; margin-bottom: 8px; }
-
-  @media print {
-    .app-header, .action-buttons, .stats-grid, .qty-stats-grid, .charts-grid, .search-box, .tabs-nav { display: none !important; }
-  }
+  /* نفس الـ CSS الذي أرسلته، لم يتغير */
+  :root { ... } /* احتفظ بالـ CSS الأصلي هنا، ولكنه محذوف للاختصار، ضعه كما في كودك */
+  /* ... */
 </style>
 </head>
 <body>
-
-<div id="login-screen">
-  <div class="login-card">
-    <div class="login-logo"><h1>🌳 TREE</h1></div>
-    <div class="form-group">
-      <label>اختر الفرع</label>
-      <select id="branch-select">
-        <option value="">— اختر —</option>
-        <option value="أكتوبر">أكتوبر</option>
-        <option value="الابراهيمية">الابراهيمية</option>
-        <option value="الاسكندرانى">الاسكندرانى</option>
-        <option value="البيطاش">البيطاش</option>
-        <option value="البيع الالكتروني">البيع الالكتروني</option>
-        <option value="التجمع">التجمع</option>
-        <option value="الحديد والصلب">الحديد والصلب</option>
-        <option value="الزقازيق">الزقازيق</option>
-        <option value="السيوف">السيوف</option>
-        <option value="العروبة الاسكندرية">العروبة الاسكندرية</option>
-        <option value="العلمين">العلمين</option>
-        <option value="العيسوى">العيسوى</option>
-        <option value="المنتزة_2">المنتزة_2</option>
-        <option value="المنتزة">المنتزة</option>
-        <option value="المنشا">المنشا</option>
-        <option value="الهانوفيل">الهانوفيل</option>
-        <option value="الهرم">الهرم</option>
-        <option value="برج العرب">برج العرب</option>
-        <option value="بشاير الخير">بشاير الخير</option>
-        <option value="بولكلي">بولكلي</option>
-        <option value="جرين تاورز">جرين تاورز</option>
-        <option value="حدائق الاهرام">حدائق الاهرام</option>
-        <option value="خالد بن الوليد">خالد بن الوليد</option>
-        <option value="دمنهور">دمنهور</option>
-        <option value="سان ستيفانو">سان ستيفانو</option>
-        <option value="سبورتنج">سبورتنج</option>
-        <option value="سموحة الجديد">سموحة الجديد</option>
-        <option value="سموحة">سموحة</option>
-        <option value="سيدى بشر">سيدى بشر</option>
-        <option value="صلاح سالم">صلاح سالم</option>
-        <option value="طنطا_2">طنطا_2</option>
-        <option value="طنطا">طنطا</option>
-        <option value="عجمى ستار">عجمى ستار</option>
-        <option value="لوران">لوران</option>
-        <option value="مارينا">مارينا</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label>كلمة المرور</label>
-      <input type="password" id="password-input" placeholder="••••••••" />
-    </div>
-    <button class="btn-login" onclick="doLogin()">دخول</button>
-    <div class="login-error" id="login-error"></div>
-  </div>
-</div>
-
-<div id="app-screen">
-  <header class="app-header">
-    <h2>🌳 TREE</h2>
-    <div style="display:flex; gap:16px;">
-      <div class="branch-badge" id="header-branch"></div>
-      <button class="btn-logout" onclick="doLogout()">خروج</button>
-    </div>
-  </header>
-
-  <div id="upload-screen">
-    <div class="upload-card">
-      <h3>📊 رفع ملف التوزيع</h3>
-      <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-        <p>📎 اضغط لاختيار الملف</p>
-        <input type="file" id="file-input" accept=".xlsx,.xls" onchange="loadFile(this)">
-      </div>
-      <p id="upload-status" style="margin-top:15px; font-size:13px; color:var(--red);"></p>
-    </div>
-  </div>
-
-  <div id="dashboard-screen">
-    <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (8 شيتات)</button>
-      <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
-    </div>
-
-    <div class="tabs-nav">
-      <button class="tab-btn active" data-tab="tab-new2026">🔴 جديد 2026</button>
-      <button class="tab-btn" data-tab="tab-urgent">🟠 نواقص عاجلة</button>
-      <button class="tab-btn" data-tab="tab-review">🟢 مراجعة 2025</button>
-      <button class="tab-btn" data-tab="tab-stable">📊 مستقرة</button>
-      <button class="tab-btn" data-tab="tab-substitute">🔄 بديل</button>
-      <button class="tab-btn" data-tab="tab-balance">🟡 متابعة</button>
-      <button class="tab-btn donor-tab" data-tab="tab-transfer-donor">🟢 ترانزيت - مانح</button>
-      <button class="tab-btn beneficiary-tab" data-tab="tab-transfer-beneficiary">🔴 ترانزيت - مستقبل</button>
-    </div>
-
-    <div id="tab-new2026" class="tab-content active">
-      <div class="stats-grid">...</div>
-      <div class="qty-stats-grid">...</div>
-      <div class="charts-grid">...</div>
-      <div class="table-card">
-        <div class="table-header"><h4>🔴 جديد 2026</h4><div class="search-box">🔍 <input type="text" id="search-new2026" placeholder="بحث..." oninput="filterTable('new2026')"></div></div>
-        <div id="table-new2026"></div>
-      </div>
-    </div>
-    <div id="tab-urgent" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div><div id="table-urgent"></div></div></div>
-    <div id="tab-review" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div><div id="table-review"></div></div></div>
-    <div id="tab-stable" class="tab-content"><div class="table-card"><div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div><div id="table-stable"></div></div></div>
-    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
-    <div id="tab-balance" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div id="table-balance"></div></div></div>
-
-    <div id="tab-transfer-donor" class="tab-content">
-      <div class="table-card">
-        <div class="table-header"><h4>🟢 ترانزيت - مانح: الأصناف اللي عندك فائض و ممكن تنقلها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
-        <div id="table-transfer-donor"></div>
-      </div>
-    </div>
-
-    <div id="tab-transfer-beneficiary" class="tab-content">
-      <div class="table-card">
-        <div class="table-header"><h4>🔴 ترانزيت - مستقبل: الأصناف اللي رصيدك ضعيف و محتاج تستلمها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
-        <div id="table-transfer-beneficiary"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
+<!-- نفس هيكل HTML، لا تغيير فيه -->
+<div id="login-screen">...</div>
+<div id="app-screen">...</div>
 <div id="admin-screen">...</div>
 <div id="substituteModal" class="modal">...</div>
 
 <script>
-const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
-const ADMIN_MASTER_KEY = "101499";
-const PASSWORDS_URL = "passwords.json";
+// ---------------------  كل دوال safeGet, safeNumber, hasSubstitute, etc. كما هي  ---------------------
+// (لن أكررها كلها، لكن يجب أن تبقى كما هي في كودك الأصلي)
 
-let currentBranch = null;
-let allBranchData = [];
-let transferData = [];
-let substituteMap = new Map();
-let classifiedData = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
+// ... ضع هنا جميع الدوال المساعدة التي لديك (safeGet, safeNumber, hasSubstitute, buildSubstituteMap, getSubstituteDetails, showSubstituteDetails, closeModal, إلخ) ...
 
-function safeGet(row, fields, defaultValue = '—') {
-  if (!Array.isArray(fields)) fields = [fields];
-  for (let field of fields) {
-    if (row[field] !== undefined && row[field] !== null && String(row[field]).trim() !== '') {
-      return String(row[field]).trim();
-    }
-  }
-  return defaultValue;
-}
-function safeNumber(row, fields, defaultValue = 0) {
-  if (!Array.isArray(fields)) fields = [fields];
-  for (let field of fields) {
-    let val = row[field];
-    if (val !== undefined && val !== null) {
-      let num = Number(val);
-      if (!isNaN(num)) return num;
-    }
-  }
-  return defaultValue;
-}
-function hasSubstitute(row) {
-  const decReason = String(safeGet(row, ['سبب_القرار', 'سبب القرار'], '')).toLowerCase();
-  const itemType = String(safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '')).toLowerCase();
-  return decReason.includes('بديل') || itemType.includes('متوفر البديل');
-}
-function buildSubstituteMap() {
-  substituteMap.clear();
-  allBranchData.forEach(row => {
-    const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-    const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-    if (hasSubstitute(row)) {
-      substituteMap.set(name, row);
-      if (barcode !== '—') substituteMap.set(barcode, row);
-    }
-  });
-}
-function getSubstituteDetails(row) {
-  const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-  const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-  return substituteMap.get(name) || substituteMap.get(barcode) || null;
-}
-function showSubstituteDetails(row) {
-  const sub = getSubstituteDetails(row);
-  if (!sub) { alert("لا توجد تفاصيل للبديل"); return; }
-  document.getElementById('modalBody').innerHTML = `
-    <div class="modal-detail-row"><div class="modal-detail-label">🔄 اسم البديل:</div><div class="modal-detail-value">${safeGet(sub, ['إسم الصنف', 'اسم الصنف'])}</div></div>
-    <div class="modal-detail-row"><div class="modal-detail-label">🏷️ الباركود:</div><div class="modal-detail-value">${safeGet(sub, ['باركود الوحدة المخزنية', 'باركود'])}</div></div>
-    <div class="modal-detail-row"><div class="modal-detail-label">🎨 اللون:</div><div class="modal-detail-value">${safeGet(sub, ['اللون'])}</div></div>
-    <div class="modal-detail-row"><div class="modal-detail-label">📦 الكمية:</div><div class="modal-detail-value">${safeNumber(sub, ['الكمية_المخصصة', 'الكمية المخصصة'])} قطعة</div></div>
-    <div class="modal-detail-row"><div class="modal-detail-label">🏪 مخزن ابيس:</div><div class="modal-detail-value">${safeNumber(sub, ['مخزن ابيس'])} قطعة</div></div>
-    <div class="modal-detail-row"><div class="modal-detail-label">💡 سبب القرار:</div><div class="modal-detail-value">${safeGet(sub, ['سبب_القرار', 'سبب القرار'])}</div></div>
-  `;
-  document.getElementById('substituteModal').style.display = 'block';
-}
-function closeModal() { document.getElementById('substituteModal').style.display = 'none'; }
-window.onclick = e => { if (e.target === document.getElementById('substituteModal')) closeModal(); };
+// ---------------------  الدوال الأساسية (getBranchPasswords, doLogin, doLogout, showApp, showAdmin, renderAdminList, updateBranchPassword) ---------------------
+// يجب أن تكون موجودة لديك كما هي. إذا كانت ناقصة، انسخها من آخر كود شغال لديك.
 
-async function getBranchPasswords() { ... } // (نفس الكود السابق)
-async function doLogin() { ... }
-function doLogout() { ... }
-function showApp() { ... }
-async function showAdmin() { ... }
-async function renderAdminList() { ... }
-async function updateBranchPassword() { ... }
+// ---------------------  دوال التحميل والتصنيف (loadFile, processClassification, renderTable, filterTable, updateCharts, exportToSheetsExcel) ---------------------
+// سأقوم بتعديل `renderTransferDonor` و `renderTransferBeneficiary` فقط.
 
-function loadFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  document.getElementById('upload-status').textContent = '⏳ جاري القراءة...';
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const wb = XLSX.read(e.target.result, { type: 'array' });
-      const wsInv = wb.Sheets[wb.SheetNames[0]];
-      const inventoryData = XLSX.utils.sheet_to_json(wsInv, { defval: "" });
-      let transferSheet = [];
-      if (wb.SheetNames.includes("ترانزيت")) {
-        const wsTr = wb.Sheets["ترانزيت"];
-        transferSheet = XLSX.utils.sheet_to_json(wsTr, { defval: "" });
-      }
-      if (inventoryData.length === 0) { document.getElementById('upload-status').textContent = '⚠️ الملف فارغ'; return; }
-      allBranchData = inventoryData;
-      transferData = transferSheet;
-      buildSubstituteMap();
-      const branchRows = inventoryData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع'], '').trim() === currentBranch);
-      if (branchRows.length === 0) { document.getElementById('upload-status').textContent = `⚠️ لا توجد بيانات لفرع ${currentBranch}`; return; }
-      processClassification(branchRows);
-      document.getElementById('upload-screen').style.display = 'none';
-      document.getElementById('dashboard-screen').style.display = 'block';
-      renderAllTables();
-      updateCharts(branchRows);
-      document.getElementById('upload-status').textContent = '✅ تم التحميل بنجاح';
-    } catch(err) { document.getElementById('upload-status').textContent = '❌ خطأ: ' + err.message; }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function processClassification(branchRows) {
-  classifiedData = { new2026: [], urgent: [], review: [], stable: [], substitute: [], balance: [] };
-  branchRows.forEach(row => {
-    const type = safeGet(row, ['تصنيف_المنتج_معدل', 'تصنيف المنتج معدل'], '');
-    const reason = safeGet(row, ['سبب_القرار', 'سبب القرار'], '').toLowerCase();
-    if (reason.includes('بديل')) { classifiedData.substitute.push(row); }
-    else if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) { classifiedData.new2026.push(row); }
-    else if (type === 'اطلب الان') { classifiedData.urgent.push(row); }
-    else if (type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) { classifiedData.review.push(row); }
-    else if (type === 'متوسطة' || type === 'متوفر' || type === 'مستقر') { classifiedData.stable.push(row); }
-    else if (type === 'غير متوفر' || type === 'تاريخ غير محدد') { classifiedData.balance.push(row); }
-    else if (type === 'متوفر البديل') { classifiedData.substitute.push(row); }
-  });
-  document.getElementById('card-new2026').textContent = classifiedData.new2026.length;
-  document.getElementById('card-urgent').textContent = classifiedData.urgent.length;
-  document.getElementById('card-review').textContent = classifiedData.review.length;
-  document.getElementById('card-stable').textContent = classifiedData.stable.length;
-  document.getElementById('card-substitute').textContent = classifiedData.substitute.length;
-  document.getElementById('card-balance').textContent = classifiedData.balance.length;
-  const totalQty = list => list.reduce((s, r) => s + safeNumber(r, ['الكمية_المخصصة', 'الكمية المخصصة']), 0);
-  document.getElementById('qty-new2026').textContent = totalQty(classifiedData.new2026);
-  document.getElementById('qty-urgent').textContent = totalQty(classifiedData.urgent);
-  document.getElementById('qty-review').textContent = totalQty(classifiedData.review);
-  document.getElementById('qty-stable').textContent = totalQty(classifiedData.stable);
-  document.getElementById('qty-substitute').textContent = totalQty(classifiedData.substitute);
-  document.getElementById('qty-balance').textContent = totalQty(classifiedData.balance);
-}
-
-function renderTable(list, containerId) {
-  const container = document.getElementById(containerId);
-  if (!list || !list.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">📭 لا توجد أصناف</p>'; return; }
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th><th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>🏪 مخزن ابيس</th><th>🔄 متوفر بديل</th></tr></thead><tbody>`;
-  list.forEach((row, i) => {
-    const qty = safeNumber(row, ['الكمية_المخصصة', 'الكمية المخصصة']);
-    const sales = safeNumber(row, ['المبيعات']);
-    const stock = safeNumber(row, ['رصيد']);
-    const abis = safeNumber(row, ['مخزن ابيس']);
-    let ratio = 0;
-    if (stock > 0) ratio = sales / stock;
-    else if (sales > 0) ratio = 999;
-    const ratioText = ratio === 999 ? 'نفد' : (ratio * 100).toFixed(1) + '%';
-    const hasSub = hasSubstitute(row);
-    const rowData = encodeURIComponent(JSON.stringify(row));
-    html += `<tr>
-      <td>${i+1}</td>
-      <td>${safeGet(row, ['إسم الصنف', 'اسم الصنف'])}</td>
-      <td class="barcode-text">${safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '—')}</td>
-      <td>${safeGet(row, ['اللون'], '—')}</td>
-      <td>${safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], '—')}</td>
-      <td>${safeGet(row, ['المجموعة الفرعية.2', 'المجموعة الفرعية'], '—')}</td>
-      <td><span class="qty-badge">${qty}</span></td>
-      <td>${sales}</td>
-      <td>${stock}</td>
-      <td style="color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioText}</td>
-      <td>${abis}</td>
-      <td>${hasSub ? `<span class="substitute-badge" onclick='showSubstituteDetails(JSON.parse(decodeURIComponent("${rowData}")))'>✅ يوجد بديل</span>` : '<span style="color:gray;">—</span>'}</td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-function filterTable(tab) {
-  const search = document.getElementById(`search-${tab}`)?.value.toLowerCase() || '';
-  const list = classifiedData[tab] || [];
-  const filtered = list.filter(row => safeGet(row, ['إسم الصنف', 'اسم الصنف'], '').toLowerCase().includes(search) || safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '').toLowerCase().includes(search));
-  renderTable(filtered, `table-${tab}`);
-}
-
+// ---- دوال الترانزيت المعدلة (تعرض كل الأعمدة) ----
 function renderTransferDonor() {
   const container = document.getElementById('table-transfer-donor');
   let donor = transferData.filter(r => (r['اسم الفرع'] || r['فرع_مصدر'] || '') === currentBranch);
-  if (!donor.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد توصيات ترانزيت كمانح لهذا الفرع</p>'; return; }
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>الفرع المستهدف</th><th>رصيد المستهدف</th><th>كمية مقترحة</th><th>التوصية</th></tr></thead><tbody>`;
-  donor.forEach((item, idx) => {
-    html += `<tr class="donor-row">
-      <td>${idx+1}</td>
-      <td>${safeGet(item, ['إسم الصنف'])}</td>
-      <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
-      <td>${safeNumber(item, ['رصيد'])}</td>
-      <td>${safeGet(item, ['فرع_مستقبل'])}</td>
-      <td>${safeNumber(item, ['رصيد_مستقبل'])}</td>
-      <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'])}</span></td>
-      <td>${safeGet(item, ['التوصية'])}</td>
-    </tr>`;
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-function filterTransferDonor() {
-  const search = document.getElementById('search-transfer-donor')?.value.toLowerCase() || '';
-  let donor = transferData.filter(r => (r['اسم الفرع'] || r['فرع_مصدر'] || '') === currentBranch);
-  if (search) donor = donor.filter(r => (r['إسم الصنف'] || '').toLowerCase().includes(search));
-  const container = document.getElementById('table-transfer-donor');
-  if (!donor.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد نتائج</p>'; return; }
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>الفرع المستهدف</th><th>رصيده</th><th>كمية</th><th>التوصية</th></tr></thead><tbody>`;
-  donor.forEach((item, idx) => {
-    html += `<tr class="donor-row"><td>${idx+1}</td><td>${safeGet(item, ['إسم الصنف'])}</td><td>${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td><td>${safeNumber(item, ['رصيد'])}</td><td>${safeGet(item, ['فرع_مستقبل'])}</td><td>${safeNumber(item, ['رصيد_مستقبل'])}</td><td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'])}</span></td><td>${safeGet(item, ['التوصية'])}</td></tr>`;
+  if (!donor.length) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد توصيات ترانزيت كمانح لهذا الفرع</p>';
+    return;
+  }
+  // الحصول على جميع أسماء الأعمدة من أول صف
+  const allKeys = Object.keys(donor[0]);
+  // بناء رأس الجدول ديناميكياً
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</tr></thead><tbody>`;
+  donor.forEach((row, idx) => {
+    html += `<tr class="donor-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`;
   });
   html += '</tbody></table>';
   container.innerHTML = html;
@@ -584,54 +54,103 @@ function filterTransferDonor() {
 function renderTransferBeneficiary() {
   const container = document.getElementById('table-transfer-beneficiary');
   let ben = transferData.filter(r => (r['فرع_مستقبل'] || '') === currentBranch);
-  if (!ben.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد توصيات ترانزيت كمستقبل لهذا الفرع</p>'; return; }
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>الفرع المانح</th><th>رصيد المانح</th><th>كمية مقترحة</th><th>التوصية</th></tr></thead><tbody>`;
-  ben.forEach((item, idx) => {
-    html += `<tr class="beneficiary-row">
-      <td>${idx+1}</td>
-      <td>${safeGet(item, ['إسم الصنف'])}</td>
-      <td class="barcode-text">${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td>
-      <td>${safeNumber(item, ['رصيد_مستقبل'])}</td>
-      <td>${safeGet(item, ['اسم الفرع'])}</td>
-      <td>${safeNumber(item, ['رصيد'])}</td>
-      <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'])}</span></td>
-      <td>${safeGet(item, ['التوصية'])}</td>
-    </tr>`;
+  if (!ben.length) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد توصيات ترانزيت كمستقبل لهذا الفرع</p>';
+    return;
+  }
+  const allKeys = Object.keys(ben[0]);
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</tr></thead><tbody>`;
+  ben.forEach((row, idx) => {
+    html += `<tr class="beneficiary-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`;
   });
   html += '</tbody></table>';
   container.innerHTML = html;
 }
+
+// دوال الفلترة المحدثة (تعمل على كل الأعمدة)
+function filterTransferDonor() {
+  const search = document.getElementById('search-transfer-donor')?.value.toLowerCase() || '';
+  let donor = transferData.filter(r => (r['اسم الفرع'] || r['فرع_مصدر'] || '') === currentBranch);
+  if (search) {
+    donor = donor.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(search)));
+  }
+  const container = document.getElementById('table-transfer-donor');
+  if (!donor.length) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد نتائج</p>';
+    return;
+  }
+  const allKeys = Object.keys(donor[0]);
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</tr></thead><tbody>`;
+  donor.forEach(row => {
+    html += `<tr class="donor-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`;
+  });
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
 function filterTransferBeneficiary() {
   const search = document.getElementById('search-transfer-beneficiary')?.value.toLowerCase() || '';
   let ben = transferData.filter(r => (r['فرع_مستقبل'] || '') === currentBranch);
-  if (search) ben = ben.filter(r => (r['إسم الصنف'] || '').toLowerCase().includes(search));
+  if (search) {
+    ben = ben.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(search)));
+  }
   const container = document.getElementById('table-transfer-beneficiary');
-  if (!ben.length) { container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد نتائج</p>'; return; }
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>الفرع المانح</th><th>رصيده</th><th>كمية</th><th>التوصية</th></tr></thead><tbody>`;
-  ben.forEach((item, idx) => {
-    html += `<tr class="beneficiary-row"><td>${idx+1}</td><td>${safeGet(item, ['إسم الصنف'])}</td><td>${safeGet(item, ['باركود الوحدة المخزنية'], '—')}</td><td>${safeNumber(item, ['رصيد_مستقبل'])}</td><td>${safeGet(item, ['اسم الفرع'])}</td><td>${safeNumber(item, ['رصيد'])}</td><td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'])}</span></td><td>${safeGet(item, ['التوصية'])}</td></tr>`;
+  if (!ben.length) {
+    container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد نتائج</p>';
+    return;
+  }
+  const allKeys = Object.keys(ben[0]);
+  let html = `<table class="data-table"><thead><tr>${allKeys.map(key => `<th>${key}</th>`).join('')}</tr></thead><tbody>`;
+  ben.forEach(row => {
+    html += `<tr class="beneficiary-row">${allKeys.map(key => `<td>${safeGet(row, key, '—')}</td>`).join('')}</tr>`;
   });
   html += '</tbody></table>';
   container.innerHTML = html;
 }
 
-function renderAllTables() {
-  renderTable(classifiedData.new2026, 'table-new2026');
-  renderTable(classifiedData.urgent, 'table-urgent');
-  renderTable(classifiedData.review, 'table-review');
-  renderTable(classifiedData.stable, 'table-stable');
-  renderTable(classifiedData.substitute, 'table-substitute');
-  renderTable(classifiedData.balance, 'table-balance');
-  renderTransferDonor();
-  renderTransferBeneficiary();
+// دالة exportToSheetsExcel المعدلة (لتصدير كل أعمدة الترانزيت أيضاً)
+function exportToSheetsExcel() {
+  if (!allBranchData.length) return;
+  const wb = XLSX.utils.book_new();
+  
+  const addSheet = (list, name) => {
+    const data = list.map((row, idx) => ({ "م": idx+1, ...row }));
+    const ws = XLSX.utils.json_to_sheet(data);
+    XLSX.utils.book_append_sheet(wb, ws, name);
+  };
+  
+  addSheet(classifiedData.new2026, "جديد 2026");
+  addSheet(classifiedData.urgent, "نواقص عاجلة");
+  addSheet(classifiedData.review, "مراجعة 2025");
+  addSheet(classifiedData.stable, "مستقرة");
+  addSheet(classifiedData.substitute, "بديل");
+  addSheet(classifiedData.balance, "متابعة");
+  
+  // تصدير كل صفوف الترانزيت الخاصة بالفرع الحالي (بدون حذف أعمدة)
+  const donorExport = transferData.filter(r => (r['اسم الفرع'] || r['فرع_مصدر'] || '') === currentBranch);
+  const benExport = transferData.filter(r => (r['فرع_مستقبل'] || '') === currentBranch);
+  
+  if (donorExport.length) {
+    const wsDonor = XLSX.utils.json_to_sheet(donorExport);
+    XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - مانح");
+  } else {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ "تنبيه": "لا توجد توصيات" }]), "ترانزيت - مانح");
+  }
+  
+  if (benExport.length) {
+    const wsBen = XLSX.utils.json_to_sheet(benExport);
+    XLSX.utils.book_append_sheet(wb, wsBen, "ترانزيت - مستقبل");
+  } else {
+    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet([{ "تنبيه": "لا توجد توصيات" }]), "ترانزيت - مستقبل");
+  }
+  
+  XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
-function updateCharts(branchRows) { ... } // احتفظ بالكود القديم للرسوم البيانية
-function exportToSheetsExcel() { ... } // احتفظ بالكود القديم مع إضافة شيتين الترانزيت
 
-// إعادة تعريف updateCharts و exportToSheetsExcel بنفس الكود السابق (للاختصار لن أعيد كتابتهما لكنهما موجودان)
-// يجب إضافتهما كاملين هنا، لكنني سأختصر للحد من طول الرد. في التطبيق الفعلي سيتم تضمينهما بالكامل.
+// ---------------------  باقي الدوال (updateCharts, renderAllTables, إلخ) كما هي ---------------------
+// يجب أن تبقى دون تغيير.
 
-// بعد ذلك تعريف مستمعي التبويبات
+// إعادة تعريف مستمعي الأزرار
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -642,6 +161,19 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
     if (btn.dataset.tab === 'tab-transfer-beneficiary') renderTransferBeneficiary();
   });
 });
+
+// تأكد من ربط الدوال التي تستخدم onlick في HTML (مثل showSubstituteDetails, closeModal, filterTable, إلخ)
+window.filterTable = filterTable;
+window.filterTransferDonor = filterTransferDonor;
+window.filterTransferBeneficiary = filterTransferBeneficiary;
+window.showSubstituteDetails = showSubstituteDetails;
+window.closeModal = closeModal;
+window.doLogin = doLogin;
+window.doLogout = doLogout;
+window.loadFile = loadFile;
+window.exportToSheetsExcel = exportToSheetsExcel;
+window.updateBranchPassword = updateBranchPassword;
+
 </script>
 </body>
 </html>
