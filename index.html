@@ -268,11 +268,7 @@ let allBranchData = [];
 let transferData = [];
 let classifiedData = { new2026:[], urgent:[], review:[], stable:[], substitute:[], balance:[] };
 let categoriesChart = null, colorChart = null;
-
-// ✅ خريطة البدائل: باركود الأصل → بيانات البديل
-// البديل هو الصنف اللي سبب_القرار بتاعه يحتوي على "بديل"
-// والأصل هو الصنف اللي سبب_القرار بتاعه يحتوي على باركود البديل أو اسمه
-let substituteMap = new Map(); // barcode أو اسم الأصل → بيانات البديل
+let substituteMap = new Map();
 
 function safeGet(row, fields, def='—') {
   if (!Array.isArray(fields)) fields = [fields];
@@ -291,39 +287,30 @@ function safeNum(row, fields, def=0) {
   return def;
 }
 
-// ✅ إصلاح: البديل يُحدد فقط لو سبب_القرار يحتوي على "بديل"
 function hasSubstitute(row) {
   const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '');
   return reason.includes('بديل');
 }
 
-// ✅ بناء خريطة البدائل من البيانات
 function buildSubstituteMap() {
   substituteMap.clear();
-  // أولاً: نجمع كل الأصناف اللي هي بدائل (سبب_القرار يحتوي "بديل")
-  // البديل نفسه بيكون له باركود، والأصل له إشارة إليه في سبب_القرار
   allBranchData.forEach(row => {
     const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '');
     if (reason.includes('بديل')) {
-      // الصنف ده له بديل — نحفظ البديل بالباركود
       const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
       const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-      // نحاول نستخرج اسم/باركود البديل من سبب_القرار
-      // مثال: "يوجد بديل: بنطلون X" أو "متوفر البديل 123456"
       substituteMap.set(barcode, row);
       substituteMap.set(name, row);
     }
   });
 }
 
-// ✅ الحصول على بيانات البديل للصنف
 function getSubstitute(row) {
   const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
   const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
   return substituteMap.get(barcode) || substituteMap.get(name) || null;
 }
 
-// ✅ toggle لعرض/إخفاء بيانات البديل inline
 function toggleSubstitute(btnId, panelId) {
   const panel = document.getElementById(panelId);
   const btn = document.getElementById(btnId);
@@ -333,11 +320,10 @@ function toggleSubstitute(btnId, panelId) {
     if (btn) btn.textContent = '🔄 إخفاء البديل';
   } else {
     panel.style.display = 'none';
-    if (btn) btn.textContent = '🔄 راجع البديل';
+    if (btn) btn.textContent = '🔄 مراجعة البديل';
   }
 }
 
-// ✅ بناء HTML للبانيل البديل
 function buildSubstitutePanel(subRow, panelId) {
   if (!subRow) return '';
   const qty = safeNum(subRow, ['الكمية_المخصصة', 'الكمية المخصصة']);
@@ -455,29 +441,14 @@ function processClassification(branchRows) {
   branchRows.forEach(row => {
     const type = safeGet(row, ['تصنيف_المنتج_معدل','تصنيف المنتج معدل'], '');
     const reason = safeGet(row, ['سبب_القرار','سبب قرار'], '');
-
-    // ✅ تبويب البديل: فقط لو سبب_القرار يحتوي "بديل"
-    if (reason.includes('بديل')) {
-      classifiedData.substitute.push(row);
-      return; // ✅ لا يظهر في تبويب تاني
-    }
-
-    // ✅ باقي التبويبات حسب التصنيف
-    if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) {
-      classifiedData.new2026.push(row);
-    } else if (type === 'اطلب الان') {
-      classifiedData.urgent.push(row);
-    } else if (type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) {
-      classifiedData.review.push(row);
-    } else if (['متوسطة','متوفر','مستقر'].includes(type)) {
-      classifiedData.stable.push(row);
-    } else if (['غير متوفر','تاريخ غير محدد'].includes(type)) {
-      classifiedData.balance.push(row);
-    } else if (type !== '') {
-      classifiedData.review.push(row);
-    }
+    if (reason.includes('بديل')) { classifiedData.substitute.push(row); return; }
+    if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) { classifiedData.new2026.push(row); }
+    else if (type === 'اطلب الان') { classifiedData.urgent.push(row); }
+    else if (type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) { classifiedData.review.push(row); }
+    else if (['متوسطة','متوفر','مستقر'].includes(type)) { classifiedData.stable.push(row); }
+    else if (['غير متوفر','تاريخ غير محدد'].includes(type)) { classifiedData.balance.push(row); }
+    else if (type !== '') { classifiedData.review.push(row); }
   });
-
   const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent=v; };
   set('card-new2026', classifiedData.new2026.length);
   set('card-urgent', classifiedData.urgent.length);
@@ -485,7 +456,6 @@ function processClassification(branchRows) {
   set('card-stable', classifiedData.stable.length);
   set('card-substitute', classifiedData.substitute.length);
   set('card-balance', classifiedData.balance.length);
-
   const totalQty = list => list.reduce((s,r) => s + safeNum(r,['الكمية_المخصصة','الكمية المخصصة']), 0);
   set('qty-new2026', totalQty(classifiedData.new2026));
   set('qty-urgent', totalQty(classifiedData.urgent));
@@ -495,7 +465,6 @@ function processClassification(branchRows) {
   set('qty-balance', totalQty(classifiedData.balance));
 }
 
-// ✅ renderTable مع زر البديل التفاعلي
 function renderTable(list, containerId) {
   const container = document.getElementById(containerId);
   if (!list || !list.length) {
@@ -508,9 +477,6 @@ function renderTable(list, containerId) {
     <th>الكمية</th><th>المبيعات</th><th>الرصيد</th>
     <th>نسبة البيع</th><th>مخزن ابيس</th><th>🔄 بديل</th>
   </tr></thead><tbody>`;
-
-  let panels = '';
-
   list.forEach((row, i) => {
     const qty   = safeNum(row, ['الكمية_المخصصة','الكمية المخصصة']);
     const sales = safeNum(row, ['المبيعات']);
@@ -523,7 +489,6 @@ function renderTable(list, containerId) {
     const subRow = hasSub ? getSubstitute(row) : null;
     const btnId = `btn-sub-${containerId}-${i}`;
     const panelId = `panel-sub-${containerId}-${i}`;
-
     html += `<tr>
       <td style="text-align:center;">${i+1}</td>
       <td>${safeGet(row,['إسم الصنف','اسم الصنف'])}</td>
@@ -542,13 +507,10 @@ function renderTable(list, containerId) {
           : '<span style="color:var(--gray);">—</span>'}
       </td>
     </tr>`;
-
-    // ✅ البانيل يجي بعد كل صف مباشرة كصف كامل
     if (hasSub && subRow) {
       html += `<tr><td colspan="12" style="padding:0 10px 10px;">${buildSubstitutePanel(subRow, panelId)}</td></tr>`;
     }
   });
-
   html += '</tbody></table>';
   container.innerHTML = html;
 }
@@ -567,15 +529,10 @@ function filterTable(tab) {
 function renderTransferTable(data, containerId, rowClass) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  if (!data.length) {
-    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات</p>';
-    return;
-  }
+  if (!data.length) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات</p>'; return; }
   const keys = Object.keys(data[0]);
   let html = `<table class="data-table"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>`;
-  data.forEach(row => {
-    html += `<tr class="${rowClass}">${keys.map(k=>`<td>${safeGet(row,k,'—')}</td>`).join('')}</tr>`;
-  });
+  data.forEach(row => { html += `<tr class="${rowClass}">${keys.map(k=>`<td>${safeGet(row,k,'—')}</td>`).join('')}</tr>`; });
   html += '</tbody></table>';
   container.innerHTML = html;
 }
@@ -616,11 +573,7 @@ function renderAllTables() {
 }
 
 function updateCharts(branchRows) {
-  const counts = [
-    classifiedData.new2026.length, classifiedData.urgent.length,
-    classifiedData.review.length, classifiedData.stable.length,
-    classifiedData.substitute.length, classifiedData.balance.length
-  ];
+  const counts = [classifiedData.new2026.length, classifiedData.urgent.length, classifiedData.review.length, classifiedData.stable.length, classifiedData.substitute.length, classifiedData.balance.length];
   if (categoriesChart) categoriesChart.destroy();
   const ctx1 = document.getElementById('categories-chart')?.getContext('2d');
   if (ctx1) {
@@ -647,9 +600,7 @@ function updateCharts(branchRows) {
 function exportToExcel() {
   if (!allBranchData.length) return;
   const wb = XLSX.utils.book_new();
-  const addSheet = (list, name) => {
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(list.map((r,i)=>({'م':i+1,...r}))), name);
-  };
+  const addSheet = (list, name) => { XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(list.map((r,i)=>({'م':i+1,...r}))), name); };
   addSheet(classifiedData.new2026, 'جديد 2026');
   addSheet(classifiedData.urgent, 'نواقص عاجلة');
   addSheet(classifiedData.review, 'مراجعة 2025');
@@ -663,7 +614,6 @@ function exportToExcel() {
   XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
-// Tabs
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -676,7 +626,6 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
   });
 });
 
-// Global functions
 window.toggleSubstitute = toggleSubstitute;
 window.doLogin = doLogin;
 window.doLogout = doLogout;
