@@ -131,6 +131,12 @@
   .tab-btn:hover:not(.active) {
     background: #e0e7e0;
   }
+  .donor-tab.active {
+    background: linear-gradient(135deg, #15803d, #22c55e);
+  }
+  .beneficiary-tab.active {
+    background: linear-gradient(135deg, #b91c1c, #ef4444);
+  }
   
   .tab-content {
     display: none;
@@ -270,10 +276,11 @@
 
   <div id="dashboard-screen">
     <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel (8 شيتات)</button>
+      <button class="btn-action btn-excel" onclick="exportToSheetsExcel()">📊 تصدير Excel</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
+    <!-- تبويبات التصنيفات + ترانزيت -->
     <div class="tabs-nav">
       <button class="tab-btn active" data-tab="tab-new2026">🔴 جديد 2026</button>
       <button class="tab-btn" data-tab="tab-urgent">🟠 نواقص عاجلة</button>
@@ -285,6 +292,7 @@
       <button class="tab-btn beneficiary-tab" data-tab="tab-transfer-beneficiary">🔴 ترانزيت - مستقبل</button>
     </div>
 
+    <!-- تبويب جديد 2026 -->
     <div id="tab-new2026" class="tab-content active">
       <div class="stats-grid">
         <div class="stat-card red"><div class="stat-label">🔴 جديد 2026</div><div class="stat-value" id="card-new2026">0</div><div class="stat-sub">صنف</div></div>
@@ -312,27 +320,32 @@
       </div>
     </div>
 
+    <!-- تبويب نواقص عاجلة -->
     <div id="tab-urgent" class="tab-content">
       <div class="table-card"><div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div><div style="overflow-x:auto;" id="table-urgent"></div></div>
     </div>
 
+    <!-- تبويب مراجعة 2025 -->
     <div id="tab-review" class="tab-content">
       <div class="table-card"><div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div><div style="overflow-x:auto;" id="table-review"></div></div>
     </div>
 
+    <!-- تبويب مستقرة -->
     <div id="tab-stable" class="tab-content">
       <div class="table-card"><div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div><div style="overflow-x:auto;" id="table-stable"></div></div>
     </div>
 
+    <!-- تبويب بديل -->
     <div id="tab-substitute" class="tab-content">
       <div class="table-card"><div class="table-header"><h4>🔄 بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div style="overflow-x:auto;" id="table-substitute"></div></div>
     </div>
 
+    <!-- تبويب متابعة -->
     <div id="tab-balance" class="tab-content">
       <div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div style="overflow-x:auto;" id="table-balance"></div></div>
     </div>
 
-    <!-- ترانزيت - مانح (الفرع الحالي هو المصدر) -->
+    <!-- تبويب ترانزيت - مانح (الفرع الحالي عنده فائض) -->
     <div id="tab-transfer-donor" class="tab-content">
       <div class="table-card">
         <div class="table-header"><h4>🟢 ترانزيت - مانح: الأصناف اللي عندك فائض و ممكن تنقلها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
@@ -340,7 +353,7 @@
       </div>
     </div>
 
-    <!-- ترانزيت - مستقبل (الفرع الحالي هو المستهدف) -->
+    <!-- تبويب ترانزيت - مستقبل (الفرع الحالي محتاج مخزون) -->
     <div id="tab-transfer-beneficiary" class="tab-content">
       <div class="table-card">
         <div class="table-header"><h4>🔴 ترانزيت - مستقبل: الأصناف اللي رصيدك ضعيف و محتاج تستلمها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
@@ -611,7 +624,7 @@ function renderTransferDonor() {
                     <th>#</th><th>إسم الصنف</th><th>الباركود</th>
                     <th>رصيدك الحالي</th><th>الحد الأدنى (ريشيو)</th>
                     <th>الفرع المستهدف</th><th>رصيد المستهدف</th>
-                    <th>كمية مقترحة للنقل</th><th>التفاصيل</th>
+                    <th>كمية مقترحة للنقل</th>
                   </tr>
                 </thead>
                 <tbody>`;
@@ -626,11 +639,10 @@ function renderTransferDonor() {
               <td>${safeGet(item, ['فرع_مستقبل', 'فرع_المستقبل'], '—')}</td>
               <td>${safeNumber(item, ['رصيد_مستقبل', 'رصيد_المستقبل'], 0)}</td>
               <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة', 'كمية_الترانزيت'], 0)}</span></td>
-              <td><span class="transfer-badge">📦 انقل</span></td>
               </tr>`;
   });
   
-  html += '</tbody></td>';
+  html += '</tbody></table>';
   container.innerHTML = html;
 }
 
@@ -654,7 +666,7 @@ function filterTransferDonor() {
     return;
   }
   
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>ريشيو</th><th>الفرع المستهدف</th><th>رصيده</th><th>كمية</th><th>الإجراء</th></tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>ريشيو</th><th>الفرع المستهدف</th><th>رصيده</th><th>كمية</th></tr></thead><tbody>`;
   donorData.forEach((item, idx) => {
     html += `<tr class="donor-row">
               <td>${idx+1}</td>
@@ -665,10 +677,9 @@ function filterTransferDonor() {
               <td>${safeGet(item, ['فرع_مستقبل'], '—')}</td>
               <td>${safeNumber(item, ['رصيد_مستقبل'], 0)}</td>
               <td><span class="transfer-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
-              <td><span class="transfer-badge">📦 انقل</span></td>
               </tr>`;
   });
-  html += '</tbody></table>';
+  html += '</tbody><table>';
   container.innerHTML = html;
 }
 
@@ -695,7 +706,7 @@ function renderTransferBeneficiary() {
                     <th>#</th><th>إسم الصنف</th><th>الباركود</th>
                     <th>رصيدك الحالي</th><th>الحد الأدنى (ريشيو)</th>
                     <th>الفرع المانح</th><th>رصيد المانح</th>
-                    <th>كمية مقترحة للإستلام</th><th>التفاصيل</th>
+                    <th>كمية مقترحة للإستلام</th>
                   </tr>
                 </thead>
                 <tbody>`;
@@ -710,11 +721,10 @@ function renderTransferBeneficiary() {
               <td>${safeGet(item, ['فرع_مصدر', 'اسم الفرع'], '—')}</td>
               <td>${safeNumber(item, ['رصيد_مصدر', 'رصيد'], 0)}</td>
               <td><span class="warning-badge">${safeNumber(item, ['كمية_مقترحة', 'كمية_الترانزيت'], 0)}</span></td>
-              <td><span class="warning-badge">📦 استلم</span></td>
               </tr>`;
   });
   
-  html += '</tbody></tr>';
+  html += '</tbody><table>';
   container.innerHTML = html;
 }
 
@@ -738,7 +748,7 @@ function filterTransferBeneficiary() {
     return;
   }
   
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>ريشيو</th><th>الفرع المانح</th><th>رصيده</th><th>كمية</th><th>الإجراء</th></tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>إسم الصنف</th><th>الباركود</th><th>رصيدك</th><th>ريشيو</th><th>الفرع المانح</th><th>رصيده</th><th>كمية</th></tr></thead><tbody>`;
   beneficiaryData.forEach((item, idx) => {
     html += `<tr class="beneficiary-row">
               <td>${idx+1}</td>
@@ -749,7 +759,6 @@ function filterTransferBeneficiary() {
               <td>${safeGet(item, ['فرع_مصدر'], '—')}</td>
               <td>${safeNumber(item, ['رصيد_مصدر'], 0)}</td>
               <td><span class="warning-badge">${safeNumber(item, ['كمية_مقترحة'], 0)}</span></td>
-              <td><span class="warning-badge">📦 استلم</span></td>
               </tr>`;
   });
   html += '</tbody></table>';
@@ -890,6 +899,7 @@ function exportToSheetsExcel() {
   XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+// تشغيل التبويبات
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
