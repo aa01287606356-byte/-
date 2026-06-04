@@ -104,8 +104,8 @@
   .sub-item-value { font-size:13px; font-weight:700; color:var(--green); }
   @keyframes fadeIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:translateY(0); } }
 
-  .donor-row { background-color:#f0fdf4; }
-  .beneficiary-row { background-color:#fef2f2; }
+  .donor-row { background-color:#f0fdf4 !important; }
+  .beneficiary-row { background-color:#fef2f2 !important; }
 
   /* MODAL */
   .modal { display:none; position:fixed; z-index:1000; left:0; top:0; width:100%; height:100%; background:rgba(0,0,0,0.5); }
@@ -230,14 +230,14 @@
 
     <div id="tab-transfer-donor" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🟢 ترانزيت - مانح</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
+        <div class="table-header"><h4>🟢 ترانزيت - مانح (الفرع الحالي هو الراسل)</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
         <div id="table-transfer-donor"></div>
       </div>
     </div>
 
     <div id="tab-transfer-beneficiary" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🔴 ترانزيت - مستقبل</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
+        <div class="table-header"><h4>🔴 ترانزيت - مستقبل (الفرع الحالي هو المستلم)</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
         <div id="table-transfer-beneficiary"></div>
       </div>
     </div>
@@ -267,12 +267,12 @@ let currentBranch = null;
 let allBranchData = [];
 let transferData = [];
 let classifiedData = { new2026:[], urgent:[], review:[], stable:[], substitute:[], balance:[] };
+let filteredDonorData = [];
+let filteredBeneficiaryData = [];
 let categoriesChart = null, colorChart = null;
 
-// ✅ خريطة البدائل: باركود الأصل → بيانات البديل
-// البديل هو الصنف اللي سبب_القرار بتاعه يحتوي على "بديل"
-// والأصل هو الصنف اللي سبب_القرار بتاعه يحتوي على باركود البديل أو اسمه
-let substituteMap = new Map(); // barcode أو اسم الأصل → بيانات البديل
+// خريطة البدائل
+let substituteMap = new Map(); 
 
 function safeGet(row, fields, def='—') {
   if (!Array.isArray(fields)) fields = [fields];
@@ -291,39 +291,30 @@ function safeNum(row, fields, def=0) {
   return def;
 }
 
-// ✅ إصلاح: البديل يُحدد فقط لو سبب_القرار يحتوي على "بديل"
 function hasSubstitute(row) {
   const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '');
   return reason.includes('بديل');
 }
 
-// ✅ بناء خريطة البدائل من البيانات
 function buildSubstituteMap() {
   substituteMap.clear();
-  // أولاً: نجمع كل الأصناف اللي هي بدائل (سبب_القرار يحتوي "بديل")
-  // البديل نفسه بيكون له باركود، والأصل له إشارة إليه في سبب_القرار
   allBranchData.forEach(row => {
     const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '');
     if (reason.includes('بديل')) {
-      // الصنف ده له بديل — نحفظ البديل بالباركود
       const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
       const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-      // نحاول نستخرج اسم/باركود البديل من سبب_القرار
-      // مثال: "يوجد بديل: بنطلون X" أو "متوفر البديل 123456"
       substituteMap.set(barcode, row);
       substituteMap.set(name, row);
     }
   });
 }
 
-// ✅ الحصول على بيانات البديل للصنف
 function getSubstitute(row) {
   const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
   const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
   return substituteMap.get(barcode) || substituteMap.get(name) || null;
 }
 
-// ✅ toggle لعرض/إخفاء بيانات البديل inline
 function toggleSubstitute(btnId, panelId) {
   const panel = document.getElementById(panelId);
   const btn = document.getElementById(btnId);
@@ -337,7 +328,6 @@ function toggleSubstitute(btnId, panelId) {
   }
 }
 
-// ✅ بناء HTML للبانيل البديل
 function buildSubstitutePanel(subRow, panelId) {
   if (!subRow) return '';
   const qty = safeNum(subRow, ['الكمية_المخصصة', 'الكمية المخصصة']);
@@ -427,19 +417,28 @@ function loadFile(input) {
       const wb = XLSX.read(e.target.result, { type:'array' });
       const wsInv = wb.Sheets[wb.SheetNames[0]];
       const inventoryData = XLSX.utils.sheet_to_json(wsInv, { defval:'' });
+      
       let transferSheetData = [];
       if (wb.SheetNames.includes('ترانزيت')) {
         transferSheetData = XLSX.utils.sheet_to_json(wb.Sheets['ترانزيت'], { defval:'' });
       }
+      
       if (!inventoryData.length) throw new Error('الملف فارغ');
       allBranchData = inventoryData;
       transferData = transferSheetData;
       buildSubstituteMap();
+      
       const branchRows = inventoryData.filter(r => safeGet(r,['اسم الفرع','الفرع'],'') === currentBranch);
-      if (!branchRows.length) throw new Error(`لا توجد بيانات لفرع ${currentBranch}`);
+      if (!branchRows.length && !transferData.length) {
+        throw new Error(`لا توجد بيانات لفرع ${currentBranch} في صفحة المخزون أو الترانزيت`);
+      }
+      
       processClassification(branchRows);
+      processTransferData();
+      
       document.getElementById('upload-screen').style.display='none';
       document.getElementById('dashboard-screen').style.display='block';
+      
       renderAllTables();
       updateCharts(branchRows);
       document.getElementById('upload-status').textContent='✅ تم التحميل';
@@ -456,13 +455,11 @@ function processClassification(branchRows) {
     const type = safeGet(row, ['تصنيف_المنتج_معدل','تصنيف المنتج معدل'], '');
     const reason = safeGet(row, ['سبب_القرار','سبب قرار'], '');
 
-    // ✅ تبويب البديل: فقط لو سبب_القرار يحتوي "بديل"
     if (reason.includes('بديل')) {
       classifiedData.substitute.push(row);
-      return; // ✅ لا يظهر في تبويب تاني
+      return; 
     }
 
-    // ✅ باقي التبويبات حسب التصنيف
     if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) {
       classifiedData.new2026.push(row);
     } else if (type === 'اطلب الان') {
@@ -495,7 +492,25 @@ function processClassification(branchRows) {
   set('qty-balance', totalQty(classifiedData.balance));
 }
 
-// ✅ renderTable مع زر البديل التفاعلي
+function processTransferData() {
+  filteredDonorData = [];
+  filteredBeneficiaryData = [];
+  
+  if (!transferData || !transferData.length) return;
+  
+  transferData.forEach(row => {
+    const donorBranch = safeGet(row, ['الفرع المانح', 'الفرع_المانح', 'مانح']);
+    const beneficiaryBranch = safeGet(row, ['الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل']);
+    
+    if (donorBranch === currentBranch) {
+      filteredDonorData.push(row);
+    }
+    if (beneficiaryBranch === currentBranch) {
+      filteredBeneficiaryData.push(row);
+    }
+  });
+}
+
 function renderTable(list, containerId) {
   const container = document.getElementById(containerId);
   if (!list || !list.length) {
@@ -508,8 +523,6 @@ function renderTable(list, containerId) {
     <th>الكمية</th><th>المبيعات</th><th>الرصيد</th>
     <th>نسبة البيع</th><th>مخزن ابيس</th><th>🔄 بديل</th>
   </tr></thead><tbody>`;
-
-  let panels = '';
 
   list.forEach((row, i) => {
     const qty   = safeNum(row, ['الكمية_المخصصة','الكمية المخصصة']);
@@ -543,7 +556,6 @@ function renderTable(list, containerId) {
       </td>
     </tr>`;
 
-    // ✅ البانيل يجي بعد كل صف مباشرة كصف كامل
     if (hasSub && subRow) {
       html += `<tr><td colspan="12" style="padding:0 10px 10px;">${buildSubstitutePanel(subRow, panelId)}</td></tr>`;
     }
@@ -551,6 +563,56 @@ function renderTable(list, containerId) {
 
   html += '</tbody></table>';
   container.innerHTML = html;
+}
+
+function renderTransferTable(data, containerId, rowClass) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  if (!data.length) {
+    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات تحويلات متطابقة في هذا التبويب</p>';
+    return;
+  }
+
+  let html = `<table class="data-table"><thead><tr>
+    <th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th>
+    <th>الفرع المانح</th><th>الفرع المستقبل</th><th>كمية الترانزيت</th><th>السبب / الملاحظات</th>
+  </tr></thead><tbody>`;
+
+  data.forEach((row, i) => {
+    const name = safeGet(row, ['إسم الصنف', 'اسم الصنف', 'الصنف']);
+    const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود', 'الباركود'], '—');
+    const color = safeGet(row, ['اللون'], '—');
+    const donor = safeGet(row, ['الفرع المانح', 'الفرع_المانح', 'مانح'], '—');
+    const beneficiary = safeGet(row, ['الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل'], '—');
+    const qty = safeNum(row, ['كمية التحويل', 'كمية_التحويل', 'الكمية', 'الكمية المخصصة']);
+    const notes = safeGet(row, ['السبب', 'سبب القرار', 'ملاحظات'], '—');
+
+    html += `<tr class="${rowClass}">
+      <td style="text-align:center;">${i+1}</td>
+      <td><strong>${name}</strong></td>
+      <td>${barcode}</td>
+      <td>${color}</td>
+      <td>${donor}</td>
+      <td>${beneficiary}</td>
+      <td style="text-align:center;"><span class="qty-badge" style="background:var(--gold);">${qty}</span></td>
+      <td>${notes}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table>';
+  container.innerHTML = html;
+}
+
+function renderAllTables() {
+  renderTable(classifiedData.new2026, 'table-new2026');
+  renderTable(classifiedData.urgent, 'table-urgent');
+  renderTable(classifiedData.review, 'table-review');
+  renderTable(classifiedData.stable, 'table-stable');
+  renderTable(classifiedData.substitute, 'table-substitute');
+  renderTable(classifiedData.balance, 'table-balance');
+  
+  renderTransferTable(filteredDonorData, 'table-transfer-donor', 'donor-row');
+  renderTransferTable(filteredBeneficiaryData, 'table-transfer-beneficiary', 'beneficiary-row');
 }
 
 function filterTable(tab) {
@@ -564,128 +626,123 @@ function filterTable(tab) {
   renderTable(filtered, `table-${tab}`);
 }
 
-function renderTransferTable(data, containerId, rowClass) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  if (!data.length) {
-    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات</p>';
-    return;
-  }
-  const keys = Object.keys(data[0]);
-  let html = `<table class="data-table"><thead><tr>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>`;
-  data.forEach(row => {
-    html += `<tr class="${rowClass}">${keys.map(k=>`<td>${safeGet(row,k,'—')}</td>`).join('')}</tr>`;
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-function renderTransferDonor() {
-  const data = transferData.filter(r => (r['اسم الفرع']||r['فرع_مصدر']||'') === currentBranch);
-  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
-}
-
-function renderTransferBeneficiary() {
-  const data = transferData.filter(r => (r['فرع_مستقبل']||'') === currentBranch);
-  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
-}
-
 function filterTransferDonor() {
-  const search = (document.getElementById('search-transfer-donor')?.value||'').toLowerCase();
-  let data = transferData.filter(r => (r['اسم الفرع']||r['فرع_مصدر']||'') === currentBranch);
-  if (search) data = data.filter(r => Object.values(r).some(v=>String(v).toLowerCase().includes(search)));
-  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
+  const search = (document.getElementById('search-transfer-donor')?.value || '').toLowerCase();
+  const filtered = search
+    ? filteredDonorData.filter(r =>
+        safeGet(r,['إسم الصنف','اسم الصنف','الصنف'],'').toLowerCase().includes(search) ||
+        safeGet(r,['باركود الوحدة المخزنية','باركود','الباركود'],'').toLowerCase().includes(search))
+    : filteredDonorData;
+  renderTransferTable(filtered, 'table-transfer-donor', 'donor-row');
 }
 
 function filterTransferBeneficiary() {
-  const search = (document.getElementById('search-transfer-beneficiary')?.value||'').toLowerCase();
-  let data = transferData.filter(r => (r['فرع_مستقبل']||'') === currentBranch);
-  if (search) data = data.filter(r => Object.values(r).some(v=>String(v).toLowerCase().includes(search)));
-  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
+  const search = (document.getElementById('search-transfer-beneficiary')?.value || '').toLowerCase();
+  const filtered = search
+    ? filteredBeneficiaryData.filter(r =>
+        safeGet(r,['إسم الصنف','اسم الصنف','الصنف'],'').toLowerCase().includes(search) ||
+        safeGet(r,['باركود الوحدة المخزنية','باركود','الباركود'],'').toLowerCase().includes(search))
+    : filteredBeneficiaryData;
+  renderTransferTable(filtered, 'table-transfer-beneficiary', 'beneficiary-row');
 }
 
-function renderAllTables() {
-  renderTable(classifiedData.new2026, 'table-new2026');
-  renderTable(classifiedData.urgent, 'table-urgent');
-  renderTable(classifiedData.review, 'table-review');
-  renderTable(classifiedData.stable, 'table-stable');
-  renderTable(classifiedData.substitute, 'table-substitute');
-  renderTable(classifiedData.balance, 'table-balance');
-  renderTransferDonor();
-  renderTransferBeneficiary();
-}
-
-function updateCharts(branchRows) {
-  const counts = [
-    classifiedData.new2026.length, classifiedData.urgent.length,
-    classifiedData.review.length, classifiedData.stable.length,
-    classifiedData.substitute.length, classifiedData.balance.length
-  ];
+function updateCharts(rows) {
   if (categoriesChart) categoriesChart.destroy();
-  const ctx1 = document.getElementById('categories-chart')?.getContext('2d');
-  if (ctx1) {
-    categoriesChart = new Chart(ctx1, {
-      type:'doughnut',
-      data:{ labels:['جديد 2026','نواقص عاجلة','مراجعة 2025','مستقرة','بديل','متابعة'], datasets:[{ data:counts, backgroundColor:['#dc2626','#ea580c','#1a6b3c','#0d9488','#2563eb','#ca8a04'] }] },
-      options:{ responsive:true, maintainAspectRatio:false }
-    });
-  }
-  const colorMap = {};
-  branchRows.forEach(r => { const c = safeGet(r,['اللون'],'غير محدد'); colorMap[c]=(colorMap[c]||0)+1; });
-  const sorted = Object.entries(colorMap).sort((a,b)=>b[1]-a[1]).slice(0,6);
   if (colorChart) colorChart.destroy();
-  const ctx2 = document.getElementById('color-chart')?.getContext('2d');
-  if (ctx2 && sorted.length) {
-    colorChart = new Chart(ctx2, {
-      type:'bar',
-      data:{ labels:sorted.map(a=>a[0]), datasets:[{ label:'عدد', data:sorted.map(a=>a[1]), backgroundColor:'#1a6b3c', borderRadius:6 }] },
-      options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}, scales:{y:{beginAtZero:true}} }
+
+  let catMap = {}, colorMap = {};
+  rows.forEach(r => {
+    let cat = safeGet(r, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], 'أخرى');
+    let color = safeGet(r, ['اللون'], 'غير محدد');
+    catMap[cat] = (catMap[cat] || 0) + 1;
+    colorMap[color] = (colorMap[color] || 0) + 1;
+  });
+
+  const makeChart = (canvasId, title, dataMap) => {
+    const ctx = document.getElementById(canvasId).getContext('2d');
+    return new Chart(ctx, {
+      type: 'doughnut',
+      data: {
+        labels: Object.keys(dataMap),
+        datasets: [{ data: Object.values(dataMap), backgroundColor: ['#1a6b3c','#c9a84c','#ea580c','#2563eb','#7c3aed','#0d9488','#dc2626','#ca8a04'] }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Cairo', size: 11 } } } } }
     });
-  }
+  };
+
+  categoriesChart = makeChart('categories-chart', 'الأصناف', catMap);
+  colorChart = makeChart('color-chart', 'الألوان', colorMap);
 }
 
 function exportToExcel() {
-  if (!allBranchData.length) return;
-  const wb = XLSX.utils.book_new();
-  const addSheet = (list, name) => {
-    XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(list.map((r,i)=>({'م':i+1,...r}))), name);
-  };
-  addSheet(classifiedData.new2026, 'جديد 2026');
-  addSheet(classifiedData.urgent, 'نواقص عاجلة');
-  addSheet(classifiedData.review, 'مراجعة 2025');
-  addSheet(classifiedData.stable, 'مستقرة');
-  addSheet(classifiedData.substitute, 'بديل');
-  addSheet(classifiedData.balance, 'متابعة');
-  const donor = transferData.filter(r=>(r['اسم الفرع']||r['فرع_مصدر']||'')===currentBranch);
-  const ben = transferData.filter(r=>(r['فرع_مستقبل']||'')===currentBranch);
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(donor.length?donor:[{'تنبيه':'لا توجد توصيات'}]), 'ترانزيت - مانح');
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(ben.length?ben:[{'تنبيه':'لا توجد توصيات'}]), 'ترانزيت - مستقبل');
-  XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
+  let wb = XLSX.utils.book_new();
+  
+  // 1. شيت المخزون الرئيسي للفرع الحالي
+  let mainRows = [];
+  Object.keys(classifiedData).forEach(k => { mainRows = mainRows.concat(classifiedData[k]); });
+  if (mainRows.length) {
+    let ws = XLSX.utils.json_to_sheet(mainRows);
+    XLSX.utils.book_append_sheet(wb, ws, "مخزون الفرع الموزع");
+  }
+  
+  // 2. شيت الترانزيت الصادر (المانح)
+  if (filteredDonorData.length) {
+    let wsDonor = XLSX.utils.json_to_sheet(filteredDonorData);
+    XLSX.utils.book_append_sheet(wb, wsDonor, "ترانزيت - فرع مانح");
+  }
+  
+  // 3. شيت الترانزيت الوارد (المستقبل)
+  if (filteredBeneficiaryData.length) {
+    let wsBeneficiary = XLSX.utils.json_to_sheet(filteredBeneficiaryData);
+    XLSX.utils.book_append_sheet(wb, wsBeneficiary, "ترانزيت - فرع مستقبل");
+  }
+  
+  XLSX.writeFile(wb, `TREE_${currentBranch}_Report.xlsx`);
 }
 
-// Tabs
+// إدارة التنقل بين التبويبات التفاعلية
 document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
-    document.querySelectorAll('.tab-content').forEach(t=>t.classList.remove('active'));
-    const tabId = btn.getAttribute('data-tab');
-    if (tabId) document.getElementById(tabId).classList.add('active');
-    if (tabId === 'tab-transfer-donor') renderTransferDonor();
-    if (tabId === 'tab-transfer-beneficiary') renderTransferBeneficiary();
+  btn.addEventListener('click', function() {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    
+    this.classList.add('active');
+    const targetTab = this.getAttribute('data-tab');
+    
+    // إذا ضغطنا على أزرار الترانزيت نضمن تفعيل المحتوى المقابل لها
+    if(targetTab === 'tab-transfer-donor') {
+      document.getElementById('tab-transfer-donor').classList.add('active');
+    } else if(targetTab === 'tab-transfer-beneficiary') {
+      document.getElementById('tab-transfer-beneficiary').classList.add('active');
+    } else {
+      // التبويبات القياسية الأخرى تعمل من خلال الشاشة الرئيسية الافتراضية لربط الـ Stats
+      document.getElementById('tab-new2026').classList.add('active');
+      document.querySelectorAll('#tab-new2026 .table-card').forEach(card => card.style.display = 'none');
+      
+      const specificTableCard = document.querySelector(`#${targetTab} .table-card`);
+      if(specificTableCard) {
+        const clone = specificTableCard.cloneNode(true);
+        // تحديث وظيفة الحذف والفلترة للنسخة المستنسخة بشكل ديناميكي
+        const input = clone.querySelector('input');
+        if(input) {
+          const tabName = targetTab.replace('tab-', '');
+          input.oninput = () => filterTable(tabName);
+        }
+        
+        // إظهار الجدول المستهدف في الحاوية الرئيسية للتبويبات
+        let container = document.getElementById('table-new2026');
+        if(targetTab === 'tab-new2026') {
+          document.querySelectorAll('#tab-new2026 > div').forEach(d => d.style.display = '');
+          filterTable('new2026');
+        } else {
+          document.getElementById('categories-chart').closest('.charts-grid').style.display = 'none';
+          document.getElementById('table-new2026').parentElement.innerHTML = clone.innerHTML;
+          filterTable(targetTab.replace('tab-', ''));
+        }
+      }
+    }
   });
 });
-
-// Global functions
-window.toggleSubstitute = toggleSubstitute;
-window.doLogin = doLogin;
-window.doLogout = doLogout;
-window.loadFile = loadFile;
-window.exportToExcel = exportToExcel;
-window.updateBranchPassword = updateBranchPassword;
-window.filterTable = filterTable;
-window.filterTransferDonor = filterTransferDonor;
-window.filterTransferBeneficiary = filterTransferBeneficiary;
 </script>
 </body>
 </html>
