@@ -179,7 +179,7 @@
   .search-box { background: var(--gray-light); border-radius: 8px; padding: 8px 14px; display: flex; align-items: center; gap: 8px; }
   .search-box input { border: none; background: transparent; outline: none; width: 250px; font-family: 'Cairo'; }
 
-  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+  .data-table { width: 100%; border-collapse: collapse; font-size: 12px; overflow-x: auto; display: block; }
   .data-table th { background: var(--gray-light); padding: 10px; text-align: right; font-weight: 700; border-bottom: 2px solid #e5e7eb; }
   .data-table td { padding: 10px; border-bottom: 1px solid var(--gray-light); text-align: right; }
   .data-table tr:hover td { background: var(--gray-light); }
@@ -363,22 +363,51 @@
       </div>
     </div>
 
-    <div id="tab-urgent" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div><div id="table-urgent"></div></div></div>
-    <div id="tab-review" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div><div id="table-review"></div></div></div>
-    <div id="tab-stable" class="tab-content"><div class="table-card"><div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div><div id="table-stable"></div></div></div>
-    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
-    <div id="tab-balance" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div id="table-balance"></div></div></div>
+    <div id="tab-urgent" class="tab-content">
+      <div class="table-card">
+        <div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div>
+        <div id="table-urgent"></div>
+      </div>
+    </div>
+
+    <div id="tab-review" class="tab-content">
+      <div class="table-card">
+        <div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div>
+        <div id="table-review"></div>
+      </div>
+    </div>
+
+    <div id="tab-stable" class="tab-content">
+      <div class="table-card">
+        <div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div>
+        <div id="table-stable"></div>
+      </div>
+    </div>
+
+    <div id="tab-substitute" class="tab-content">
+      <div class="table-card">
+        <div class="table-header"><h4>🔄 بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div>
+        <div id="table-substitute"></div>
+      </div>
+    </div>
+
+    <div id="tab-balance" class="tab-content">
+      <div class="table-card">
+        <div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div>
+        <div id="table-balance"></div>
+      </div>
+    </div>
 
     <div id="tab-transfer-donor" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🟢 ترانزيت - مانح: الأصناف اللي عندك فائض و ممكن تنقلها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
+        <div class="table-header"><h4>🟢 ترانزيت - مانح</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث..." oninput="filterTransferDonor()"></div></div>
         <div id="table-transfer-donor"></div>
       </div>
     </div>
 
     <div id="tab-transfer-beneficiary" class="tab-content">
       <div class="table-card">
-        <div class="table-header"><h4>🔴 ترانزيت - مستقبل: الأصناف اللي رصيدك ضعيف و محتاج تستلمها</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
+        <div class="table-header"><h4>🔴 ترانزيت - مستقبل</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث..." oninput="filterTransferBeneficiary()"></div></div>
         <div id="table-transfer-beneficiary"></div>
       </div>
     </div>
@@ -652,6 +681,7 @@ function processClassification(branchRows) {
   });
   
   const setText = (id, val) => { const el = document.getElementById(id); if(el) el.textContent = val; };
+  
   setText('card-new2026', classifiedData.new2026.length);
   setText('card-urgent', classifiedData.urgent.length);
   setText('card-review', classifiedData.review.length);
@@ -671,7 +701,7 @@ function processClassification(branchRows) {
 function renderTable(list, containerId) {
   const container = document.getElementById(containerId);
   if (!list || !list.length) { 
-    container.innerHTML = '<p style="text-align:center; padding:40px;">📭 لا توجد أصناف</p>'; 
+    if(container) container.innerHTML = '<p style="text-align:center; padding:40px;">📭 لا توجد أصناف</p>'; 
     return; 
   }
   let html = `<table class="data-table"><thead><tr>
@@ -704,7 +734,7 @@ function renderTable(list, containerId) {
       <td style="text-align:center; color:${ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280'}">${ratioText}</td>
       <td style="text-align:center;">${abis}</td>
       <td style="text-align:center;">${hasSub ? `<span class="substitute-badge" onclick='showSubstituteDetails(JSON.parse(decodeURIComponent("${rowData}")))'>✅ يوجد بديل</span>` : '<span style="color:gray;">—</span>'}</td>
-    </tr>`;
+     </tr>`;
   });
   html += '</tbody></table>';
   container.innerHTML = html;
@@ -722,6 +752,7 @@ function filterTable(tab) {
 
 function renderTransferDonor() {
   const container = document.getElementById('table-transfer-donor');
+  if(!container) return;
   let donor = transferData.filter(r => (r['اسم الفرع'] || r['فرع_مصدر'] || '') === currentBranch);
   if (!donor.length) { 
     container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد توصيات ترانزيت كمانح لهذا الفرع</p>'; 
@@ -737,12 +768,13 @@ function renderTransferDonor() {
 }
 
 function filterTransferDonor() {
+  const container = document.getElementById('table-transfer-donor');
+  if(!container) return;
   const search = document.getElementById('search-transfer-donor')?.value.toLowerCase() || '';
   let donor = transferData.filter(r => (r['اسم الفرع'] || r['فرع_مصدر'] || '') === currentBranch);
   if (search) {
     donor = donor.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(search)));
   }
-  const container = document.getElementById('table-transfer-donor');
   if (!donor.length) { 
     container.innerHTML = '<p style="text-align:center; padding:40px;">🟢 لا توجد نتائج</p>'; 
     return; 
@@ -758,6 +790,7 @@ function filterTransferDonor() {
 
 function renderTransferBeneficiary() {
   const container = document.getElementById('table-transfer-beneficiary');
+  if(!container) return;
   let ben = transferData.filter(r => (r['فرع_مستقبل'] || '') === currentBranch);
   if (!ben.length) { 
     container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد توصيات ترانزيت كمستقبل لهذا الفرع</p>'; 
@@ -773,12 +806,13 @@ function renderTransferBeneficiary() {
 }
 
 function filterTransferBeneficiary() {
+  const container = document.getElementById('table-transfer-beneficiary');
+  if(!container) return;
   const search = document.getElementById('search-transfer-beneficiary')?.value.toLowerCase() || '';
   let ben = transferData.filter(r => (r['فرع_مستقبل'] || '') === currentBranch);
   if (search) {
     ben = ben.filter(row => Object.values(row).some(val => String(val).toLowerCase().includes(search)));
   }
-  const container = document.getElementById('table-transfer-beneficiary');
   if (!ben.length) { 
     container.innerHTML = '<p style="text-align:center; padding:40px;">🔴 لا توجد نتائج</p>'; 
     return; 
@@ -809,27 +843,31 @@ function updateCharts(branchRows) {
     classifiedData.stable.length, classifiedData.substitute.length, classifiedData.balance.length
   ];
   if(categoriesChart) categoriesChart.destroy();
-  const ctx1 = document.getElementById('categories-chart').getContext('2d');
-  categoriesChart = new Chart(ctx1, { 
-    type: 'doughnut', 
-    data: { 
-      labels: ['جديد 2026', 'نواقص عاجلة', 'مراجعة 2025', 'مستقرة', 'بديل', 'متابعة'], 
-      datasets: [{ data: counts, backgroundColor: ['#dc2626', '#ea580c', '#1a6b3c', '#0d9488', '#2563eb', '#ca8a04'] }] 
-    }, 
-    options: { responsive: true, maintainAspectRatio: false } 
-  });
+  const ctx1 = document.getElementById('categories-chart')?.getContext('2d');
+  if(ctx1) {
+    categoriesChart = new Chart(ctx1, { 
+      type: 'doughnut', 
+      data: { 
+        labels: ['جديد 2026', 'نواقص عاجلة', 'مراجعة 2025', 'مستقرة', 'بديل', 'متابعة'], 
+        datasets: [{ data: counts, backgroundColor: ['#dc2626', '#ea580c', '#1a6b3c', '#0d9488', '#2563eb', '#ca8a04'] }] 
+      }, 
+      options: { responsive: true, maintainAspectRatio: false } 
+    });
+  }
   
   const colorMap = {};
   branchRows.forEach(row => { const color = safeGet(row, ['اللون'], 'غير محدد'); colorMap[color] = (colorMap[color] || 0) + 1; });
   const sortedColors = Object.entries(colorMap).sort((a,b) => b[1] - a[1]).slice(0,6);
   if(colorChart) colorChart.destroy();
   if (sortedColors.length > 0) {
-    const ctx2 = document.getElementById('color-chart').getContext('2d');
-    colorChart = new Chart(ctx2, { 
-      type: 'bar', 
-      data: { labels: sortedColors.map(([c]) => c), datasets: [{ label: 'عدد الأصناف', data: sortedColors.map(([,v]) => v), backgroundColor: '#1a6b3c', borderRadius: 6 }] }, 
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } 
-    });
+    const ctx2 = document.getElementById('color-chart')?.getContext('2d');
+    if(ctx2) {
+      colorChart = new Chart(ctx2, { 
+        type: 'bar', 
+        data: { labels: sortedColors.map(([c]) => c), datasets: [{ label: 'عدد الأصناف', data: sortedColors.map(([,v]) => v), backgroundColor: '#1a6b3c', borderRadius: 6 }] }, 
+        options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } } 
+      });
+    }
   }
 }
 
@@ -868,18 +906,20 @@ function exportToSheetsExcel() {
   XLSX.writeFile(wb, `تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
 }
 
+// Tab switching
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
     document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-    document.getElementById(btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'tab-transfer-donor') renderTransferDonor();
-    if (btn.dataset.tab === 'tab-transfer-beneficiary') renderTransferBeneficiary();
+    const tabId = btn.getAttribute('data-tab');
+    if(tabId) document.getElementById(tabId).classList.add('active');
+    if (tabId === 'tab-transfer-donor') renderTransferDonor();
+    if (tabId === 'tab-transfer-beneficiary') renderTransferBeneficiary();
   });
 });
 
-// تعريف الدوال في النطاق العام
+// Make functions global for onclick
 window.filterTable = filterTable;
 window.filterTransferDonor = filterTransferDonor;
 window.filterTransferBeneficiary = filterTransferBeneficiary;
