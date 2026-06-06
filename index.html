@@ -450,6 +450,7 @@ function processClassification(branchRows) {
     const type = safeGet(row, ['تصنيف_المنتج_معدل','تصنيف المنتج معدل'], '');
     const reason = safeGet(row, ['سبب_القرار','سبب قرار'], '');
     
+    // التعديل: فحص البديل بشكل منفصل دون منع إدراجه في الأيقونة الأساسية للمنتج
     if (reason.includes('بديل')) { 
       classifiedData.substitute.push(row); 
     }
@@ -564,95 +565,122 @@ function renderTransferDonor() {
 }
 
 function renderTransferBeneficiary() {
-  const data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المشتقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
+  const data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
   renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
 }
 
 function filterTable(tab) {
   const search = (document.getElementById(`search-${tab}`)?.value || '').toLowerCase();
-  const filtered = classifiedData[tab].filter(row => {
-    return safeGet(row, ['إسم الصنف', 'اسم الصنف']).toLowerCase().includes(search) ||
-           safeGet(row, ['كود الوحدة المخزنية', 'باركود الوحدة المخزنية', 'باركود']).toLowerCase().includes(search);
-  });
+  const list = classifiedData[tab] || [];
+  const filtered = search
+    ? list.filter(r =>
+        safeGet(r,['إسم الصنف','اسم الصنف'],'').toLowerCase().includes(search) ||
+        safeGet(r,['باركود الوحدة المخزنية','باركود'],'').toLowerCase().includes(search))
+    : list;
   renderTable(filtered, `table-${tab}`);
 }
 
 function filterTransferDonor() {
-  const search = (document.getElementById('search-transfer-donor')?.value || '').toLowerCase();
-  const data = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
-  const filtered = data.filter(row => {
-    return Object.values(row).some(val => String(val).toLowerCase().includes(search));
-  });
-  renderTransferTable(filtered, 'table-transfer-donor', 'donor-row');
+  const search = (document.getElementById('search-transfer-donor')?.value||'').toLowerCase();
+  let data = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
+  if (search) data = data.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
+  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
 }
 
 function filterTransferBeneficiary() {
-  const search = (document.getElementById('search-transfer-beneficiary')?.value || '').toLowerCase();
-  const data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المشقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
-  const filtered = data.filter(row => {
-    return Object.values(row).some(val => String(val).toLowerCase().includes(search));
-  });
-  renderTransferTable(filtered, 'table-transfer-beneficiary', 'beneficiary-row');
+  const search = (document.getElementById('search-transfer-beneficiary')?.value||'').toLowerCase();
+  let data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
+  if (search) data = data.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
+  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
 }
 
-function updateCharts(branchRows) {
-  const categories = {};
-  const colors = {};
-  
-  branchRows.forEach(row => {
-    const cat = safeGet(row, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], 'أخرى');
-    const col = safeGet(row, ['الالوان', 'اللون'], 'غير محدد');
-    categories[cat] = (categories[cat] || 0) + safeNum(row, ['الكمية_المخصصة', 'الكمية المخصصة']);
-    colors[col] = (colors[col] || 0) + safeNum(row, ['الكمية_المخصصة', 'الكمية المخصصة']);
-  });
-
+function updateCharts(rows) {
   if (categoriesChart) categoriesChart.destroy();
   if (colorChart) colorChart.destroy();
-
-  const ctxCat = document.getElementById('categories-chart')?.getContext('2d');
-  if (ctxCat) {
-    categoriesChart = new Chart(ctxCat, {
-      type: 'bar',
+  let catMap = {}, colorMap = {};
+  rows.forEach(r => {
+    let cat = safeGet(r, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], 'أخرى');
+    let color = safeGet(r, ['اللون'], 'غير محدد');
+    catMap[cat] = (catMap[cat] || 0) + 1;
+    colorMap[color] = (colorMap[color] || 0) + 1;
+  });
+  const makeChart = (canvasId, dataMap) => {
+    const el = document.getElementById(canvasId);
+    if(!el) return null;
+    const ctx = el.getContext('2d');
+    return new Chart(ctx, {
+      type: 'doughnut',
       data: {
-        labels: Object.keys(categories),
-        datasets: [{ data: Object.values(categories), backgroundColor: '#1a6b3c' }]
+        labels: Object.keys(dataMap),
+        datasets: [{ data: Object.values(dataMap), backgroundColor: ['#1a6b3c','#c9a84c','#ea580c','#2563eb','#7c3aed','#0d9488','#dc2626','#ca8a04'] }]
       },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
+      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Cairo', size: 11 } } } } }
     });
-  }
-
-  const ctxCol = document.getElementById('color-chart')?.getContext('2d');
-  if (ctxCol) {
-    colorChart = new Chart(ctxCol, {
-      type: 'pie',
-      data: {
-        labels: Object.keys(colors),
-        datasets: [{ data: Object.values(colors), backgroundColor: ['#ea580c', '#ca8a04', '#2563eb', '#7c3aed', '#0d9488', '#6b7280'] }]
-      },
-      options: { responsive: true, maintainAspectRatio: false }
-    });
-  }
+  };
+  categoriesChart = makeChart('categories-chart', catMap);
+  colorChart = makeChart('color-chart', colorMap);
 }
 
 function exportToExcel() {
-  const wb = XLSX.utils.book_new();
-  Object.keys(classifiedData).forEach(tab => {
-    if (classifiedData[tab].length) {
-      const ws = XLSX.utils.json_to_sheet(classifiedData[tab]);
-      XLSX.utils.book_append_sheet(wb, ws, tab);
-    }
+  let wb = XLSX.utils.book_new();
+  
+  // التعديل: تجميع شيت كامل بكل القوائم والأصناف (ما عدا شيتات الترانزيت) وضبطه ليكون أول شيت
+  let allCombinedItems = [
+    ...classifiedData.new2026,
+    ...classifiedData.urgent,
+    ...classifiedData.review,
+    ...classifiedData.stable,
+    ...classifiedData.substitute,
+    ...classifiedData.balance
+  ];
+  
+  let wsAll = XLSX.utils.json_to_sheet(allCombinedItems.length ? allCombinedItems : [{"تنبيه": "لا توجد أصناف"}]);
+  XLSX.utils.book_append_sheet(wb, wsAll, "📊 التقرير الشامل للفرع");
+  
+  // إضافة بقية شيتات الأيقونات المفصلة تلقائياً
+  const tabsConfig = [
+    { key: "new2026", name: "🔴 جديد 2026" },
+    { key: "urgent", name: "🟠 نواقص عاجلة" },
+    { key: "review", name: "🟢 مراجعة 2025" },
+    { key: "stable", name: "📊 مستقرة" },
+    { key: "substitute", name: "🔄 متوفر بديل" },
+    { key: "balance", name: "🟡 متابعة" }
+  ];
+  tabsConfig.forEach(tab => {
+    let list = classifiedData[tab.key] || [];
+    let ws = XLSX.utils.json_to_sheet(list.length ? list : [{"تنبيه": "لا توجد أصناف"}]);
+    XLSX.utils.book_append_sheet(wb, ws, tab.name);
   });
-  XLSX.writeFile(wb, `TREE_Inventory_${currentBranch}.xlsx`);
+  
+  let donorData = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
+  let beneficiaryData = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
+  
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(donorData.length ? donorData : [{"ملاحظة": "لا يوجد"}]), "🟢 ترانزيت - فرع مانح");
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(beneficiaryData.length ? beneficiaryData : [{"ملاحظة": "لا يوجد"}]), "🔴 ترانزيت - فرع مستقبل");
+  
+  XLSX.writeFile(wb, `TREE_${currentBranch}_Report.xlsx`);
 }
 
-// تفعيل التنقل بين التبويبات
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    this.classList.add('active');
-    const target = this.getAttribute('data-tab');
-    document.getElementById(target)?.classList.add('active');
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      
+      this.classList.add('active');
+      const tabId = this.getAttribute('data-tab');
+      const targetContent = document.getElementById(tabId);
+      if (targetContent) targetContent.classList.add('active');
+      
+      const summaryWidgets = document.getElementById('dashboard-summary-widgets');
+      if(summaryWidgets) {
+        if(tabId.includes('transfer')) {
+          summaryWidgets.style.display = 'none';
+        } else {
+          summaryWidgets.style.display = 'block';
+        }
+      }
+    });
   });
 });
 </script>
