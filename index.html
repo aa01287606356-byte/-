@@ -21,12 +21,16 @@
   /* LOGIN */
   #login-screen { min-height:100vh; display:flex; align-items:center; justify-content:center; background:linear-gradient(135deg,var(--green-dark),var(--green),var(--green-light)); }
   .login-card { background:white; border-radius:24px; padding:48px 40px; width:420px; box-shadow:0 32px 80px rgba(0,0,0,0.3); }
-  .login-logo h1 { font-size:32px; font-weight:900; color:var(--green); text-align:center; letter-spacing:2px; }
+  .login-logo h1 { font-size:32px; font-weight:900; color:var(--green); text-align:center; letter-spacing:2px; margin-bottom:8px; }
+  .login-logo p { font-size:12px; color:var(--gray); text-align:center; margin-bottom:24px; }
   .form-group { margin-bottom:20px; }
   .form-group label { display:block; font-size:13px; font-weight:600; color:var(--gray); margin-bottom:8px; }
-  .form-group select, .form-group input { width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:12px; font-family:'Cairo'; font-size:14px; outline:none; }
-  .btn-login { width:100%; padding:16px; background:linear-gradient(135deg,var(--green),var(--green-light)); color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer; font-family:'Cairo'; font-size:15px; }
+  .form-group select, .form-group input { width:100%; padding:14px 16px; border:2px solid #e5e7eb; border-radius:12px; font-family:'Cairo'; font-size:14px; outline:none; transition:border-color 0.2s; }
+  .form-group select:focus, .form-group input:focus { border-color:var(--green-light); }
+  .btn-login { width:100%; padding:16px; background:linear-gradient(135deg,var(--green),var(--green-light)); color:white; border:none; border-radius:12px; font-weight:700; cursor:pointer; font-family:'Cairo'; font-size:15px; transition:opacity 0.2s; }
+  .btn-login:hover { opacity:0.9; }
   .login-error { color:var(--red); background:#fef2f2; padding:12px; border-radius:8px; font-size:13px; text-align:center; margin-top:12px; display:none; }
+  .login-loading { color:var(--green); background:#f0fdf4; padding:12px; border-radius:8px; font-size:13px; text-align:center; margin-top:12px; display:none; }
 
   /* APP */
   #app-screen { display:none; }
@@ -36,30 +40,38 @@
 
   /* UPLOAD */
   #upload-screen { min-height:calc(100vh - 64px); display:flex; align-items:center; justify-content:center; padding:40px; }
-  .upload-card { background:white; border-radius:20px; padding:48px; text-align:center; max-width:500px; width:100%; }
-  .upload-zone { border:2px dashed var(--green-light); border-radius:16px; padding:32px; cursor:pointer; background:var(--gray-light); margin-top:20px; }
+  .upload-card { background:white; border-radius:20px; padding:48px; text-align:center; max-width:500px; width:100%; box-shadow:0 8px 32px rgba(0,0,0,0.08); }
+  .upload-zone { border:2px dashed var(--green-light); border-radius:16px; padding:32px; cursor:pointer; background:var(--gray-light); margin-top:20px; transition:all 0.2s; }
+  .upload-zone:hover { border-color:var(--green); background:#e8f5ed; }
   .upload-zone input { display:none; }
 
   /* DASHBOARD */
   #dashboard-screen { display:none; padding:32px; }
-  .action-buttons { display:flex; gap:12px; margin-bottom:20px; justify-content:flex-end; }
-  .btn-action { border:none; padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer; color:white; font-family:'Cairo'; }
+  .action-buttons { display:flex; gap:12px; margin-bottom:20px; justify-content:flex-end; flex-wrap:wrap; }
+  .btn-action { border:none; padding:10px 20px; border-radius:10px; font-weight:600; cursor:pointer; color:white; font-family:'Cairo'; font-size:13px; transition:opacity 0.2s; }
+  .btn-action:hover { opacity:0.85; }
   .btn-excel { background:#107c41; }
   .btn-print { background:var(--gold); }
+  .btn-scorecard { background:linear-gradient(135deg,var(--purple),var(--blue)); }
+  .btn-pareto { background:linear-gradient(135deg,var(--teal),var(--green)); }
+  .btn-analysis { background:linear-gradient(135deg,var(--orange),var(--yellow)); }
 
   /* TABS */
   .tabs-nav { display:flex; gap:8px; margin-bottom:24px; flex-wrap:wrap; background:white; padding:12px 20px; border-radius:20px; box-shadow:0 2px 8px rgba(0,0,0,0.05); }
-  .tab-btn { padding:10px 20px; border:none; background:var(--gray-light); border-radius:30px; font-family:'Cairo'; font-weight:600; cursor:pointer; transition:all 0.2s; color:var(--gray); }
+  .tab-btn { padding:10px 20px; border:none; background:var(--gray-light); border-radius:30px; font-family:'Cairo'; font-weight:600; cursor:pointer; transition:all 0.2s; color:var(--gray); font-size:13px; }
   .tab-btn.active { background:linear-gradient(135deg,var(--green),var(--green-light)); color:white; box-shadow:0 2px 8px rgba(26,107,60,0.3); }
   .tab-btn:hover:not(.active) { background:#e0e7e0; }
   .donor-tab.active { background:linear-gradient(135deg,#15803d,#22c55e); }
   .beneficiary-tab.active { background:linear-gradient(135deg,#b91c1c,#ef4444); }
+  .scorecard-tab.active { background:linear-gradient(135deg,var(--purple),var(--blue)); }
+  .pareto-tab.active { background:linear-gradient(135deg,var(--teal),var(--green)); }
+  .analysis-tab.active { background:linear-gradient(135deg,var(--orange),var(--yellow)); }
   .tab-content { display:none; }
   .tab-content.active { display:block; }
 
   /* STATS */
-  .stats-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:20px; margin-bottom:28px; }
-  .stat-card { background:white; border-radius:16px; padding:20px; text-align:center; cursor:pointer; transition:all 0.3s; border:2px solid transparent; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+  .stats-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:16px; margin-bottom:24px; }
+  .stat-card { background:white; border-radius:16px; padding:18px; text-align:center; cursor:pointer; transition:all 0.3s; border:2px solid transparent; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
   .stat-card:hover { transform:translateY(-4px); }
   .stat-card.red { border-right:4px solid var(--red); }
   .stat-card.orange { border-right:4px solid var(--orange); }
@@ -67,36 +79,34 @@
   .stat-card.teal { border-right:4px solid var(--teal); }
   .stat-card.blue { border-right:4px solid var(--blue); }
   .stat-card.yellow { border-right:4px solid var(--yellow); }
-  .stat-label { font-size:14px; font-weight:700; margin-bottom:8px; }
-  .stat-value { font-size:32px; font-weight:900; }
+  .stat-label { font-size:13px; font-weight:700; margin-bottom:6px; }
+  .stat-value { font-size:30px; font-weight:900; }
   .stat-sub { font-size:11px; color:var(--gray); margin-top:4px; }
-  .qty-stats-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:20px; margin-bottom:28px; }
-  .qty-card { background:white; border-radius:16px; padding:20px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); border-right:4px solid var(--gold); }
+  .qty-stats-grid { display:grid; grid-template-columns:repeat(6,1fr); gap:16px; margin-bottom:24px; }
+  .qty-card { background:white; border-radius:16px; padding:18px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); border-right:4px solid var(--gold); }
   .qty-label { font-size:12px; color:var(--gray); margin-bottom:4px; }
-  .qty-value { font-size:26px; font-weight:900; }
+  .qty-value { font-size:24px; font-weight:900; }
 
   /* CHARTS */
-  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:28px; }
+  .charts-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
   .chart-card { background:white; border-radius:16px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
   .chart-card h4 { font-size:15px; font-weight:700; margin-bottom:15px; padding-bottom:8px; border-bottom:2px solid var(--gray-light); }
   .chart-wrap { height:250px; position:relative; }
 
   /* TABLES */
-  .table-card { background:white; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
-  .table-header { display:flex; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; }
+  .table-card { background:white; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.08); overflow-x:auto; }
+  .table-header { display:flex; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:10px; align-items:center; }
   .search-box { background:var(--gray-light); border-radius:8px; padding:8px 14px; display:flex; align-items:center; gap:8px; }
-  .search-box input { border:none; background:transparent; outline:none; width:250px; font-family:'Cairo'; }
-  .data-table { width:100%; border-collapse:collapse; font-size:12px; }
+  .search-box input { border:none; background:transparent; outline:none; width:220px; font-family:'Cairo'; font-size:13px; }
+  .data-table { width:100%; border-collapse:collapse; font-size:12px; min-width:900px; }
   .data-table th { background:var(--gray-light); padding:10px; text-align:right; font-weight:700; border-bottom:2px solid #e5e7eb; white-space:nowrap; }
   .data-table td { padding:10px; border-bottom:1px solid var(--gray-light); text-align:right; }
-  .data-table tr:hover td { background:var(--gray-light); }
+  .data-table tr:hover td { background:#f8faf8; }
   .qty-badge { background:var(--green); color:white; padding:3px 8px; border-radius:20px; font-weight:700; font-size:11px; display:inline-block; }
 
   /* SUBSTITUTE */
-  .substitute-btn { background:linear-gradient(135deg,var(--blue),var(--purple)); color:white; padding:5px 12px; border-radius:20px; font-size:12px; font-weight:600; display:inline-block; cursor:pointer; border:none; font-family:'Cairo'; transition:all 0.2s; }
+  .substitute-btn { background:linear-gradient(135deg,var(--blue),var(--purple)); color:white; padding:5px 12px; border-radius:20px; font-size:11px; font-weight:600; display:inline-block; cursor:pointer; border:none; font-family:'Cairo'; transition:all 0.2s; }
   .substitute-btn:hover { transform:scale(1.05); box-shadow:0 2px 8px rgba(0,0,0,0.2); }
-
-  /* SUBSTITUTE INLINE PANEL */
   .substitute-panel { background:linear-gradient(135deg,#eff6ff,#f5f3ff); border:1px solid #c7d2fe; border-radius:12px; padding:14px 18px; margin-top:8px; font-size:12px; animation:fadeIn 0.2s ease; }
   .substitute-panel-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; }
   .sub-item { background:white; border-radius:8px; padding:8px; text-align:center; box-shadow:0 1px 4px rgba(0,0,0,0.06); }
@@ -107,20 +117,87 @@
   .donor-row { background-color:#f0fdf4 !important; }
   .beneficiary-row { background-color:#fef2f2 !important; }
 
+  /* ===== SCORECARD ===== */
+  .scorecard-container { padding:0; }
+  .scorecard-header { background:linear-gradient(135deg,var(--purple),var(--blue)); color:white; padding:24px 28px; border-radius:16px; margin-bottom:24px; display:flex; align-items:center; gap:16px; }
+  .scorecard-header h3 { font-size:20px; font-weight:900; }
+  .scorecard-header p { font-size:13px; opacity:0.85; margin-top:4px; }
+  .scorecard-kpis { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .kpi-card { background:white; border-radius:14px; padding:20px; text-align:center; box-shadow:0 4px 12px rgba(0,0,0,0.08); border-top:4px solid var(--purple); }
+  .kpi-icon { font-size:28px; margin-bottom:8px; }
+  .kpi-label { font-size:12px; color:var(--gray); margin-bottom:6px; font-weight:600; }
+  .kpi-value { font-size:28px; font-weight:900; color:var(--purple); }
+  .kpi-sub { font-size:11px; color:var(--gray); margin-top:4px; }
+  .scorecard-charts { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+  .top10-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:24px; }
+  .top10-card { background:white; border-radius:14px; padding:20px; box-shadow:0 4px 12px rgba(0,0,0,0.08); }
+  .top10-card h4 { font-size:14px; font-weight:800; margin-bottom:14px; padding-bottom:8px; border-bottom:2px solid var(--gray-light); display:flex; align-items:center; gap:8px; }
+  .top10-item { display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-bottom:1px solid var(--gray-light); font-size:12px; }
+  .top10-item:last-child { border-bottom:none; }
+  .top10-rank { background:var(--gray-light); width:24px; height:24px; border-radius:50%; display:inline-flex; align-items:center; justify-content:center; font-weight:700; font-size:11px; flex-shrink:0; margin-left:8px; }
+  .top10-rank.gold { background:var(--gold); color:white; }
+  .top10-rank.silver { background:#9ca3af; color:white; }
+  .top10-rank.bronze { background:#b45309; color:white; }
+  .top10-name { flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .top10-val { font-weight:700; color:var(--green); flex-shrink:0; margin-right:8px; }
+  .bar-bg { background:var(--gray-light); border-radius:4px; height:6px; margin-top:4px; }
+  .bar-fill { background:linear-gradient(90deg,var(--green),var(--green-light)); border-radius:4px; height:6px; transition:width 0.5s; }
+
+  /* ===== PARETO ===== */
+  .pareto-container {}
+  .pareto-header { background:linear-gradient(135deg,var(--teal),var(--green)); color:white; padding:24px 28px; border-radius:16px; margin-bottom:24px; }
+  .pareto-header h3 { font-size:20px; font-weight:900; }
+  .pareto-header p { font-size:13px; opacity:0.85; margin-top:4px; }
+  .pareto-chart-wrap { background:white; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:20px; }
+  .pareto-chart-wrap h4 { font-size:14px; font-weight:800; margin-bottom:16px; }
+  .pareto-canvas-wrap { height:320px; position:relative; }
+  .pareto-abc { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; margin-bottom:20px; }
+  .abc-card { border-radius:14px; padding:20px; text-align:center; color:white; }
+  .abc-card.a { background:linear-gradient(135deg,#dc2626,#ef4444); }
+  .abc-card.b { background:linear-gradient(135deg,#ea580c,#f97316); }
+  .abc-card.c { background:linear-gradient(135deg,#ca8a04,#eab308); }
+  .abc-label { font-size:14px; font-weight:700; margin-bottom:4px; }
+  .abc-value { font-size:32px; font-weight:900; }
+  .abc-sub { font-size:11px; opacity:0.85; margin-top:4px; }
+
+  /* ===== ANALYSIS ===== */
+  .analysis-container {}
+  .analysis-header { background:linear-gradient(135deg,var(--orange),var(--yellow)); color:white; padding:24px 28px; border-radius:16px; margin-bottom:24px; }
+  .analysis-header h3 { font-size:20px; font-weight:900; }
+  .analysis-header p { font-size:13px; opacity:0.9; margin-top:4px; }
+  .analysis-charts { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:20px; }
+  .analysis-table-wrap { background:white; border-radius:16px; padding:24px; box-shadow:0 4px 12px rgba(0,0,0,0.08); margin-bottom:20px; overflow-x:auto; }
+  .analysis-table-wrap h4 { font-size:14px; font-weight:800; margin-bottom:14px; padding-bottom:8px; border-bottom:2px solid var(--gray-light); }
+  .ratio-bar { display:flex; align-items:center; gap:8px; }
+  .ratio-fill { height:8px; border-radius:4px; min-width:4px; transition:width 0.4s; }
+  .ratio-text { font-size:11px; font-weight:700; white-space:nowrap; }
+
   /* ADMIN */
   #admin-screen { display:none; }
   .admin-container { padding:32px; }
   .admin-grid { display:grid; grid-template-columns:1fr 1fr; gap:24px; }
   .password-item { display:flex; justify-content:space-between; background:var(--gray-light); padding:10px 15px; border-radius:8px; margin-bottom:8px; }
 
+  /* MODAL */
+  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:1000; display:none; align-items:center; justify-content:center; }
+  .modal-overlay.active { display:flex; }
+  .modal-box { background:white; border-radius:20px; padding:32px; max-width:600px; width:90%; max-height:80vh; overflow-y:auto; }
+  .modal-close { float:left; background:none; border:none; font-size:20px; cursor:pointer; color:var(--gray); }
+
+  @media (max-width:1200px) { .stats-grid,.qty-stats-grid { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:768px) { .stats-grid,.qty-stats-grid { grid-template-columns:repeat(2,1fr); } .charts-grid,.scorecard-charts,.analysis-charts,.top10-grid { grid-template-columns:1fr; } .scorecard-kpis { grid-template-columns:repeat(2,1fr); } }
   @media print { .app-header,.action-buttons,.stats-grid,.qty-stats-grid,.charts-grid,.search-box,.tabs-nav { display:none !important; } }
 </style>
 </head>
 <body>
 
+<!-- LOGIN -->
 <div id="login-screen">
   <div class="login-card">
-    <div class="login-logo"><h1>🌳 TREE</h1></div>
+    <div class="login-logo">
+      <h1>🌳 TREE</h1>
+      <p>نظام إدارة المخزون والتوزيع</p>
+    </div>
     <div class="form-group">
       <label>اختر الفرع</label>
       <select id="branch-select">
@@ -145,13 +222,15 @@
     </div>
     <button class="btn-login" onclick="doLogin()">دخول</button>
     <div class="login-error" id="login-error"></div>
+    <div class="login-loading" id="login-loading">⏳ جاري التحقق...</div>
   </div>
 </div>
 
+<!-- APP -->
 <div id="app-screen">
   <header class="app-header">
     <h2>🌳 TREE</h2>
-    <div style="display:flex;gap:16px;">
+    <div style="display:flex;gap:16px;align-items:center;">
       <div class="branch-badge" id="header-branch"></div>
       <button class="btn-logout" onclick="doLogout()">خروج</button>
     </div>
@@ -159,9 +238,12 @@
 
   <div id="upload-screen">
     <div class="upload-card">
-      <h3>📊 رفع ملف التوزيع</h3>
+      <h3 style="color:var(--green);font-size:20px;font-weight:800;">📊 رفع ملف التوزيع</h3>
+      <p style="color:var(--gray);font-size:13px;margin-top:8px;">رفع ملف Excel لعرض بيانات الفرع والتقارير</p>
       <div class="upload-zone" onclick="document.getElementById('file-input').click()">
-        <p>📎 اضغط لاختيار الملف</p>
+        <div style="font-size:40px;margin-bottom:12px;">📎</div>
+        <p style="font-weight:600;color:var(--green);">اضغط لاختيار الملف</p>
+        <p style="font-size:12px;color:var(--gray);margin-top:4px;">.xlsx / .xls</p>
         <input type="file" id="file-input" accept=".xlsx,.xls" onchange="loadFile(this)">
       </div>
       <p id="upload-status" style="margin-top:15px;font-size:13px;color:var(--red);"></p>
@@ -170,519 +252,21 @@
 
   <div id="dashboard-screen">
     <div class="action-buttons">
-      <button class="btn-action btn-excel" onclick="exportToExcel()">📊 تصدير Excel</button>
+      <button class="btn-action btn-scorecard" onclick="activateTab('tab-scorecard')">📋 سكار</button>
+      <button class="btn-action btn-pareto" onclick="activateTab('tab-pareto')">📊 باريتو</button>
+      <button class="btn-action btn-analysis" onclick="activateTab('tab-analysis')">🔍 تحليل المبيعات</button>
+      <button class="btn-action btn-excel" onclick="exportToExcel()">📥 تصدير Excel</button>
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
     <div id="dashboard-summary-widgets">
       <div class="stats-grid">
-        <div class="stat-card red"><div class="stat-label">🔴 جديد 2026</div><div class="stat-value" id="card-new2026">0</div><div class="stat-sub">صنف</div></div>
-        <div class="stat-card orange"><div class="stat-label">🟠 نواقص عاجلة</div><div class="stat-value" id="card-urgent">0</div><div class="stat-sub">صنف</div></div>
-        <div class="stat-card green"><div class="stat-label">🟢 مراجعة 2025</div><div class="stat-value" id="card-review">0</div><div class="stat-sub">صنف</div></div>
-        <div class="stat-card teal"><div class="stat-label">📊 مستقرة</div><div class="stat-value" id="card-stable">0</div><div class="stat-sub">صنف</div></div>
-        <div class="stat-card blue"><div class="stat-label">🔄 متوفر بديل</div><div class="stat-value" id="card-substitute">0</div><div class="stat-sub">صنف</div></div>
-        <div class="stat-card yellow"><div class="stat-label">🟡 متابعة</div><div class="stat-value" id="card-balance">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card red" onclick="activateTab('tab-new2026')"><div class="stat-label">🔴 جديد 2026</div><div class="stat-value" id="card-new2026">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card orange" onclick="activateTab('tab-urgent')"><div class="stat-label">🟠 نواقص عاجلة</div><div class="stat-value" id="card-urgent">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card green" onclick="activateTab('tab-review')"><div class="stat-label">🟢 مراجعة 2025</div><div class="stat-value" id="card-review">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card teal" onclick="activateTab('tab-stable')"><div class="stat-label">📊 مستقرة</div><div class="stat-value" id="card-stable">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card blue" onclick="activateTab('tab-substitute')"><div class="stat-label">🔄 متوفر بديل</div><div class="stat-value" id="card-substitute">0</div><div class="stat-sub">صنف</div></div>
+        <div class="stat-card yellow" onclick="activateTab('tab-balance')"><div class="stat-label">🟡 متابعة</div><div class="stat-value" id="card-balance">0</div><div class="stat-sub">صنف</div></div>
       </div>
       <div class="qty-stats-grid">
-        <div class="qty-card"><div class="qty-label">🔴 قطع جديد 2026</div><div class="qty-value" id="qty-new2026">0</div></div>
-        <div class="qty-card"><div class="qty-label">🟠 قطع نواقص عاجلة</div><div class="qty-value" id="qty-urgent">0</div></div>
-        <div class="qty-card"><div class="qty-label">🟢 قطع مراجعة 2025</div><div class="qty-value" id="qty-review">0</div></div>
-        <div class="qty-card"><div class="qty-label">📊 قطع مستقرة</div><div class="qty-value" id="qty-stable">0</div></div>
-        <div class="qty-card"><div class="qty-label">🔄 قطع البدائل</div><div class="qty-value" id="qty-substitute">0</div></div>
-        <div class="qty-card"><div class="qty-label">🟡 قطع المتابعة</div><div class="qty-value" id="qty-balance">0</div></div>
-      </div>
-      <div class="charts-grid">
-        <div class="chart-card"><h4>📊 توزيع الأصناف</h4><div class="chart-wrap"><canvas id="categories-chart"></canvas></div></div>
-        <div class="chart-card"><h4>🎨 توزيع الألوان</h4><div class="chart-wrap"><canvas id="color-chart"></canvas></div></div>
-      </div>
-    </div>
-
-    <div class="tabs-nav">
-      <button class="tab-btn active" data-tab="tab-new2026">🔴 جديد 2026</button>
-      <button class="tab-btn" data-tab="tab-urgent">🟠 نواقص عاجلة</button>
-      <button class="tab-btn" data-tab="tab-review">🟢 مراجعة 2025</button>
-      <button class="tab-btn" data-tab="tab-stable">📊 مستقرة</button>
-      <button class="tab-btn" data-tab="tab-substitute">🔄 متوفر بديل</button>
-      <button class="tab-btn" data-tab="tab-balance">🟡 متابعة</button>
-      <button class="tab-btn donor-tab" data-tab="tab-transfer-donor">🟢 ترانزيت - مانح</button>
-      <button class="tab-btn beneficiary-tab" data-tab="tab-transfer-beneficiary">🔴 ترانزيت - مستقبل</button>
-    </div>
-
-    <div id="tab-new2026" class="tab-content active">
-      <div class="table-card">
-        <div class="table-header"><h4>🔴 جديد 2026</h4><div class="search-box">🔍 <input type="text" id="search-new2026" placeholder="بحث..." oninput="filterTable('new2026')"></div></div>
-        <div id="table-new2026"></div>
-      </div>
-    </div>
-
-    <div id="tab-urgent" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟠 نواقص عاجلة</h4><div class="search-box">🔍 <input type="text" id="search-urgent" placeholder="بحث..." oninput="filterTable('urgent')"></div></div><div id="table-urgent"></div></div></div>
-    <div id="tab-review" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟢 مراجعة 2025</h4><div class="search-box">🔍 <input type="text" id="search-review" placeholder="بحث..." oninput="filterTable('review')"></div></div><div id="table-review"></div></div></div>
-    <div id="tab-stable" class="tab-content"><div class="table-card"><div class="table-header"><h4>📊 مستقرة</h4><div class="search-box">🔍 <input type="text" id="search-stable" placeholder="بحث..." oninput="filterTable('stable')"></div></div><div id="table-stable"></div></div></div>
-    <div id="tab-substitute" class="tab-content"><div class="table-card"><div class="table-header"><h4>🔄 متوفر بديل</h4><div class="search-box">🔍 <input type="text" id="search-substitute" placeholder="بحث..." oninput="filterTable('substitute')"></div></div><div id="table-substitute"></div></div></div>
-    <div id="tab-balance" class="tab-content"><div class="table-card"><div class="table-header"><h4>🟡 متابعة</h4><div class="search-box">🔍 <input type="text" id="search-balance" placeholder="بحث..." oninput="filterTable('balance')"></div></div><div id="table-balance"></div></div></div>
-
-    <div id="tab-transfer-donor" class="tab-content">
-      <div class="table-card">
-        <div class="table-header"><h4>🟢 ترانزيت - فرع مانح (الصادر من فرعك)</h4><div class="search-box">🔍 <input type="text" id="search-transfer-donor" placeholder="بحث بالإسم أو الباركود..." oninput="filterTransferDonor()"></div></div>
-        <div id="table-transfer-donor"></div>
-      </div>
-    </div>
-
-    <div id="tab-transfer-beneficiary" class="tab-content">
-      <div class="table-card">
-        <div class="table-header"><h4>🔴 ترانزيت - فرع مستقبل (الوارد إلى فرعك)</h4><div class="search-box">🔍 <input type="text" id="search-transfer-beneficiary" placeholder="بحث بالإسم أو الباركود..." oninput="filterTransferBeneficiary()"></div></div>
-        <div id="table-transfer-beneficiary"></div>
-      </div>
-    </div>
-  </div>
-</div>
-
-<div id="admin-screen">
-  <header class="app-header"><h2>🌳 لوحة الإدارة</h2><button class="btn-logout" onclick="doLogout()">خروج</button></header>
-  <div class="admin-container">
-    <div class="admin-grid">
-      <div class="chart-card"><h3>🔐 كلمات مرور الفروع</h3><div id="admin-password-list"></div></div>
-      <div class="chart-card">
-        <h3>✏️ تحديث كلمة مرور</h3>
-        <select id="admin-branch-select" style="width:100%;padding:12px;margin-bottom:15px;border-radius:10px;font-family:'Cairo';"></select>
-        <input type="text" id="admin-new-password" placeholder="كلمة المرور الجديدة" style="width:100%;padding:12px;margin-bottom:15px;border-radius:10px;font-family:'Cairo';">
-        <button class="btn-login" onclick="updateBranchPassword()">💾 حفظ</button>
-      </div>
-    </div>
-  </div>
-</div>
-
-<script>
-const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
-const ADMIN_KEY = "101499";
-
-let currentBranch = null;
-let allBranchData = [];
-let transferData = [];
-let classifiedData = { new2026:[], urgent:[], review:[], stable:[], substitute:[], balance:[] };
-let categoriesChart = null, colorChart = null;
-let substituteMap = new Map();
-
-function safeGet(row, fields, def='—') {
-  if (!Array.isArray(fields)) fields = [fields];
-  for (let f of fields) {
-    if (row[f] !== undefined && row[f] !== null && String(row[f]).trim() !== '') return String(row[f]).trim();
-  }
-  return def;
-}
-
-function safeNum(row, fields, def=0) {
-  if (!Array.isArray(fields)) fields = [fields];
-  for (let f of fields) {
-    let v = row[f];
-    if (v !== undefined && v !== null) { let n = Number(v); if (!isNaN(n)) return n; }
-  }
-  return def;
-}
-
-function hasSubstitute(row) {
-  const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '');
-  return reason.includes('بديل');
-}
-
-function buildSubstituteMap() {
-  substituteMap.clear();
-  allBranchData.forEach(row => {
-    const reason = safeGet(row, ['سبب_القرار', 'سبب قرار'], '');
-    if (reason.includes('بديل')) {
-      const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-      const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-      substituteMap.set(barcode, row);
-      substituteMap.set(name, row);
-    }
-  });
-}
-
-function getSubstitute(row) {
-  const barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
-  const name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
-  return substituteMap.get(barcode) || substituteMap.get(name) || null;
-}
-
-function toggleSubstitute(btnId, panelId) {
-  const panel = document.getElementById(panelId);
-  const btn = document.getElementById(btnId);
-  if (!panel) return;
-  if (panel.style.display === 'none' || !panel.style.display) {
-    panel.style.display = 'block';
-    if (btn) btn.textContent = '🔄 إخفاء البديل';
-  } else {
-    panel.style.display = 'none';
-    if (btn) btn.textContent = '🔄 مراجعة البديل';
-  }
-}
-
-function buildSubstitutePanel(subRow, panelId) {
-  if (!subRow) return '';
-  const qty = safeNum(subRow, ['الكمية_المخصصة', 'الكمية المخصصة']);
-  const abis = safeNum(subRow, ['مخزن ابيس']);
-  const sales = safeNum(subRow, ['المبيعات']);
-  const stock = safeNum(subRow, ['رصيد']);
-  return `
-    <div id="${panelId}" class="substitute-panel" style="display:none;">
-      <div style="font-weight:700; color:var(--blue); margin-bottom:10px;">🔄 بيانات البديل</div>
-      <div class="substitute-panel-grid">
-        <div class="sub-item"><div class="sub-item-label">إسم البديل</div><div class="sub-item-value" style="font-size:11px;">${safeGet(subRow,['إسم الصنف','اسم الصنف'])}</div></div>
-        <div class="sub-item"><div class="sub-item-label">الباركود</div><div class="sub-item-value">${safeGet(subRow,['باركود الوحدة المخزنية','باركود'])}</div></div>
-        <div class="sub-item"><div class="sub-item-label">اللون</div><div class="sub-item-value">${safeGet(subRow,['اللون'],'—')}</div></div>
-        <div class="sub-item"><div class="sub-item-label">الكمية</div><div class="sub-item-value">${qty}</div></div>
-        <div class="sub-item"><div class="sub-item-label">مخزن ابيس</div><div class="sub-item-value">${abis}</div></div>
-        <div class="sub-item"><div class="sub-item-label">المبيعات</div><div class="sub-item-value">${sales}</div></div>
-        <div class="sub-item"><div class="sub-item-label">الرصيد</div><div class="sub-item-value">${stock}</div></div>
-        <div class="sub-item"><div class="sub-item-label">سبب القرار</div><div class="sub-item-value" style="font-size:10px;">${safeGet(subRow,['سبب_القرار','سبب قرار'],'—')}</div></div>
-      </div>
-    </div>`;
-}
-
-async function getBranchPasswords() {
-  let stored = localStorage.getItem('tree_passwords');
-  if (stored) return JSON.parse(stored);
-  let defaults = {};
-  BRANCHES.forEach((b,i) => { defaults[b] = 'tree' + String(i+1).padStart(3,'0'); });
-  localStorage.setItem('tree_passwords', JSON.stringify(defaults));
-  return defaults;
-}
-
-async function doLogin() {
-  const branch = document.getElementById('branch-select').value;
-  const pwd = document.getElementById('password-input').value.trim();
-  const err = document.getElementById('login-error');
-  if (pwd === ADMIN_KEY) { showAdmin(); return; }
-  if (!branch) { err.style.display='block'; err.textContent='❌ اختر الفرع'; return; }
-  const pwds = await getBranchPasswords();
-  if (pwds[branch] && pwds[branch] === pwd) {
-    currentBranch = branch; err.style.display='none'; showApp();
-  } else {
-    err.style.display='block'; err.textContent='❌ كلمة مرور خاطئة';
-  }
-}
-
-function doLogout() { location.reload(); }
-
-function showApp() {
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('app-screen').style.display='block';
-  document.getElementById('header-branch').textContent='🏪 فرع ' + currentBranch;
-  document.getElementById('upload-screen').style.display='flex';
-  document.getElementById('dashboard-screen').style.display='none';
-}
-
-async function showAdmin() {
-  document.getElementById('login-screen').style.display='none';
-  document.getElementById('admin-screen').style.display='block';
-  const pwds = await getBranchPasswords();
-  const listDiv = document.getElementById('admin-password-list');
-  const sel = document.getElementById('admin-branch-select');
-  listDiv.innerHTML=''; sel.innerHTML='<option value="">— اختر —</option>';
-  BRANCHES.forEach(b => {
-    listDiv.innerHTML += `<div class="password-item"><strong>${b}</strong><span>${pwds[b]||'—'}</span></div>`;
-    sel.innerHTML += `<option value="${b}">${b}</option>`;
-  });
-}
-
-async function updateBranchPassword() {
-  const branch = document.getElementById('admin-branch-select').value;
-  const newPwd = document.getElementById('admin-new-password').value.trim();
-  if (!branch || !newPwd) return;
-  let pwds = await getBranchPasswords();
-  pwds[branch] = newPwd;
-  localStorage.setItem('tree_passwords', JSON.stringify(pwds));
-  alert('✅ تم التحديث');
-  showAdmin();
-}
-
-function loadFile(input) {
-  const file = input.files[0];
-  if (!file) return;
-  document.getElementById('upload-status').textContent = '⏳ جاري قراءة الملف وتحليل الترانزيت...';
-  const reader = new FileReader();
-  reader.onload = function(e) {
-    try {
-      const wb = XLSX.read(e.target.result, { type:'array' });
-      const wsInv = wb.Sheets[wb.SheetNames[0]];
-      const inventoryData = XLSX.utils.sheet_to_json(wsInv, { defval:'' });
-      
-      if (!inventoryData.length) throw new Error('الملف فارغ');
-      
-      let transferSheetData = [];
-      let foundTransfer = false;
-      for (let sName of wb.SheetNames) {
-        if (sName.trim() === 'ترانزيت' || sName.toLowerCase().includes('transit') || sName.trim() === 'الترانزيت') {
-          transferSheetData = XLSX.utils.sheet_to_json(wb.Sheets[sName], { defval:'' });
-          foundTransfer = true;
-          break;
-        }
-      }
-      if (!foundTransfer && wb.SheetNames.length > 1) {
-        transferSheetData = XLSX.utils.sheet_to_json(wb.Sheets[wb.SheetNames[1]], { defval:'' });
-      }
-
-      allBranchData = inventoryData;
-      transferData = transferSheetData.length ? transferSheetData : inventoryData;
-      
-      buildSubstituteMap();
-      
-      const branchRows = inventoryData.filter(r => safeGet(r,['اسم الفرع','الفرع'],'') === currentBranch);
-      
-      processClassification(branchRows);
-      
-      document.getElementById('upload-screen').style.display='none';
-      document.getElementById('dashboard-screen').style.display='block';
-      
-      renderAllTables();
-      updateCharts(branchRows);
-      document.getElementById('upload-status').textContent='✅ تم التحميل';
-    } catch(err) {
-      document.getElementById('upload-status').textContent = '❌ ' + err.message;
-    }
-  };
-  reader.readAsArrayBuffer(file);
-}
-
-function processClassification(branchRows) {
-  classifiedData = { new2026:[], urgent:[], review:[], stable:[], substitute:[], balance:[] };
-  branchRows.forEach(row => {
-    const type = safeGet(row, ['تصنيف_المنتج_معدل','تصنيف المنتج معدل'], '');
-    const reason = safeGet(row, ['سبب_القرار','سبب قرار'], '');
-    
-    // التعديل: فحص البديل بشكل منفصل دون منع إدراجه في الأيقونة الأساسية للمنتج
-    if (reason.includes('بديل')) { 
-      classifiedData.substitute.push(row); 
-    }
-    
-    if (type.includes('جديد 2026') || type.includes('جديد ٢٠٢٦')) { classifiedData.new2026.push(row); }
-    else if (type === 'اطلب الان') { classifiedData.urgent.push(row); }
-    else if (type.includes('جديد 2025') || type.includes('جديد ٢٠٢٥')) { classifiedData.review.push(row); }
-    else if (['منخفضة','متوسطة','متوفر','مستقر'].includes(type)) { classifiedData.stable.push(row); }
-    else if (['غير متوفر','تاريخ غير محدد'].includes(type)) { classifiedData.balance.push(row); }
-    else if (type !== '') { classifiedData.review.push(row); }
-  });
-  
-  const set = (id, v) => { const el = document.getElementById(id); if(el) el.textContent=v; };
-  set('card-new2026', classifiedData.new2026.length);
-  set('card-urgent', classifiedData.urgent.length);
-  set('card-review', classifiedData.review.length);
-  set('card-stable', classifiedData.stable.length);
-  set('card-substitute', classifiedData.substitute.length);
-  set('card-balance', classifiedData.balance.length);
-  
-  const totalQty = list => list.reduce((s,r) => s + safeNum(r,['الكمية_المخصصة','الكمية المخصصة']), 0);
-  set('qty-new2026', totalQty(classifiedData.new2026));
-  set('qty-urgent', totalQty(classifiedData.urgent));
-  set('qty-review', totalQty(classifiedData.review));
-  set('qty-stable', totalQty(classifiedData.stable));
-  set('qty-substitute', totalQty(classifiedData.substitute));
-  set('qty-balance', totalQty(classifiedData.balance));
-}
-
-function renderTable(list, containerId) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  if (!list || !list.length) {
-    container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد أصناف</p>';
-    return;
-  }
-  let html = `<table class="data-table"><thead><tr>
-    <th>#</th><th>إسم الصنف</th><th>الباركود</th><th>اللون</th>
-    <th>المجموعة الرئيسية</th><th>المجموعة الفرعية</th>
-    <th>الكمية</th><th>المبيعات</th><th>الرصيد</th>
-    <th>نسبة البيع</th><th>مخزن ابيس</th><th>🔄 بديل</th>
-  </tr></thead><tbody>`;
-  
-  list.forEach((row, i) => {
-    const qty   = safeNum(row, ['الكمية_المخصصة','الكمية المخصصة']);
-    const sales = safeNum(row, ['المبيعات']);
-    const stock = safeNum(row, ['رصيد']);
-    const abis  = safeNum(row, ['مخزن ابيس']);
-    const ratio = stock > 0 ? sales/stock : (sales > 0 ? 999 : 0);
-    const ratioText = ratio === 999 ? '🔴 نفد' : (ratio*100).toFixed(1)+'%';
-    const ratioColor = ratio > 0.5 ? '#dc2626' : ratio > 0 ? '#ea580c' : '#6b7280';
-    const hasSub = hasSubstitute(row);
-    const subRow = hasSub ? getSubstitute(row) : null;
-    const btnId = `btn-sub-${containerId}-${i}`;
-    const panelId = `panel-sub-${containerId}-${i}`;
-    
-    html += `<tr>
-      <td style="text-align:center;">${i+1}</td>
-      <td><strong>${safeGet(row,['إسم الصنف','اسم الصنف'])}</strong></td>
-      <td>${safeGet(row,['كود الوحدة المخزنية','باركود الوحدة المخزنية','باركود'],'—')}</td>
-      <td>${safeGet(row,['اللون'],'—')}</td>
-      <td>${safeGet(row,['المجموعة الرئيسية.2','المجموعة الرئيسية'],'—')}</td>
-      <td>${safeGet(row,['المجموعة الفرعية.2','المجموعة الفرعية'],'—')}</td>
-      <td style="text-align:center;"><span class="qty-badge">${qty}</span></td>
-      <td style="text-align:center;">${sales}</td>
-      <td style="text-align:center;">${stock}</td>
-      <td style="text-align:center;color:${ratioColor};">${ratioText}</td>
-      <td style="text-align:center;">${abis}</td>
-      <td style="text-align:center;">
-        ${hasSub && subRow
-          ? `<button id="${btnId}" class="substitute-btn" onclick="toggleSubstitute('${btnId}','${panelId}')">🔄 مراجعة البديل</button>`
-          : '<span style="color:var(--gray);">—</span>'}
-      </td>
-    </tr>`;
-    if (hasSub && subRow) {
-      html += `<tr><td colspan="12" style="padding:0 10px 10px;">${buildSubstitutePanel(subRow, panelId)}</td></tr>`;
-    }
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-function renderTransferTable(data, containerId, rowClass) {
-  const container = document.getElementById(containerId);
-  if (!container) return;
-  if (!data.length) { container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد تحويلات مسجلة لهذا الفرع</p>'; return; }
-  
-  const keys = Object.keys(data[0]);
-  let html = `<table class="data-table"><thead><tr><th>#</th>${keys.map(k=>`<th>${k}</th>`).join('')}</tr></thead><tbody>`;
-  data.forEach((row, idx) => { 
-    html += `<tr class="${rowClass}"><td style="text-align:center;font-weight:bold;">${idx+1}</td>${keys.map(k=>`<td>${safeGet(row,k,'—')}</td>`).join('')}</tr>`; 
-  });
-  html += '</tbody></table>';
-  container.innerHTML = html;
-}
-
-function renderAllTables() {
-  renderTable(classifiedData.new2026, 'table-new2026');
-  renderTable(classifiedData.urgent, 'table-urgent');
-  renderTable(classifiedData.review, 'table-review');
-  renderTable(classifiedData.stable, 'table-stable');
-  renderTable(classifiedData.substitute, 'table-substitute');
-  renderTable(classifiedData.balance, 'table-balance');
-  
-  renderTransferDonor();
-  renderTransferBeneficiary();
-}
-
-function renderTransferDonor() {
-  const data = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
-  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
-}
-
-function renderTransferBeneficiary() {
-  const data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
-  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
-}
-
-function filterTable(tab) {
-  const search = (document.getElementById(`search-${tab}`)?.value || '').toLowerCase();
-  const list = classifiedData[tab] || [];
-  const filtered = search
-    ? list.filter(r =>
-        safeGet(r,['إسم الصنف','اسم الصنف'],'').toLowerCase().includes(search) ||
-        safeGet(r,['باركود الوحدة المخزنية','باركود'],'').toLowerCase().includes(search))
-    : list;
-  renderTable(filtered, `table-${tab}`);
-}
-
-function filterTransferDonor() {
-  const search = (document.getElementById('search-transfer-donor')?.value||'').toLowerCase();
-  let data = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
-  if (search) data = data.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
-  renderTransferTable(data, 'table-transfer-donor', 'donor-row');
-}
-
-function filterTransferBeneficiary() {
-  const search = (document.getElementById('search-transfer-beneficiary')?.value||'').toLowerCase();
-  let data = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
-  if (search) data = data.filter(r => Object.values(r).some(v => String(v).toLowerCase().includes(search)));
-  renderTransferTable(data, 'table-transfer-beneficiary', 'beneficiary-row');
-}
-
-function updateCharts(rows) {
-  if (categoriesChart) categoriesChart.destroy();
-  if (colorChart) colorChart.destroy();
-  let catMap = {}, colorMap = {};
-  rows.forEach(r => {
-    let cat = safeGet(r, ['المجموعة الرئيسية.2', 'المجموعة الرئيسية'], 'أخرى');
-    let color = safeGet(r, ['اللون'], 'غير محدد');
-    catMap[cat] = (catMap[cat] || 0) + 1;
-    colorMap[color] = (colorMap[color] || 0) + 1;
-  });
-  const makeChart = (canvasId, dataMap) => {
-    const el = document.getElementById(canvasId);
-    if(!el) return null;
-    const ctx = el.getContext('2d');
-    return new Chart(ctx, {
-      type: 'doughnut',
-      data: {
-        labels: Object.keys(dataMap),
-        datasets: [{ data: Object.values(dataMap), backgroundColor: ['#1a6b3c','#c9a84c','#ea580c','#2563eb','#7c3aed','#0d9488','#dc2626','#ca8a04'] }]
-      },
-      options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { position: 'right', labels: { font: { family: 'Cairo', size: 11 } } } } }
-    });
-  };
-  categoriesChart = makeChart('categories-chart', catMap);
-  colorChart = makeChart('color-chart', colorMap);
-}
-
-function exportToExcel() {
-  let wb = XLSX.utils.book_new();
-  
-  // التعديل: تجميع شيت كامل بكل القوائم والأصناف (ما عدا شيتات الترانزيت) وضبطه ليكون أول شيت
-  let allCombinedItems = [
-    ...classifiedData.new2026,
-    ...classifiedData.urgent,
-    ...classifiedData.review,
-    ...classifiedData.stable,
-    ...classifiedData.substitute,
-    ...classifiedData.balance
-  ];
-  
-  let wsAll = XLSX.utils.json_to_sheet(allCombinedItems.length ? allCombinedItems : [{"تنبيه": "لا توجد أصناف"}]);
-  XLSX.utils.book_append_sheet(wb, wsAll, "📊 التقرير الشامل للفرع");
-  
-  // إضافة بقية شيتات الأيقونات المفصلة تلقائياً
-  const tabsConfig = [
-    { key: "new2026", name: "🔴 جديد 2026" },
-    { key: "urgent", name: "🟠 نواقص عاجلة" },
-    { key: "review", name: "🟢 مراجعة 2025" },
-    { key: "stable", name: "📊 مستقرة" },
-    { key: "substitute", name: "🔄 متوفر بديل" },
-    { key: "balance", name: "🟡 متابعة" }
-  ];
-  tabsConfig.forEach(tab => {
-    let list = classifiedData[tab.key] || [];
-    let ws = XLSX.utils.json_to_sheet(list.length ? list : [{"تنبيه": "لا توجد أصناف"}]);
-    XLSX.utils.book_append_sheet(wb, ws, tab.name);
-  });
-  
-  let donorData = transferData.filter(r => safeGet(r, ['اسم الفرع', 'الفرع المانح', 'الفرع_المانح', 'مانح', 'الفرع', 'فرع_مصدر']) === currentBranch);
-  let beneficiaryData = transferData.filter(r => safeGet(r, ['فرع_مستقبل', 'الفرع المستقبل', 'الفرع_المستقبل', 'مستقبل', 'فرع مستقبل']) === currentBranch);
-  
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(donorData.length ? donorData : [{"ملاحظة": "لا يوجد"}]), "🟢 ترانزيت - فرع مانح");
-  XLSX.utils.book_append_sheet(wb, XLSX.utils.json_to_sheet(beneficiaryData.length ? beneficiaryData : [{"ملاحظة": "لا يوجد"}]), "🔴 ترانزيت - فرع مستقبل");
-  
-  XLSX.writeFile(wb, `TREE_${currentBranch}_Report.xlsx`);
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  document.querySelectorAll('.tab-btn').forEach(btn => {
-    btn.addEventListener('click', function() {
-      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      
-      this.classList.add('active');
-      const tabId = this.getAttribute('data-tab');
-      const targetContent = document.getElementById(tabId);
-      if (targetContent) targetContent.classList.add('active');
-      
-      const summaryWidgets = document.getElementById('dashboard-summary-widgets');
-      if(summaryWidgets) {
-        if(tabId.includes('transfer')) {
-          summaryWidgets.style.display = 'none';
-        } else {
-          summaryWidgets.style.display = 'block';
-        }
-      }
-    });
-  });
-});
-</script>
-</body>
-</html>
+        <div class="
