@@ -3,13 +3,13 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>TREE — إدارة المخزون المتقدمة | باريتو + ترانزيت + بدائل</title>
+<title>TREE — إدارة المخزون المتقدمة</title>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
 <style>
   * { margin: 0; padding: 0; box-sizing: border-box; }
-  body { font-family: 'Cairo', sans-serif; background: #f0f4f0; color: #1a2e1a; min-height: 100vh; direction: rtl; }
+  body { font-family: 'Cairo', sans-serif; background: #f5f7f5; color: #1a2e1a; min-height: 100vh; direction: rtl; }
   
   :root {
     --primary: #1a6b3c;
@@ -23,18 +23,19 @@
     --blue: #2563eb;
     --purple: #7c3aed;
     --teal: #0d9488;
-    --shadow: 0 8px 20px rgba(0,0,0,0.08);
+    --shadow: 0 4px 12px rgba(0,0,0,0.08);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
   }
 
   .login-screen { min-height: 100vh; display: flex; align-items: center; justify-content: center; background: linear-gradient(135deg, #0f4526, #1a6b3c, #2d9e5f); }
   .login-card { background: white; border-radius: 32px; padding: 48px 40px; width: 460px; box-shadow: 0 40px 80px rgba(0,0,0,0.3); text-align: center; }
-  .logo { font-size: 48px; margin-bottom: 16px; }
+  .logo { font-size: 52px; margin-bottom: 16px; }
   .login-card h1 { font-size: 28px; font-weight: 900; color: var(--primary); margin-bottom: 32px; }
   .form-group { margin-bottom: 24px; text-align: right; }
   .form-group label { display: block; font-size: 13px; font-weight: 700; color: var(--gray); margin-bottom: 8px; }
   .form-group select, .form-group input { width: 100%; padding: 14px 16px; border: 2px solid #e5e7eb; border-radius: 14px; font-family: 'Cairo'; font-size: 15px; outline: none; transition: 0.2s; }
   .form-group select:focus, .form-group input:focus { border-color: var(--primary); }
-  .btn-login { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; border-radius: 14px; font-weight: 800; font-size: 16px; cursor: pointer; font-family: 'Cairo'; transition: transform 0.1s; }
+  .btn-login { width: 100%; padding: 16px; background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; border-radius: 14px; font-weight: 800; font-size: 16px; cursor: pointer; font-family: 'Cairo'; transition: transform 0.2s; }
   .btn-login:hover { transform: scale(1.02); }
   .error-msg { color: var(--red); background: #fef2f2; padding: 12px; border-radius: 12px; font-size: 13px; margin-top: 16px; display: none; }
 
@@ -45,30 +46,30 @@
   .btn-logout:hover { background: rgba(255,255,255,0.3); }
 
   .upload-container { min-height: calc(100vh - 70px); display: flex; align-items: center; justify-content: center; padding: 40px; }
-  .upload-card { background: white; border-radius: 28px; padding: 48px; text-align: center; max-width: 550px; width: 100%; box-shadow: var(--shadow); }
+  .upload-card { background: white; border-radius: 28px; padding: 48px; text-align: center; max-width: 550px; width: 100%; box-shadow: var(--shadow-lg); }
   .upload-zone { border: 2px dashed var(--primary-light); border-radius: 20px; padding: 40px; cursor: pointer; background: var(--gray-light); margin-top: 24px; transition: 0.2s; }
-  .upload-zone:hover { background: #e8f0e8; }
+  .upload-zone:hover { background: #e8f0e8; border-color: var(--primary); }
 
   .dashboard { padding: 28px 32px; display: none; }
   .action-bar { display: flex; gap: 12px; margin-bottom: 24px; justify-content: flex-end; flex-wrap: wrap; }
-  .btn-action { padding: 10px 20px; border-radius: 30px; font-weight: 700; border: none; cursor: pointer; font-family: 'Cairo'; background: white; box-shadow: 0 2px 6px rgba(0,0,0,0.1); transition: 0.2s; }
+  .btn-action { padding: 10px 20px; border-radius: 30px; font-weight: 700; border: none; cursor: pointer; font-family: 'Cairo'; background: white; box-shadow: var(--shadow); transition: 0.2s; }
+  .btn-action:hover { transform: translateY(-2px); }
   .btn-excel { background: var(--primary); color: white; }
   .btn-print { background: var(--gold); color: white; }
 
   .stats-row { display: grid; grid-template-columns: repeat(7, 1fr); gap: 16px; margin-bottom: 28px; }
   .stat-card { background: white; border-radius: 20px; padding: 18px 12px; text-align: center; box-shadow: var(--shadow); border-right: 4px solid; transition: 0.2s; cursor: pointer; }
-  .stat-card:hover { transform: translateY(-4px); }
+  .stat-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
   .stat-label { font-size: 13px; font-weight: 700; color: var(--gray); margin-bottom: 6px; }
   .stat-value { font-size: 28px; font-weight: 900; }
 
   .report-buttons { display: flex; gap: 12px; margin-bottom: 28px; flex-wrap: wrap; justify-content: center; }
-  .report-btn { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 10px 24px; border-radius: 40px; font-weight: 700; cursor: pointer; font-family: 'Cairo'; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
-  .report-btn:hover { transform: translateY(-2px); filter: brightness(1.05); }
+  .report-btn { background: linear-gradient(135deg, var(--primary), var(--primary-light)); color: white; border: none; padding: 12px 28px; border-radius: 40px; font-weight: 700; cursor: pointer; font-family: 'Cairo'; display: inline-flex; align-items: center; gap: 8px; transition: 0.2s; box-shadow: var(--shadow); }
+  .report-btn:hover { transform: translateY(-2px); filter: brightness(1.05); box-shadow: var(--shadow-lg); }
 
   .tabs-nav { display: flex; gap: 8px; margin-bottom: 24px; flex-wrap: wrap; background: white; padding: 12px 20px; border-radius: 60px; box-shadow: var(--shadow); }
-  .tab-btn { padding: 8px 20px; border: none; background: var(--gray-light); border-radius: 40px; font-weight: 700; cursor: pointer; transition: 0.2s; }
+  .tab-btn { padding: 8px 24px; border: none; background: var(--gray-light); border-radius: 40px; font-weight: 700; cursor: pointer; transition: 0.2s; font-family: 'Cairo'; }
   .tab-btn.active { background: var(--primary); color: white; }
-
   .tab-content { display: none; }
   .tab-content.active { display: block; }
 
@@ -76,24 +77,27 @@
   .data-table { width: 100%; border-collapse: collapse; font-size: 13px; }
   .data-table th { background: var(--gray-light); padding: 12px; text-align: right; font-weight: 800; }
   .data-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
-  .qty-badge { background: var(--primary); color: white; padding: 4px 10px; border-radius: 30px; font-weight: 700; font-size: 12px; display: inline-block; }
+  .data-table tr:hover { background: #f9fafb; }
+  .qty-badge { background: var(--primary); color: white; padding: 4px 12px; border-radius: 30px; font-weight: 700; font-size: 12px; display: inline-block; }
 
-  .substitute-btn { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; padding: 5px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; cursor: pointer; border: none; font-family: 'Cairo'; transition: 0.2s; }
+  .substitute-btn { background: linear-gradient(135deg, var(--blue), var(--purple)); color: white; padding: 5px 14px; border-radius: 20px; font-size: 12px; font-weight: 600; display: inline-block; cursor: pointer; border: none; font-family: 'Cairo'; transition: 0.2s; }
   .substitute-btn:hover { transform: scale(1.05); }
   .substitute-panel { background: linear-gradient(135deg, #eff6ff, #f5f3ff); border: 1px solid #c7d2fe; border-radius: 12px; padding: 14px 18px; margin-top: 8px; font-size: 12px; animation: fadeIn 0.2s ease; display: none; }
   .substitute-panel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
-  .sub-item { background: white; border-radius: 8px; padding: 8px; text-align: center; box-shadow: 0 1px 4px rgba(0,0,0,0.06); }
+  .sub-item { background: white; border-radius: 8px; padding: 8px; text-align: center; }
   .sub-item-label { font-size: 10px; color: var(--gray); margin-bottom: 2px; }
   .sub-item-value { font-size: 13px; font-weight: 700; color: var(--green); }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
 
   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
-  .modal-content { background: white; border-radius: 28px; width: 95%; max-width: 1300px; max-height: 90vh; overflow-y: auto; padding: 28px; position: relative; }
+  .modal-content { background: white; border-radius: 28px; width: 90%; max-width: 1200px; max-height: 85vh; overflow-y: auto; padding: 28px; position: relative; }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--gray-light); padding-bottom: 12px; }
-  .close-modal { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray); }
+  .close-modal { background: none; border: none; font-size: 28px; cursor: pointer; color: var(--gray); transition: 0.2s; }
+  .close-modal:hover { color: var(--red); }
   .filter-buttons { display: flex; gap: 12px; margin-bottom: 24px; flex-wrap: wrap; justify-content: center; }
-  .filter-btn { padding: 8px 20px; border-radius: 30px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; }
+  .filter-btn { padding: 10px 24px; border-radius: 40px; font-weight: 700; cursor: pointer; border: none; transition: 0.2s; font-family: 'Cairo'; }
   .filter-btn.active { transform: scale(1.05); box-shadow: 0 2px 8px rgba(0,0,0,0.2); }
+  .chart-container { height: 320px; margin-bottom: 24px; }
   .donor-row { background: #f0fdf4; }
   .beneficiary-row { background: #fef2f2; }
 
@@ -121,7 +125,7 @@
 
 <div id="appScreen" class="app-screen">
   <header class="app-header">
-    <h2>🌳 TREE</h2>
+    <h2>🌳 TREE | إدارة المخزون</h2>
     <div style="display: flex; gap: 16px; align-items: center;">
       <div class="branch-badge" id="headerBranch"></div>
       <button class="btn-logout" onclick="logout()">خروج</button>
@@ -148,9 +152,8 @@
     <div class="stats-row" id="statsRow"></div>
 
     <div class="report-buttons">
-      <button class="report-btn" onclick="openParetoModal()">📈 باريتو (نجوم/ميت/متوازن)</button>
+      <button class="report-btn" onclick="openParetoModal()">📈 باريتو</button>
       <button class="report-btn" onclick="openHealthModal()">🏥 صحة المخزون</button>
-      <button class="report-btn" onclick="openDemandModal()">📢 طلب الفروع</button>
       <button class="report-btn" onclick="openFastModal()">⚡ سريعة الدوران</button>
     </div>
 
@@ -172,30 +175,43 @@
 <script>
 // ======================== كلمات المرور والفروع ========================
 const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
+
 const BRANCH_PASSWORDS = {
   "أكتوبر":"471","الابراهيمية":"832","الاسكندرانى":"295","البيطاش":"647","البيع الالكتروني":"913","التجمع":"158","الحديد والصلب":"724","الزقازيق":"386","السيوف":"549","العروبة الاسكندرية":"672","العلمين":"231","العيسوى":"895","المنتزة_2":"413","المنتزة":"768","المنشا":"327","الهانوفيل":"689","الهرم":"574","برج العرب":"146","بشاير الخير":"932","بولكلي":"258","جرين تاورز":"703","حدائق الاهرام":"481","خالد بن الوليد":"615","دمنهور":"397","سان ستيفانو":"854","سبورتنج":"169","سموحة الجديد":"726","سموحة":"542","سيدى بشر":"903","صلاح سالم":"384","طنطا_2":"618","طنطا":"275","عجمى ستار":"791","لوران":"467","مارينا":"555"
 };
+
 const MASTER_PASSWORD = "101499";
 
 let currentUser = null;
 let allData = [];
 let transferData = [];
 let substituteMap = new Map();
+let currentChart = null;
 
+// ======================== دوال مساعدة ========================
 function safeGet(row, fields, def='—') {
-  if(!Array.isArray(fields)) fields=[fields];
+  if(!Array.isArray(fields)) fields = [fields];
   for(let f of fields) if(row[f] && String(row[f]).trim()) return String(row[f]).trim();
   return def;
 }
-function safeNum(row, fields, def=0){
-  if(!Array.isArray(fields)) fields=[fields];
-  for(let f of fields) { let v = row[f]; if(v !== undefined && v !== null) { let n=Number(v); if(!isNaN(n)) return n; } }
+
+function safeNum(row, fields, def=0) {
+  if(!Array.isArray(fields)) fields = [fields];
+  for(let f of fields) {
+    let v = row[f];
+    if(v !== undefined && v !== null) {
+      let n = Number(v);
+      if(!isNaN(n)) return n;
+    }
+  }
   return def;
 }
+
 function hasSubstitute(row) {
   let reason = safeGet(row, ['سبب_القرار', 'سبب قرار', 'تصنيف_المنتج_معدل'], '');
   return reason.includes('بديل');
 }
+
 function buildSubstituteMap() {
   substituteMap.clear();
   allData.forEach(row => {
@@ -208,16 +224,18 @@ function buildSubstituteMap() {
     }
   });
 }
+
 function getSubstitute(row) {
   let barcode = safeGet(row, ['باركود الوحدة المخزنية', 'باركود'], '');
   let name = safeGet(row, ['إسم الصنف', 'اسم الصنف'], '');
   return substituteMap.get(barcode) || substituteMap.get(name) || null;
 }
+
 function toggleSubstitute(btnId, panelId) {
   let panel = document.getElementById(panelId);
   let btn = document.getElementById(btnId);
   if(!panel) return;
-  if(panel.style.display === 'none' || !panel.style.display || panel.style.display === '') {
+  if(panel.style.display === 'none' || panel.style.display === '') {
     panel.style.display = 'block';
     if(btn) btn.textContent = '🔄 إخفاء البديل';
   } else {
@@ -225,6 +243,7 @@ function toggleSubstitute(btnId, panelId) {
     if(btn) btn.textContent = '🔄 مراجعة البديل';
   }
 }
+
 function buildSubstitutePanel(subRow, panelId) {
   if(!subRow) return '';
   let qty = safeNum(subRow, ['الكمية_المخصصة', 'الكمية المخصصة']);
@@ -243,46 +262,53 @@ function buildSubstitutePanel(subRow, panelId) {
   </div></div>`;
 }
 
-function doLogin(){
+// ======================== تسجيل الدخول ========================
+function doLogin() {
   const branch = document.getElementById('branchSelect').value;
   const pwd = document.getElementById('passwordInput').value.trim();
   const errDiv = document.getElementById('loginError');
-  if(!branch){ errDiv.innerText='❌ اختر الفرع'; errDiv.style.display='block'; return; }
-  if(pwd === MASTER_PASSWORD){
+  if(!branch) {
+    errDiv.innerText = '❌ اختر الفرع';
+    errDiv.style.display = 'block';
+    return;
+  }
+  if(pwd === MASTER_PASSWORD) {
     currentUser = { type: 'master' };
     document.getElementById('headerBranch').innerHTML = '🏢 المدير العام';
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appScreen').style.display = 'block';
     document.getElementById('uploadScreen').style.display = 'flex';
     document.getElementById('dashboardPanel').style.display = 'none';
-    errDiv.style.display='none';
+    errDiv.style.display = 'none';
     return;
   }
-  if(BRANCH_PASSWORDS[branch] === pwd){
+  if(BRANCH_PASSWORDS[branch] === pwd) {
     currentUser = { type: 'branch', name: branch };
     document.getElementById('headerBranch').innerHTML = `🏪 ${branch}`;
     document.getElementById('loginScreen').style.display = 'none';
     document.getElementById('appScreen').style.display = 'block';
     document.getElementById('uploadScreen').style.display = 'flex';
     document.getElementById('dashboardPanel').style.display = 'none';
-    errDiv.style.display='none';
+    errDiv.style.display = 'none';
     return;
   }
-  errDiv.innerText='❌ كلمة مرور خاطئة';
-  errDiv.style.display='block';
+  errDiv.innerText = '❌ كلمة مرور خاطئة';
+  errDiv.style.display = 'block';
 }
-function logout(){ location.reload(); }
 
-function loadFile(input){
+function logout() { location.reload(); }
+
+// ======================== قراءة الملف ========================
+function loadFile(input) {
   const file = input.files[0];
   if(!file) return;
   document.getElementById('uploadStatus').innerText = '⏳ جاري المعالجة...';
   const reader = new FileReader();
-  reader.onload = function(e){
-    try{
-      const wb = XLSX.read(e.target.result, { type:'array' });
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array' });
       const sheet = wb.Sheets[wb.SheetNames[0]];
-      let raw = XLSX.utils.sheet_to_json(sheet, { defval:'' });
+      let raw = XLSX.utils.sheet_to_json(sheet, { defval: '' });
       if(!raw.length) throw new Error('الملف فارغ');
       allData = raw;
       buildSubstituteMap();
@@ -291,136 +317,170 @@ function loadFile(input){
       document.getElementById('dashboardPanel').style.display = 'block';
       renderDashboard();
       document.getElementById('uploadStatus').innerText = '';
-    } catch(err){ document.getElementById('uploadStatus').innerText = '❌ '+err.message; }
+    } catch(err) {
+      document.getElementById('uploadStatus').innerText = '❌ ' + err.message;
+    }
   };
   reader.readAsArrayBuffer(file);
 }
 
-function calculateTransfers(data){
+// ======================== حساب الترانزيت ========================
+function calculateTransfers(data) {
   let enriched = data.map(r => {
-    let bal = safeNum(r,'رصيد'), sales = safeNum(r,'المبيعات');
-    let ratio = bal===0 ? (sales>0?999:0) : sales/bal;
-    return {...r, نسبة_البيع: ratio};
+    let bal = safeNum(r, 'رصيد'), sales = safeNum(r, 'المبيعات');
+    let ratio = bal === 0 ? (sales > 0 ? 999 : 0) : sales / bal;
+    return { ...r, نسبة_البيع: ratio };
   });
-  let suspended = ['بولكلي','سموحة الجديد','البيطاش','البيع الالكتروني','طنطا','بشاير الخير','المنتزة'];
-  let donors = enriched.filter(r => r.نسبة_البيع < 0.10 && r.نسبة_البيع !== 999 && safeNum(r,'رصيد')>0);
-  let beneficiaries = enriched.filter(r => (r.نسبة_البيع >= 0.40 || r.نسبة_البيع === 999) && safeNum(r,'رصيد') < (safeNum(r,'ريشيو')||3) && !suspended.includes(safeGet(r,'اسم الفرع')));
+  let suspended = ['بولكلي', 'سموحة الجديد', 'البيطاش', 'البيع الالكتروني', 'طنطا', 'بشاير الخير', 'المنتزة'];
+  let donors = enriched.filter(r => r.نسبة_البيع < 0.10 && r.نسبة_البيع !== 999 && safeNum(r, 'رصيد') > 0);
+  let beneficiaries = enriched.filter(r => (r.نسبة_البيع >= 0.40 || r.نسبة_البيع === 999) && safeNum(r, 'رصيد') < (safeNum(r, 'ريشيو') || 3) && !suspended.includes(safeGet(r, 'اسم الفرع')));
   let result = [];
-  for(let b of beneficiaries){
-    let sameDonors = donors.filter(d => safeGet(d,'باركود الوحدة المخزنية') === safeGet(b,'باركود الوحدة المخزنية') && safeGet(d,'اسم الفرع') !== safeGet(b,'اسم الفرع'));
-    if(sameDonors.length){
+  for(let b of beneficiaries) {
+    let sameDonors = donors.filter(d => safeGet(d, 'باركود الوحدة المخزنية') === safeGet(b, 'باركود الوحدة المخزنية') && safeGet(d, 'اسم الفرع') !== safeGet(b, 'اسم الفرع'));
+    if(sameDonors.length) {
       let donor = sameDonors[0];
       result.push({
-        'المنتج': safeGet(b,'إسم الصنف'), 'باركود': safeGet(b,'باركود الوحدة المخزنية'),
-        'فرع_مانح': safeGet(donor,'اسم الفرع'), 'فرع_مستقبل': safeGet(b,'اسم الفرع'),
-        'الكمية_المقترحة': Math.min(safeNum(donor,'رصيد'), safeNum(b,'ريشيو')||3)
+        'المنتج': safeGet(b, 'إسم الصنف'),
+        'الباركود': safeGet(b, 'باركود الوحدة المخزنية'),
+        'من فرع': safeGet(donor, 'اسم الفرع'),
+        'إلى فرع': safeGet(b, 'اسم الفرع'),
+        'الكمية المقترحة': Math.min(safeNum(donor, 'رصيد'), safeNum(b, 'ريشيو') || 3)
       });
     }
   }
   return result;
 }
 
-function renderDashboard(){
+// ======================== عرض لوحة التحكم ========================
+function renderDashboard() {
   const isMaster = currentUser.type === 'master';
-  let filteredData = isMaster ? allData : allData.filter(r => safeGet(r,'اسم الفرع') === currentUser.name);
-  let categories = { all:filteredData.length, urgent:0, new2026:0, review:0, stable:0, substitute:0, balance:0 };
-  filteredData.forEach(r=>{
-    let cat = safeGet(r,'تصنيف_المنتج_معدل','');
+  let filteredData = isMaster ? allData : allData.filter(r => safeGet(r, 'اسم الفرع') === currentUser.name);
+  
+  let categories = { all: filteredData.length, urgent: 0, new2026: 0, review: 0, stable: 0, substitute: 0, balance: 0 };
+  filteredData.forEach(r => {
+    let cat = safeGet(r, 'تصنيف_المنتج_معدل', '');
     if(cat === 'اطلب الان') categories.urgent++;
     else if(cat.includes('جديد 2026')) categories.new2026++;
     else if(cat.includes('جديد 2025')) categories.review++;
-    else if(['منخفضة','متوسطة','متوفر','مستقر'].includes(cat)) categories.stable++;
+    else if(['منخفضة', 'متوسطة', 'متوفر', 'مستقر'].includes(cat)) categories.stable++;
     else if(cat.includes('بديل')) categories.substitute++;
-    else if(cat === 'غير متوفر' || cat === 'تاريخ غير محدد') categories.balance++;
-    else if(cat !== '') categories.balance++;
+    else categories.balance++;
   });
+
   document.getElementById('statsRow').innerHTML = `
-    <div class="stat-card" style="border-right-color:var(--gray)" onclick="scrollToTab(0)"><div class="stat-label">📦 إجمالي</div><div class="stat-value">${categories.all}</div></div>
-    <div class="stat-card" style="border-right-color:var(--teal)" onclick="scrollToTab(0)"><div class="stat-label">🔴 جديد 2026</div><div class="stat-value">${categories.new2026}</div></div>
-    <div class="stat-card" style="border-right-color:var(--orange)" onclick="scrollToTab(0)"><div class="stat-label">🟠 نواقص عاجلة</div><div class="stat-value">${categories.urgent}</div></div>
-    <div class="stat-card" style="border-right-color:var(--green)" onclick="scrollToTab(0)"><div class="stat-label">🟢 مراجعة 2025</div><div class="stat-value">${categories.review}</div></div>
-    <div class="stat-card" style="border-right-color:var(--blue)" onclick="scrollToTab(0)"><div class="stat-label">📊 مستقرة</div><div class="stat-value">${categories.stable}</div></div>
-    <div class="stat-card" style="border-right-color:var(--purple)" onclick="scrollToTab(0)"><div class="stat-label">🔄 بديل</div><div class="stat-value">${categories.substitute}</div></div>
-    <div class="stat-card" style="border-right-color:var(--gold)" onclick="scrollToTab(0)"><div class="stat-label">🟡 متابعة</div><div class="stat-value">${categories.balance}</div></div>
+    <div class="stat-card" style="border-right-color:var(--gray)" onclick="filterByCategory('all')"><div class="stat-label">📦 إجمالي</div><div class="stat-value">${categories.all}</div></div>
+    <div class="stat-card" style="border-right-color:var(--teal)" onclick="filterByCategory('new2026')"><div class="stat-label">🔴 جديد 2026</div><div class="stat-value">${categories.new2026}</div></div>
+    <div class="stat-card" style="border-right-color:var(--orange)" onclick="filterByCategory('urgent')"><div class="stat-label">🟠 نواقص عاجلة</div><div class="stat-value">${categories.urgent}</div></div>
+    <div class="stat-card" style="border-right-color:var(--green)" onclick="filterByCategory('review')"><div class="stat-label">🟢 مراجعة 2025</div><div class="stat-value">${categories.review}</div></div>
+    <div class="stat-card" style="border-right-color:var(--blue)" onclick="filterByCategory('stable')"><div class="stat-label">📊 مستقرة</div><div class="stat-value">${categories.stable}</div></div>
+    <div class="stat-card" style="border-right-color:var(--purple)" onclick="filterByCategory('substitute')"><div class="stat-label">🔄 بديل</div><div class="stat-value">${categories.substitute}</div></div>
+    <div class="stat-card" style="border-right-color:var(--gold)" onclick="filterByCategory('balance')"><div class="stat-label">🟡 متابعة</div><div class="stat-value">${categories.balance}</div></div>
   `;
-  const tabs = ['المنتجات','الترانزيت مانح','الترانزيت مستقبل'];
+
+  const tabs = ['المنتجات', 'الترانزيت مانح', 'الترانزيت مستقبل'];
   let tabsHtml = '', contentHtml = '';
-  tabs.forEach((tab,i)=>{ let active=i===0?'active':''; tabsHtml+=`<button class="tab-btn ${active}" data-tab="tab${i}">${tab}</button>`; contentHtml+=`<div id="tab${i}" class="tab-content ${active}"><div class="table-card"><div id="table${i}"></div></div></div>`; });
+  tabs.forEach((tab, i) => {
+    let active = i === 0 ? 'active' : '';
+    tabsHtml += `<button class="tab-btn ${active}" data-tab="tab${i}">${tab}</button>`;
+    contentHtml += `<div id="tab${i}" class="tab-content ${active}"><div class="table-card"><div id="table${i}"></div></div></div>`;
+  });
   document.getElementById('tabsNav').innerHTML = tabsHtml;
   document.getElementById('tabsContainer').innerHTML = contentHtml;
-  document.querySelectorAll('.tab-btn').forEach(btn=>{ btn.addEventListener('click',function(){ document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active')); document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active')); this.classList.add('active'); document.getElementById(this.dataset.tab).classList.add('active'); }); });
+  
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', function() {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      this.classList.add('active');
+      document.getElementById(this.dataset.tab).classList.add('active');
+    });
+  });
+  
+  window.currentFilteredData = filteredData;
   renderProductsTable(filteredData, 'table0');
-  let donorData = isMaster ? transferData : transferData.filter(t=>t.فرع_مانح===currentUser.name);
-  let beneficiaryData = isMaster ? transferData : transferData.filter(t=>t.فرع_مستقبل===currentUser.name);
+  
+  let donorData = isMaster ? transferData : transferData.filter(t => t['من فرع'] === currentUser.name);
+  let beneficiaryData = isMaster ? transferData : transferData.filter(t => t['إلى فرع'] === currentUser.name);
   renderTransferTable(donorData, 'table1', 'donor-row');
   renderTransferTable(beneficiaryData, 'table2', 'beneficiary-row');
 }
 
-function renderProductsTable(data, containerId){
-  let html = `<table class="data-table"><thead><th>#</th><th>المنتج</th><th>الباركود</th><th>اللون</th><th>المجموعة</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>🔄 بديل</th></thead><tbody>`;
-  data.forEach((r,i)=>{
-    let ratio = safeNum(r,'رصيد')>0 ? safeNum(r,'المبيعات')/safeNum(r,'رصيد') : (safeNum(r,'المبيعات')>0?999:0);
+function filterByCategory(cat) {
+  let data = window.currentFilteredData || [];
+  let filtered = [];
+  if(cat === 'all') filtered = data;
+  else if(cat === 'urgent') filtered = data.filter(r => safeGet(r, 'تصنيف_المنتج_معدل') === 'اطلب الان');
+  else if(cat === 'new2026') filtered = data.filter(r => safeGet(r, 'تصنيف_المنتج_معدل').includes('جديد 2026'));
+  else if(cat === 'review') filtered = data.filter(r => safeGet(r, 'تصنيف_المنتج_معدل').includes('جديد 2025'));
+  else if(cat === 'stable') filtered = data.filter(r => ['منخفضة', 'متوسطة', 'متوفر', 'مستقر'].includes(safeGet(r, 'تصنيف_المنتج_معدل')));
+  else if(cat === 'substitute') filtered = data.filter(r => safeGet(r, 'تصنيف_المنتج_معدل').includes('بديل'));
+  else filtered = data.filter(r => !['اطلب الان', 'جديد 2026', 'جديد 2025', 'منخفضة', 'متوسطة', 'متوفر', 'مستقر', 'بديل'].some(k => safeGet(r, 'تصنيف_المنتج_معدل').includes(k)));
+  renderProductsTable(filtered, 'table0');
+  document.querySelector('.tab-btn[data-tab="tab0"]').click();
+}
+
+function renderProductsTable(data, containerId) {
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>المنتج</th><th>الباركود</th><th>اللون</th><th>المجموعة</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>🔄 بديل</th></tr></thead><tbody>`;
+  data.slice(0, 500).forEach((r, i) => {
+    let ratio = safeNum(r, 'رصيد') > 0 ? safeNum(r, 'المبيعات') / safeNum(r, 'رصيد') : (safeNum(r, 'المبيعات') > 0 ? 999 : 0);
     let hasSub = hasSubstitute(r);
     let subRow = hasSub ? getSubstitute(r) : null;
     let btnId = `btn-sub-${containerId}-${i}`;
     let panelId = `panel-sub-${containerId}-${i}`;
     html += `<tr>
       <td>${i+1}</td>
-      <td><strong>${safeGet(r,'إسم الصنف')}</strong></td>
-      <td>${safeGet(r,'باركود الوحدة المخزنية')}</td>
-      <td>${safeGet(r,'اللون','—')}</td>
-      <td>${safeGet(r,'المجموعة الرئيسية.2')}</td>
-      <td><span class="qty-badge">${safeNum(r,'الكمية_المخصصة')}</span></td>
-      <td>${safeNum(r,'المبيعات')}</td>
-      <td>${safeNum(r,'رصيد')}</td>
-      <td>${ratio===999?'🔴 نفد':(ratio*100).toFixed(1)+'%'}</td>
+      <td><strong>${safeGet(r, 'إسم الصنف')}</strong></td>
+      <td>${safeGet(r, 'باركود الوحدة المخزنية')}</td>
+      <td>${safeGet(r, 'اللون', '—')}</td>
+      <td>${safeGet(r, 'المجموعة الرئيسية.2')}</td>
+      <td><span class="qty-badge">${safeNum(r, 'الكمية_المخصصة')}</span></td>
+      <td>${safeNum(r, 'المبيعات')}</td>
+      <td>${safeNum(r, 'رصيد')}</td>
+      <td>${ratio === 999 ? '🔴 نفد' : (ratio * 100).toFixed(1) + '%'}</td>
       <td style="text-align:center;">${hasSub && subRow ? `<button id="${btnId}" class="substitute-btn" onclick="toggleSubstitute('${btnId}','${panelId}')">🔄 مراجعة البديل</button>` : '<span style="color:var(--gray);">—</span>'}</td>
     </tr>`;
-    if(hasSub && subRow) html += `<tr><td colspan="10" style="padding:0 10px 10px;">${buildSubstitutePanel(subRow, panelId)}</td></tr>`;
+    if(hasSub && subRow) html += `<td><td colspan="10" style="padding:0 10px 10px;">${buildSubstitutePanel(subRow, panelId)}</td></tr>`;
   });
   html += `</tbody></table>`;
   document.getElementById(containerId).innerHTML = html;
 }
 
-function renderTransferTable(data, containerId, rowClass){
-  if(!data.length){ document.getElementById(containerId).innerHTML = '<p style="padding:20px;text-align:center">📭 لا توجد تحويلات</p>'; return; }
-  let html = `<table class="data-table"><thead><th>#</th><th>المنتج</th><th>الباركود</th><th>من فرع</th><th>إلى فرع</th><th>الكمية المقترحة</th></thead><tbody>`;
-  data.forEach((t,i)=> html += `<tr class="${rowClass}"><td>${i+1}</td><td>${t.المنتج}</td><td>${t.باركود}</td><td>${t.فرع_مانح}</td><td>${t.فرع_مستقبل}</td><td><span class="qty-badge">${t.الكمية_المقترحة}</span></td></tr>`);
+function renderTransferTable(data, containerId, rowClass) {
+  if(!data.length) {
+    document.getElementById(containerId).innerHTML = '<p style="padding:20px;text-align:center">📭 لا توجد تحويلات</p>';
+    return;
+  }
+  let html = `<table class="data-table"><thead><tr><th>#</th><th>المنتج</th><th>الباركود</th><th>من فرع</th><th>إلى فرع</th><th>الكمية المقترحة</th></tr></thead><tbody>`;
+  data.forEach((t, i) => html += `<tr class="${rowClass}"><td>${i+1}</td><td>${t.المنتج}</td><td>${t.الباركود}</td><td>${t['من فرع']}</td><td>${t['إلى فرع']}</td><td><span class="qty-badge">${t['الكمية المقترحة']}</span></td></tr>`);
   html += `</tbody></table>`;
   document.getElementById(containerId).innerHTML = html;
 }
 
-function scrollToTab(tabIndex){
-  let btns = document.querySelectorAll('.tab-btn');
-  if(btns[tabIndex]) btns[tabIndex].click();
-  document.getElementById('dashboardPanel').scrollIntoView({ behavior: 'smooth' });
-}
-
 // ======================== باريتو مودال ========================
-function openParetoModal(){
+function openParetoModal() {
   const isMaster = currentUser.type === 'master';
-  let data = isMaster ? allData : allData.filter(r=>safeGet(r,'اسم الفرع')===currentUser.name);
-  let totalSales = data.reduce((s,r)=>s+safeNum(r,'المبيعات'),1);
-  let totalStock = data.reduce((s,r)=>s+safeNum(r,'رصيد'),1);
-  let salesSorted = [...data].sort((a,b)=>safeNum(b,'المبيعات')-safeNum(a,'المبيعات'));
-  let stockSorted = [...data].sort((a,b)=>safeNum(b,'رصيد')-safeNum(a,'رصيد'));
-  let cumSales=0, cumStock=0;
-  let salesMap=new Map(), stockMap=new Map();
-  salesSorted.forEach(p=>{ cumSales+=safeNum(p,'المبيعات'); salesMap.set(p, cumSales/totalSales<=0.8?'A':'B/C'); });
-  stockSorted.forEach(p=>{ cumStock+=safeNum(p,'رصيد'); stockMap.set(p, cumStock/totalStock<=0.8?'A':'B/C'); });
+  let data = isMaster ? allData : allData.filter(r => safeGet(r, 'اسم الفرع') === currentUser.name);
+  let totalSales = data.reduce((s, r) => s + safeNum(r, 'المبيعات'), 1);
+  let totalStock = data.reduce((s, r) => s + safeNum(r, 'رصيد'), 1);
+  let salesSorted = [...data].sort((a, b) => safeNum(b, 'المبيعات') - safeNum(a, 'المبيعات'));
+  let stockSorted = [...data].sort((a, b) => safeNum(b, 'رصيد') - safeNum(a, 'رصيد'));
+  let cumSales = 0, cumStock = 0;
+  let salesMap = new Map(), stockMap = new Map();
+  salesSorted.forEach(p => { cumSales += safeNum(p, 'المبيعات'); salesMap.set(p, cumSales / totalSales <= 0.8 ? 'A' : 'B/C'); });
+  stockSorted.forEach(p => { cumStock += safeNum(p, 'رصيد'); stockMap.set(p, cumStock / totalStock <= 0.8 ? 'A' : 'B/C'); });
   
-  let items = data.map(r=>{
+  let items = data.map(r => {
     let salesClass = salesMap.get(r) || 'B/C';
     let stockClass = stockMap.get(r) || 'B/C';
     let category = '';
-    if(salesClass==='A' && stockClass!=='A') category = 'stars';
-    else if(salesClass==='A' && stockClass==='A') category = 'balanced';
-    else if(salesClass!=='A' && stockClass==='A') category = 'dead';
+    if(salesClass === 'A' && stockClass !== 'A') category = 'stars';
+    else if(salesClass === 'A' && stockClass === 'A') category = 'balanced';
+    else if(salesClass !== 'A' && stockClass === 'A') category = 'dead';
     else category = 'marginal';
     return { ...r, salesClass, stockClass, category };
   });
   
-  document.getElementById('modalTitle').innerText = '📈 تحليل باريتو (مبيعات + رصيد)';
+  document.getElementById('modalTitle').innerHTML = '📈 تحليل باريتو';
   let filterHtml = `<div class="filter-buttons">
     <button class="filter-btn" style="background:#d1fae5;color:#065f46;" onclick="showParetoCategory('stars')">🏆 نجوم (مبيعات A + رصيد قليل)</button>
     <button class="filter-btn" style="background:#fef3c7;color:#92400e;" onclick="showParetoCategory('balanced')">⚖️ متوازن (مبيعات A + رصيد عالي)</button>
@@ -433,83 +493,135 @@ function openParetoModal(){
   document.getElementById('reportModal').style.display = 'flex';
 }
 
-function showParetoCategory(cat){
+function showParetoCategory(cat) {
   let items = window.paretoItems || [];
-  let filtered = items.filter(i=>i.category===cat);
-  let titles = { stars:'🏆 نجوم - زود المخزون فوراً', balanced:'⚖️ متوازن - راقب فقط', dead:'💀 ميت - صفيهم بعروض', marginal:'⚠️ هامشي - راجع الجدوى' };
+  let filtered = items.filter(i => i.category === cat);
+  let titles = { stars: '🏆 نجوم - زود المخزون فوراً', balanced: '⚖️ متوازن - راقب فقط', dead: '💀 ميت - صفيهم بعروض', marginal: '⚠️ هامشي - راجع الجدوى' };
   let tableHtml = `<table class="data-table"><thead><th>المنتج</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th><th>التوصية</th></thead><tbody>`;
-  filtered.slice(0,50).forEach(r=>{
-    let ratio = safeNum(r,'رصيد')>0 ? safeNum(r,'المبيسات')/safeNum(r,'رصيد') : 0;
-    let rec = cat==='stars'?'🟢 زود المخزون':cat==='balanced'?'🟡 راقب فقط':cat==='dead'?'🔴 عرض أو تصفية':'🟠 راجع الجدوى';
-    tableHtml += `<tr><td><strong>${safeGet(r,'إسم الصنف')}</strong></td><td>${safeNum(r,'المبيعات')}</td><td>${safeNum(r,'رصيد')}</td><td>${(ratio*100).toFixed(1)}%</td><td>${rec}</td></tr>`;
+  filtered.slice(0, 50).forEach(r => {
+    let ratio = safeNum(r, 'رصيد') > 0 ? safeNum(r, 'المبيعات') / safeNum(r, 'رصيد') : 0;
+    let rec = cat === 'stars' ? '🟢 زود المخزون' : (cat === 'balanced' ? '🟡 راقب فقط' : (cat === 'dead' ? '🔴 عرض أو تصفية' : '🟠 راجع الجدوى'));
+    tableHtml += `<tr><td><strong>${safeGet(r, 'إسم الصنف')}</strong></td><td>${safeNum(r, 'المبيعات')}</td><td>${safeNum(r, 'رصيد')}</td><td>${(ratio * 100).toFixed(1)}%</td><td>${rec}</td></tr>`;
   });
-  tableHtml += `</tbody><td>`;
+  tableHtml += `</tbody></table>`;
   document.getElementById('paretoTableContainer').innerHTML = `<h4 style="margin-bottom:16px;">${titles[cat]} (${filtered.length} منتج)</h4>${tableHtml}`;
 }
 
-function openHealthModal(){
+// ======================== صحة المخزون ========================
+function openHealthModal() {
   const isMaster = currentUser.type === 'master';
-  let data = isMaster ? allData : allData.filter(r=>safeGet(r,'اسم الفرع')===currentUser.name);
-  let healthy = data.filter(r=>safeNum(r,'نسبة_البيع')<0.3 && safeNum(r,'رصيد')>safeNum(r,'ريشيو')).length;
-  let moderate = data.filter(r=>safeNum(r,'نسبة_البيع')>=0.3 && safeNum(r,'نسبة_البيع')<0.7).length;
+  let data = isMaster ? allData : allData.filter(r => safeGet(r, 'اسم الفرع') === currentUser.name);
+  let ratioData = data.map(r => {
+    let sales = safeNum(r, 'المبيعات');
+    let stock = safeNum(r, 'رصيد');
+    let ratio = stock > 0 ? sales / stock : (sales > 0 ? 999 : 0);
+    return { ...r, ratio };
+  });
+  let healthy = ratioData.filter(r => r.ratio < 0.3 && safeNum(r, 'رصيد') > safeNum(r, 'ريشيو')).length;
+  let moderate = ratioData.filter(r => r.ratio >= 0.3 && r.ratio < 0.7).length;
   let critical = data.length - healthy - moderate;
+  
   document.getElementById('modalTitle').innerText = '🏥 صحة المخزون';
-  document.getElementById('modalContent').innerHTML = `<div class="chart-container"><canvas id="healthChart"></canvas></div><p>✅ سليم: ${healthy}<br>⚠️ متوسط: ${moderate}<br>❌ مريض: ${critical}</p>`;
+  document.getElementById('modalContent').innerHTML = `<div class="chart-container"><canvas id="healthChart"></canvas></div>
+    <div style="display:flex;justify-content:space-around;margin-top:20px;gap:16px;flex-wrap:wrap;">
+      <div style="text-align:center;"><div style="background:#1a6b3c;width:40px;height:40px;border-radius:50%;margin:0 auto;"></div><p style="margin-top:8px;"><strong>✅ سليم</strong><br>${healthy} صنف</p></div>
+      <div style="text-align:center;"><div style="background:#c9a84c;width:40px;height:40px;border-radius:50%;margin:0 auto;"></div><p style="margin-top:8px;"><strong>⚠️ متوسط</strong><br>${moderate} صنف</p></div>
+      <div style="text-align:center;"><div style="background:#dc2626;width:40px;height:40px;border-radius:50%;margin:0 auto;"></div><p style="margin-top:8px;"><strong>❌ مريض</strong><br>${critical} صنف</p></div>
+    </div>`;
   document.getElementById('reportModal').style.display = 'flex';
-  setTimeout(()=>{ let ctx = document.getElementById('healthChart')?.getContext('2d'); if(ctx) new Chart(ctx, { type:'doughnut', data:{ labels:['🟢 سليم','🟡 متوسط','🔴 مريض'], datasets:[{ data:[healthy,moderate,critical], backgroundColor:['#1a6b3c','#c9a84c','#dc2626'] }] } }); },50);
+  setTimeout(() => {
+    let ctx = document.getElementById('healthChart')?.getContext('2d');
+    if(ctx) new Chart(ctx, { type: 'doughnut', data: { labels: ['🟢 سليم', '🟡 متوسط', '🔴 مريض'], datasets: [{ data: [healthy, moderate, critical], backgroundColor: ['#1a6b3c', '#c9a84c', '#dc2626'] }] }, options: { responsive: true, maintainAspectRatio: true } });
+  }, 50);
 }
 
-function openDemandModal(){
+// ======================== سريعة الدوران ========================
+function openFastModal() {
   const isMaster = currentUser.type === 'master';
-  let data = isMaster ? allData : allData.filter(r=>safeGet(r,'اسم الفرع')===currentUser.name);
-  let demandMap = new Map();
-  allData.forEach(r=>{ let prod = safeGet(r,'إسم الصنف'); if(safeNum(r,'رصيد')<safeNum(r,'ريشيو') && safeNum(r,'المبيعات')>0) demandMap.set(prod, (demandMap.get(prod)||0)+1); });
-  let sorted = Array.from(demandMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0,20);
-  document.getElementById('modalTitle').innerText = '📢 طلب الفروع';
-  document.getElementById('modalContent').innerHTML = `<div class="chart-container"><canvas id="demandChart"></canvas></div><table class="data-table"><thead><th>المنتج</th><th>عدد الفروع المحتاجة</th></thead><tbody>${sorted.map(s=>`<tr><td>${s[0]}</td><td><span class="qty-badge">${s[1]}</span></td></tr>`).join('')}</tbody></table>`;
-  document.getElementById('reportModal').style.display = 'flex';
-  setTimeout(()=>{ let ctx = document.getElementById('demandChart')?.getContext('2d'); if(ctx) new Chart(ctx, { type:'bar', data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'عدد الفروع', data:sorted.map(s=>s[1]), backgroundColor:'#ea580c' }] } }); },50);
-}
-
-function openFastModal(){
-  const isMaster = currentUser.type === 'master';
-  let data = isMaster ? allData : allData.filter(r=>safeGet(r,'اسم الفرع')===currentUser.name);
-  let fast = data.filter(r=>{
-    let ratio = safeNum(r,'رصيد')>0 ? safeNum(r,'المبيعات')/safeNum(r,'رصيد') : 0;
-    let stock = safeNum(r,'رصيد');
-    let rish = safeNum(r,'ريشيو')||3;
-    let sales = safeNum(r,'المبيعات');
+  let data = isMaster ? allData : allData.filter(r => safeGet(r, 'اسم الفرع') === currentUser.name);
+  let fast = data.filter(r => {
+    let ratio = safeNum(r, 'رصيد') > 0 ? safeNum(r, 'المبيعات') / safeNum(r, 'رصيد') : 0;
+    let stock = safeNum(r, 'رصيد');
+    let rish = safeNum(r, 'ريشيو') || 3;
+    let sales = safeNum(r, 'المبيعات');
     return (ratio > 0.30) || (stock < rish * 1.5) || (sales > 10) || (ratio > 0.20 && stock < 30);
-  }).map(r=>{
-    let ratio = safeNum(r,'رصيد')>0 ? safeNum(r,'المبيعات')/safeNum(r,'رصيد') : 0;
-    let rish = safeNum(r,'ريشيو')||3;
-    let priority = (ratio * 100) + ((rish - safeNum(r,'رصيد')) * 2);
+  }).map(r => {
+    let ratio = safeNum(r, 'رصيد') > 0 ? safeNum(r, 'المبيعات') / safeNum(r, 'رصيد') : 0;
+    let rish = safeNum(r, 'ريشيو') || 3;
+    let priority = (ratio * 100) + ((rish - safeNum(r, 'رصيد')) * 2);
     return { ...r, ratio, priority };
-  }).sort((a,b)=>b.priority - a.priority).slice(0,30);
-  document.getElementById('modalTitle').innerText = '⚡ منتجات سريعة الدوران - أولوية التدخل';
-  let tableHtml = `<div class="chart-container"><canvas id="fastChart"></canvas></div><table class="data-table"><thead><th>الأولوية</th><th>المنتج</th><th>نسبة البيع</th><th>الرصيد</th><th>حد الأمان</th><th>الكمية المطلوبة</th><th>التوصية</th></thead><tbody>`;
-  fast.forEach(r=>{
-    let need = Math.max(0, (safeNum(r,'ريشيو')||3) - safeNum(r,'رصيد'));
+  }).sort((a, b) => b.priority - a.priority).slice(0, 30);
+  
+  let tableHtml = `<div class="chart-container"><canvas id="fastChart"></canvas></div>
+    <table class="data-table"><thead><th>الأولوية</th><th>المنتج</th><th>نسبة البيع</th><th>الرصيد</th><th>حد الأمان</th><th>الكمية المطلوبة</th><th>التوصية</th></thead><tbody>`;
+  fast.forEach(r => {
+    let need = Math.max(0, (safeNum(r, 'ريشيو') || 3) - safeNum(r, 'رصيد'));
     let priorityText = r.priority > 70 ? '🔴 عاجل' : (r.priority > 40 ? '🟠 متابعة' : '🟡 عادي');
-    tableHtml += `<tr><td>${priorityText}</td><td><strong>${safeGet(r,'إسم الصنف')}</strong></td><td>${(r.ratio*100).toFixed(1)}%</td><td>${safeNum(r,'رصيد')}</td><td>${safeNum(r,'ريشيو')||3}</td><td><span class="qty-badge">${need}</span></td><td>${need>0?'زود المخزون':'مخزون آمن'}</td></tr>`;
+    tableHtml += `<tr><td>${priorityText}</td><td><strong>${safeGet(r, 'إسم الصنف')}</strong></td><td>${(r.ratio * 100).toFixed(1)}%</td><td>${safeNum(r, 'رصيد')}</td><td>${safeNum(r, 'ريشيو') || 3}</td><td><span class="qty-badge">${need}</span></td><td>${need > 0 ? 'زود المخزون' : 'مخزون آمن'}</td></tr>`;
   });
   tableHtml += `</tbody></table>`;
+  
+  document.getElementById('modalTitle').innerText = '⚡ منتجات سريعة الدوران - أولوية التدخل';
   document.getElementById('modalContent').innerHTML = tableHtml;
   document.getElementById('reportModal').style.display = 'flex';
-  setTimeout(()=>{ let ctx = document.getElementById('fastChart')?.getContext('2d'); if(ctx) new Chart(ctx, { type:'bar', data:{ labels:fast.slice(0,15).map(r=>safeGet(r,'إسم الصنف')), datasets:[{ label:'نسبة البيع %', data:fast.slice(0,15).map(r=>r.ratio*100), backgroundColor:'#2563eb' }] } }); },50);
+  setTimeout(() => {
+    let ctx = document.getElementById('fastChart')?.getContext('2d');
+    if(ctx) new Chart(ctx, { type: 'bar', data: { labels: fast.slice(0, 15).map(r => safeGet(r, 'إسم الصنف')), datasets: [{ label: 'نسبة البيع %', data: fast.slice(0, 15).map(r => r.ratio * 100), backgroundColor: '#2563eb' }] }, options: { responsive: true, maintainAspectRatio: true } });
+  }, 50);
 }
 
-function closeModal(){ document.getElementById('reportModal').style.display = 'none'; }
-function exportToExcel(){
-  let ws = XLSX.utils.json_to_sheet(allData);
+function closeModal() { document.getElementById('reportModal').style.display = 'none'; if(currentChart) currentChart.destroy(); }
+
+// ======================== تصدير Excel ========================
+function exportToExcel() {
+  const isMaster = currentUser.type === 'master';
+  let filteredData = isMaster ? allData : allData.filter(r => safeGet(r, 'اسم الفرع') === currentUser.name);
+  
+  // إزالة عمود البديل من البيانات للتصدير
+  let exportData = filteredData.map(({ ['🔄 بديل']: _, ...rest }) => rest);
+  
+  let donorData = isMaster ? transferData : transferData.filter(t => t['من فرع'] === currentUser.name);
+  let beneficiaryData = isMaster ? transferData : transferData.filter(t => t['إلى فرع'] === currentUser.name);
+  
+  let categories = { all: filteredData.length, urgent: 0, new2026: 0, review: 0, stable: 0, substitute: 0, balance: 0 };
+  filteredData.forEach(r => {
+    let cat = safeGet(r, 'تصنيف_المنتج_معدل', '');
+    if(cat === 'اطلب الان') categories.urgent++;
+    else if(cat.includes('جديد 2026')) categories.new2026++;
+    else if(cat.includes('جديد 2025')) categories.review++;
+    else if(['منخفضة', 'متوسطة', 'متوفر', 'مستقر'].includes(cat)) categories.stable++;
+    else if(cat.includes('بديل')) categories.substitute++;
+    else categories.balance++;
+  });
+  
+  let summary = [
+    { 'الإحصائية': '📦 إجمالي', 'العدد': categories.all },
+    { 'الإحصائية': '🔴 جديد 2026', 'العدد': categories.new2026 },
+    { 'الإحصائية': '🟠 نواقص عاجلة', 'العدد': categories.urgent },
+    { 'الإحصائية': '🟢 مراجعة 2025', 'العدد': categories.review },
+    { 'الإحصائية': '📊 مستقرة', 'العدد': categories.stable },
+    { 'الإحصائية': '🔄 بديل', 'العدد': categories.substitute },
+    { 'الإحصائية': '🟡 متابعة', 'العدد': categories.balance }
+  ];
+  
   let wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, 'البيانات');
-  XLSX.writeFile(wb, `TREE_${currentUser.type==='master'?'مدير_عام':currentUser.name}.xlsx`);
+  let wsProducts = XLSX.utils.json_to_sheet(exportData);
+  let wsDonor = XLSX.utils.json_to_sheet(donorData);
+  let wsBeneficiary = XLSX.utils.json_to_sheet(beneficiaryData);
+  let wsSummary = XLSX.utils.json_to_sheet(summary);
+  
+  XLSX.utils.book_append_sheet(wb, wsProducts, 'المنتجات');
+  XLSX.utils.book_append_sheet(wb, wsDonor, 'ترانزيت مانح');
+  XLSX.utils.book_append_sheet(wb, wsBeneficiary, 'ترانزيت مستقبل');
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'الإحصائيات');
+  
+  XLSX.writeFile(wb, `TREE_${currentUser.type === 'master' ? 'مدير_عام' : currentUser.name}.xlsx`);
 }
 
-window.onload = ()=>{
+// ======================== تهيئة القائمة ========================
+window.onload = () => {
   let select = document.getElementById('branchSelect');
-  BRANCHES.forEach(b=>{ let opt = document.createElement('option'); opt.value=b; opt.innerText=b; select.appendChild(opt); });
+  BRANCHES.forEach(b => { let opt = document.createElement('option'); opt.value = b; opt.innerText = b; select.appendChild(opt); });
 };
 </script>
 </body>
