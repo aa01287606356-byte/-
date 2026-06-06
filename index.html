@@ -11,7 +11,6 @@
   * { margin: 0; padding: 0; box-sizing: border-box; }
   body { font-family: 'Cairo', sans-serif; background: #f0f4f0; color: #1a2e1a; min-height: 100vh; direction: rtl; }
   
-  /* متغيرات التصميم */
   :root {
     --primary: #1a6b3c;
     --primary-dark: #0f4526;
@@ -87,7 +86,7 @@
   .data-table td { padding: 12px; border-bottom: 1px solid #e5e7eb; }
   .qty-badge { background: var(--primary); color: white; padding: 4px 10px; border-radius: 30px; font-weight: 700; font-size: 12px; display: inline-block; }
 
-  /* المودال (النوافذ المنبثقة) */
+  /* المودال */
   .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.6); align-items: center; justify-content: center; z-index: 1000; }
   .modal-content { background: white; border-radius: 28px; width: 85%; max-width: 1100px; max-height: 85vh; overflow-y: auto; padding: 28px; position: relative; }
   .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid var(--gray-light); padding-bottom: 12px; }
@@ -97,7 +96,7 @@
   .donor-row { background: #f0fdf4; }
   .beneficiary-row { background: #fef2f2; }
 
-  @media print { .app-header, .action-bar, .stats-row, .report-buttons, .tabs-nav, .search-box, .modal { display: none !important; } }
+  @media print { .app-header, .action-bar, .stats-row, .report-buttons, .tabs-nav, .modal { display: none !important; } }
 </style>
 </head>
 <body>
@@ -151,10 +150,8 @@
       <button class="btn-action btn-print" onclick="window.print()">🖨️ طباعة</button>
     </div>
 
-    <!-- الإحصائيات السريعة -->
     <div class="stats-row" id="statsRow"></div>
 
-    <!-- أزرار التقارير المميزة -->
     <div class="report-buttons">
       <button class="report-btn" onclick="openReport('pareto')">📈 باريتو (80/20)</button>
       <button class="report-btn" onclick="openReport('health')">🏥 صحة المخزون</button>
@@ -162,7 +159,6 @@
       <button class="report-btn" onclick="openReport('gap')">🎯 فجوة السوق</button>
     </div>
 
-    <!-- التبويبات الرئيسية -->
     <div class="tabs-nav" id="tabsNav"></div>
     <div id="tabsContainer"></div>
   </div>
@@ -183,14 +179,16 @@
 <script>
 // ======================== بيانات الفروع وكلمات المرور الثابتة ========================
 const BRANCHES = ["أكتوبر","الابراهيمية","الاسكندرانى","البيطاش","البيع الالكتروني","التجمع","الحديد والصلب","الزقازيق","السيوف","العروبة الاسكندرية","العلمين","العيسوى","المنتزة_2","المنتزة","المنشا","الهانوفيل","الهرم","برج العرب","بشاير الخير","بولكلي","جرين تاورز","حدائق الاهرام","خالد بن الوليد","دمنهور","سان ستيفانو","سبورتنج","سموحة الجديد","سموحة","سيدى بشر","صلاح سالم","طنطا_2","طنطا","عجمى ستار","لوران","مارينا"];
+
 const BRANCH_PASSWORDS = {
   "أكتوبر":"471","الابراهيمية":"832","الاسكندرانى":"295","البيطاش":"647","البيع الالكتروني":"913","التجمع":"158","الحديد والصلب":"724","الزقازيق":"386","السيوف":"549","العروبة الاسكندرية":"672","العلمين":"231","العيسوى":"895","المنتزة_2":"413","المنتزة":"768","المنشا":"327","الهانوفيل":"689","الهرم":"574","برج العرب":"146","بشاير الخير":"932","بولكلي":"258","جرين تاورز":"703","حدائق الاهرام":"481","خالد بن الوليد":"615","دمنهور":"397","سان ستيفانو":"854","سبورتنج":"169","سموحة الجديد":"726","سموحة":"542","سيدى بشر":"903","صلاح سالم":"384","طنطا_2":"618","طنطا":"275","عجمى ستار":"791","لوران":"467","مارينا":"555"
 };
+
 const MASTER_PASSWORD = "101499";
 
-let currentUser = null;     // { type: 'branch', name } or { type: 'master' }
-let allData = [];           // كل البيانات من الملف
-let transferData = [];      // بيانات التوصيات المحسوبة
+let currentUser = null;
+let allData = [];
+let transferData = [];
 let currentChart = null;
 
 // ======================== دوال مساعدة ========================
@@ -199,18 +197,32 @@ function safeGet(row, fields, def='—') {
   for(let f of fields) if(row[f] && String(row[f]).trim()) return String(row[f]).trim();
   return def;
 }
+
 function safeNum(row, fields, def=0){
   if(!Array.isArray(fields)) fields=[fields];
-  for(let f of fields) { let v = row[f]; if(v !== undefined && v !== null) { let n=Number(v); if(!isNaN(n)) return n; } }
+  for(let f of fields) { 
+    let v = row[f]; 
+    if(v !== undefined && v !== null) { 
+      let n = Number(v); 
+      if(!isNaN(n)) return n; 
+    } 
+  }
   return def;
 }
 
-// تسجيل الدخول
+// ======================== تسجيل الدخول ========================
 function doLogin(){
   const branch = document.getElementById('branchSelect').value;
   const pwd = document.getElementById('passwordInput').value.trim();
   const errDiv = document.getElementById('loginError');
-  if(!branch){ errDiv.innerText='❌ اختر الفرع'; errDiv.style.display='block'; return; }
+  
+  if(!branch){
+    errDiv.innerText='❌ اختر الفرع'; 
+    errDiv.style.display='block'; 
+    return; 
+  }
+  
+  // مدير عام
   if(pwd === MASTER_PASSWORD){
     currentUser = { type: 'master' };
     document.getElementById('headerBranch').innerHTML = '🏢 المدير العام';
@@ -221,6 +233,8 @@ function doLogin(){
     errDiv.style.display='none';
     return;
   }
+  
+  // مدير فرع
   if(BRANCH_PASSWORDS[branch] === pwd){
     currentUser = { type: 'branch', name: branch };
     document.getElementById('headerBranch').innerHTML = `🏪 ${branch}`;
@@ -231,13 +245,14 @@ function doLogin(){
     errDiv.style.display='none';
     return;
   }
+  
   errDiv.innerText='❌ كلمة مرور خاطئة';
   errDiv.style.display='block';
 }
 
 function logout(){ location.reload(); }
 
-// قراءة الملف
+// ======================== قراءة الملف ========================
 function loadFile(input){
   const file = input.files[0];
   if(!file) return;
@@ -251,28 +266,32 @@ function loadFile(input){
       if(!raw.length) throw new Error('الملف فارغ');
       allData = raw;
       
-      // حساب التوصيات
       transferData = calculateTransfers(allData);
       
       document.getElementById('uploadScreen').style.display = 'none';
       document.getElementById('dashboardPanel').style.display = 'block';
       renderDashboard();
       document.getElementById('uploadStatus').innerText = '';
-    } catch(err){ document.getElementById('uploadStatus').innerText = '❌ '+err.message; }
+    } catch(err){ 
+      document.getElementById('uploadStatus').innerText = '❌ '+err.message; 
+    }
   };
   reader.readAsArrayBuffer(file);
 }
 
-// حساب الترانزيت المبسط (محاكاة منطق Power Query)
+// ======================== حساب الترانزيت ========================
 function calculateTransfers(data){
   let enriched = data.map(r => {
     let bal = safeNum(r,'رصيد'), sales = safeNum(r,'المبيعات');
     let ratio = bal===0 ? (sales>0?999:0) : sales/bal;
     return {...r, نسبة_البيع: ratio};
   });
+  
   let suspended = ['بولكلي','سموحة الجديد','البيطاش','البيع الالكتروني','طنطا','بشاير الخير','المنتزة'];
+  
   let donors = enriched.filter(r => r.نسبة_البيع < 0.10 && r.نسبة_البيع !== 999 && safeNum(r,'رصيد')>0);
   let beneficiaries = enriched.filter(r => (r.نسبة_البيع >= 0.40 || r.نسبة_البيع === 999) && safeNum(r,'رصيد') < (safeNum(r,'ريشيو')||3) && !suspended.includes(safeGet(r,'اسم الفرع')));
+  
   let result = [];
   for(let b of beneficiaries){
     let sameDonors = donors.filter(d => safeGet(d,'باركود الوحدة المخزنية') === safeGet(b,'باركود الوحدة المخزنية') && safeGet(d,'اسم الفرع') !== safeGet(b,'اسم الفرع'));
@@ -291,18 +310,18 @@ function calculateTransfers(data){
   return result;
 }
 
-// عرض لوحة التحكم حسب نوع المستخدم
+// ======================== عرض لوحة التحكم ========================
 function renderDashboard(){
   const isMaster = currentUser.type === 'master';
   let filteredData = isMaster ? allData : allData.filter(r => safeGet(r,'اسم الفرع') === currentUser.name);
   
-  // إحصائيات
   const stats = {
     totalItems: filteredData.length,
     urgent: filteredData.filter(r => safeGet(r,'تصنيف_المنتج_معدل') === 'اطلب الان').length,
     new2026: filteredData.filter(r => safeGet(r,'تصنيف_المنتج_معدل').includes('جديد 2026')).length,
-    stable: filteredData.filter(r => ['منخفضة','متوسطة','متوفر','مستقر'].includes(safeGet(r,'تصنيف_المنتج_معدл'))).length
+    stable: filteredData.filter(r => ['منخفضة','متوسطة','متوفر','مستقر'].includes(safeGet(r,'تصنيف_المنتج_معدل'))).length
   };
+  
   document.getElementById('statsRow').innerHTML = `
     <div class="stat-card" style="border-right-color:var(--red)"><div class="stat-label">📦 إجمالي الأصناف</div><div class="stat-value">${stats.totalItems}</div></div>
     <div class="stat-card" style="border-right-color:var(--orange)"><div class="stat-label">🟠 نواقص عاجلة</div><div class="stat-value">${stats.urgent}</div></div>
@@ -310,7 +329,6 @@ function renderDashboard(){
     <div class="stat-card" style="border-right-color:var(--green)"><div class="stat-label">📊 مستقرة</div><div class="stat-value">${stats.stable}</div></div>
   `;
   
-  // بناء التبويبات (جداول أساسية)
   const tabs = ['المنتجات','الترانزيت مانح','الترانزيت مستقبل'];
   let tabsHtml = '';
   let contentHtml = '';
@@ -321,6 +339,7 @@ function renderDashboard(){
   });
   document.getElementById('tabsNav').innerHTML = tabsHtml;
   document.getElementById('tabsContainer').innerHTML = contentHtml;
+  
   document.querySelectorAll('.tab-btn').forEach(btn=>{
     btn.addEventListener('click',function(){
       document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
@@ -330,11 +349,13 @@ function renderDashboard(){
     });
   });
   
-  // عرض الجداول
   renderProductsTable(filteredData, 'table0');
-  let donorData = transferData.filter(t => t.فرع_مانح === (isMaster ? '' : currentUser.name));
-  let beneficiaryData = transferData.filter(t => t.فرع_مستقبل === (isMaster ? '' : currentUser.name));
-  if(!isMaster){
+  
+  let donorData = [], beneficiaryData = [];
+  if(isMaster){
+    donorData = transferData;
+    beneficiaryData = transferData;
+  } else {
     donorData = transferData.filter(t => t.فرع_مانح === currentUser.name);
     beneficiaryData = transferData.filter(t => t.فرع_مستقبل === currentUser.name);
   }
@@ -343,40 +364,80 @@ function renderDashboard(){
 }
 
 function renderProductsTable(data, containerId){
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>المنتج</th><th>الباركود</th><th>اللون</th><th>المجموعة</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th></tr></thead><tbody>`;
+  let html = `<table class="data-table"><thead><tr>
+    <th>#</th><th>المنتج</th><th>الباركود</th><th>اللون</th>
+    <th>المجموعة</th><th>الكمية</th><th>المبيعات</th><th>الرصيد</th><th>نسبة البيع</th>
+   </tr></thead><tbody>`;
+  
   data.slice(0,200).forEach((r,i)=>{
     let ratio = safeNum(r,'رصيد')>0 ? safeNum(r,'المبيعات')/safeNum(r,'رصيد') : (safeNum(r,'المبيعات')>0?999:0);
-    html += `<tr><td>${i+1}</td><td>${safeGet(r,'إسم الصنف')}</td><td>${safeGet(r,'باركود الوحدة المخزنية')}</td><td>${safeGet(r,'اللون','—')}</td><td>${safeGet(r,'المجموعة الرئيسية.2')}</td><td><span class="qty-badge">${safeNum(r,'الكمية_المخصصة')}</span></td><td>${safeNum(r,'المبيعات')}</td><td>${safeNum(r,'رصيد')}</td><td>${ratio===999?'🔴 نفد':(ratio*100).toFixed(1)+'%'}</td></tr>`;
+    html += `<tr>
+      <td>${i+1}</td>
+      <td><strong>${safeGet(r,'إسم الصنف')}</strong></td>
+      <td>${safeGet(r,'باركود الوحدة المخزنية')}</td>
+      <td>${safeGet(r,'اللون','—')}</td>
+      <td>${safeGet(r,'المجموعة الرئيسية.2')}</td>
+      <td><span class="qty-badge">${safeNum(r,'الكمية_المخصصة')}</span></td>
+      <td>${safeNum(r,'المبيعات')}</td>
+      <td>${safeNum(r,'رصيد')}</td>
+      <td>${ratio===999?'🔴 نفد':(ratio*100).toFixed(1)+'%'}</td>
+    </tr>`;
   });
   html += `</tbody></table>`;
   document.getElementById(containerId).innerHTML = html;
 }
+
 function renderTransferTable(data, containerId, rowClass){
-  if(!data.length){ document.getElementById(containerId).innerHTML = '<p style="padding:20px;text-align:center">📭 لا توجد تحويلات</p>'; return; }
-  let html = `<table class="data-table"><thead><tr><th>#</th><th>المنتج</th><th>الباركود</th><th>من فرع</th><th>إلى فرع</th><th>الكمية المقترحة</th></tr></thead><tbody>`;
-  data.forEach((t,i)=> html += `<tr class="${rowClass}"><td>${i+1}</td><td>${t.المنتج}</td><td>${t.باركود}</td><td>${t.فرع_مانح}</td><td>${t.فرع_مستقبل}</td><td><span class="qty-badge">${t.الكمية_المقترحة}</span></td></tr>`);
+  if(!data.length){ 
+    document.getElementById(containerId).innerHTML = '<p style="padding:20px;text-align:center">📭 لا توجد تحويلات</p>'; 
+    return; 
+  }
+  let html = `<table class="data-table"><thead><tr>
+    <th>#</th><th>المنتج</th><th>الباركود</th><th>من فرع</th><th>إلى فرع</th><th>الكمية المقترحة</th>
+   </tr></thead><tbody>`;
+  data.forEach((t,i)=> html += `<tr class="${rowClass}">
+    <td>${i+1}</td><td>${t.المنتج}</td><td>${t.باركود}</td>
+    <td>${t.فرع_مانح}</td><td>${t.فرع_مستقبل}</td>
+    <td><span class="qty-badge">${t.الكمية_المقترحة}</span></td>
+  </tr>`);
   html += `</tbody></table>`;
   document.getElementById(containerId).innerHTML = html;
 }
 
-// ======================== التقارير المميزة مع شارت ========================
-let reportCanvas = null;
+// ======================== التقارير المميزة ========================
 function openReport(type){
   const isMaster = currentUser.type === 'master';
   let data = isMaster ? allData : allData.filter(r => safeGet(r,'اسم الفرع') === currentUser.name);
+  
   document.getElementById('reportModal').style.display = 'flex';
-  document.getElementById('modalTitle').innerText = type==='pareto'?'📈 تحليل باريتو (المبيعات)':type==='health'?'🏥 صحة المخزون':type==='demand'?'📢 طلب الفروع':'🎯 فجوة السوق';
-  if(reportCanvas) reportCanvas.destroy();
+  
+  let title = '';
+  if(type==='pareto') title = '📈 تحليل باريتو (المبيعات)';
+  else if(type==='health') title = '🏥 صحة المخزون';
+  else if(type==='demand') title = '📢 طلب الفروع';
+  else title = '🎯 فجوة السوق';
+  document.getElementById('modalTitle').innerText = title;
+  
+  if(currentChart) currentChart.destroy();
   const ctx = document.getElementById('reportCanvas').getContext('2d');
+  
   if(type === 'pareto'){
-    let items = data.map(r => ({ name: safeGet(r,'إسم الصنف'), sales: safeNum(r,'المبيعات') })).sort((a,b)=>b.sales-a.sales).slice(0,15);
+    let items = data.map(r => ({ name: safeGet(r,'إسم الصنف'), sales: safeNum(r,'المبيعات') }))
+      .sort((a,b)=>b.sales-a.sales).slice(0,15);
     let labels = items.map(i=>i.name);
     let values = items.map(i=>i.sales);
-    reportCanvas = new Chart(ctx, { type:'bar', data:{ labels, datasets:[{ label:'المبيعات', data:values, backgroundColor:'#1a6b3c' }] }, options:{ responsive:true, maintainAspectRatio:true } });
-    let tableHtml = '<table class="data-table"><tr><th>المنتج</th><th>المبيعات</th><th>النسبة التراكمية</th></tr>';
+    currentChart = new Chart(ctx, { 
+      type:'bar', 
+      data:{ labels, datasets:[{ label:'المبيعات', data:values, backgroundColor:'#1a6b3c' }] }, 
+      options:{ responsive:true, maintainAspectRatio:true } 
+    });
     let total = values.reduce((a,b)=>a+b,1);
     let cum=0;
-    items.forEach((it,i)=>{ cum+=it.sales; tableHtml+=`<tr><td>${it.name}</td><td>${it.sales}</td><td>${((cum/total)*100).toFixed(1)}%</td></tr>`; });
+    let tableHtml = '<table class="data-table"><tr><th>المنتج</th><th>المبيعات</th><th>النسبة التراكمية</th></tr>';
+    items.forEach((it,i)=>{ 
+      cum+=it.sales; 
+      tableHtml+=`<tr><td>${it.name}</td><td>${it.sales}</td><td>${((cum/total)*100).toFixed(1)}%</td></tr>`; 
+    });
     tableHtml+='</table>';
     document.getElementById('modalTable').innerHTML = tableHtml;
   }
@@ -384,26 +445,45 @@ function openReport(type){
     let healthy = data.filter(r=>safeNum(r,'نسبة_البيع')<0.3 && safeNum(r,'رصيد')>safeNum(r,'ريشيو')).length;
     let moderate = data.filter(r=>safeNum(r,'نسبة_البيع')>=0.3 && safeNum(r,'نسبة_البيع')<0.7).length;
     let critical = data.length - healthy - moderate;
-    reportCanvas = new Chart(ctx, { type:'doughnut', data:{ labels:['🟢 سليم','🟡 متوسط','🔴 مريض'], datasets:[{ data:[healthy,moderate,critical], backgroundColor:['#1a6b3c','#c9a84c','#dc2626'] }] } });
+    currentChart = new Chart(ctx, { 
+      type:'doughnut', 
+      data:{ labels:['🟢 سليم','🟡 متوسط','🔴 مريض'], 
+             datasets:[{ data:[healthy,moderate,critical], backgroundColor:['#1a6b3c','#c9a84c','#dc2626'] }] 
+      } 
+    });
     document.getElementById('modalTable').innerHTML = `<p>✅ سليم: ${healthy} صنف<br>⚠️ متوسط: ${moderate}<br>❌ مريض: ${critical}</p>`;
   }
   else if(type === 'demand'){
     let demandMap = new Map();
-    allData.forEach(r=>{ let prod = safeGet(r,'إسم الصنف'); if(safeNum(r,'رصيد') < safeNum(r,'ريشيو') && safeNum(r,'المبيعات')>0) demandMap.set(prod, (demandMap.get(prod)||0)+1); });
+    allData.forEach(r=>{ 
+      let prod = safeGet(r,'إسم الصنف'); 
+      if(safeNum(r,'رصيد') < safeNum(r,'ريشيو') && safeNum(r,'المبيعات')>0) 
+        demandMap.set(prod, (demandMap.get(prod)||0)+1); 
+    });
     let sorted = Array.from(demandMap.entries()).sort((a,b)=>b[1]-a[1]).slice(0,10);
-    reportCanvas = new Chart(ctx, { type:'bar', data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'عدد الفروع الطالبة', data:sorted.map(s=>s[1]), backgroundColor:'#ea580c' }] } });
-    let tableHtml = '<table class="data-table"><tr><th>المنتج</th><th>عدد الفروع المحتاجة</th></tr>'+sorted.map(s=>`<tr><td>${s[0]}</td><td>${s[1]}</td></tr>`).join('')+'</table>';
+    currentChart = new Chart(ctx, { 
+      type:'bar', 
+      data:{ labels:sorted.map(s=>s[0]), datasets:[{ label:'عدد الفروع الطالبة', data:sorted.map(s=>s[1]), backgroundColor:'#ea580c' }] } 
+    });
+    let tableHtml = '<table class="data-table"><tr><th>المنتج</th><th>عدد الفروع المحتاجة</th></tr>'+
+      sorted.map(s=>`<tr><td>${s[0]}</td><td>${s[1]}</td></tr>`).join('')+'</table>';
     document.getElementById('modalTable').innerHTML = tableHtml;
   }
   else if(type === 'gap'){
     let masterProducts = new Set(allData.map(r=>safeGet(r,'إسم الصنف')));
     let branchProducts = new Set(data.map(r=>safeGet(r,'إسم الصنف')));
     let missing = [...masterProducts].filter(p => !branchProducts.has(p)).slice(0,20);
-    reportCanvas = new Chart(ctx, { type:'pie', data:{ labels:missing, data:missing.map(()=>1), backgroundColor:'#2563eb' } });
+    currentChart = new Chart(ctx, { 
+      type:'pie', 
+      data:{ labels:missing, datasets:[{ data:missing.map(()=>1), backgroundColor:'#2563eb' }] } 
+    });
     document.getElementById('modalTable').innerHTML = `<p>🎯 فرص مبيعات: ${missing.length} منتج غير متوفر لديك</p><ul>${missing.map(m=>`<li>${m}</li>`).join('')}</ul>`;
   }
 }
-function closeModal(){ document.getElementById('reportModal').style.display = 'none'; }
+
+function closeModal(){ 
+  document.getElementById('reportModal').style.display = 'none'; 
+}
 
 function exportToExcel(){
   let ws = XLSX.utils.json_to_sheet(allData);
@@ -412,10 +492,15 @@ function exportToExcel(){
   XLSX.writeFile(wb, `TREE_${currentUser.type==='master'?'مدير_عام':currentUser.name}.xlsx`);
 }
 
-// تعبئة قائمة الفروع
+// ======================== تهيئة القائمة ========================
 window.onload = ()=>{
   let select = document.getElementById('branchSelect');
-  BRANCHES.forEach(b=>{ let opt = document.createElement('option'); opt.value=b; opt.innerText=b; select.appendChild(opt); });
+  BRANCHES.forEach(b=>{ 
+    let opt = document.createElement('option'); 
+    opt.value=b; 
+    opt.innerText=b; 
+    select.appendChild(opt); 
+  });
 };
 </script>
 </body>
