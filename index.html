@@ -513,13 +513,31 @@ function renderTransferTable(data, containerId, rowClass) {
         container.innerHTML = '<p style="text-align:center;padding:40px;">📭 لا توجد بيانات</p>';
         return;
     }
-    let headers = Object.keys(data[0]);
-    let html = `<table class="data-table"><thead><tr>${headers.map(k => `<th>${k}</th>`).join('')}<th style="background:#d1fae5; color:#065f46;">📦 شرح كمية الإرسال (سيريال)</th></tr></thead><tbody>`;
+    const importantColumns = [
+        'إسم الصنف',
+        'باركود الوحدة المخزنية',
+        'اسم الفرع',
+        'رصيد',
+        'المبيعات',
+        'كمية_متاحة',
+        'فرع_مستقبل',
+        'رصيد_مستقبل',
+        'مبيعات_مستقبل',
+        'كمية_مقترحة',
+        'التوصية'
+    ];
+    let html = `<table class="data-table"><thead><tr>${importantColumns.map(k => `<th>${k}</th>`).join('')}<th style="background:#d1fae5; color:#065f46; text-align:center;">📦 شرح كمية الإرسال<br><span style="font-size:11px; font-weight:normal;">سيريال</span></th></tr></thead><tbody>`;
     data.forEach((row, idx) => {
-        html += `<tr class="${rowClass}">`;
-        headers.forEach(k => { html += `<td>${safeGet(row, k, '—')}<td>`; });
         const key = `${containerId}_${idx}`;
-        html += `<td style="background:#f0fdf4;"><input type="text" style="width:100%; padding:8px; border:1px solid #a7f3d0; border-radius:8px; font-family:'Cairo';" placeholder="مثال: 001-2024-001" value="${serialNumbers[key] || ''}" onchange="updateSerialNumber('${containerId}', ${idx}, this.value)"></td>`;
+        html += `<tr class="${rowClass}">`;
+        importantColumns.forEach(k => {
+            let value = safeGet(row, k, '—');
+            if (k === 'التوصية') {
+                value = `<span style="font-size:11px;">${value}</span>`;
+            }
+            html += `<td style="vertical-align:middle;">${value}</td>`;
+        });
+        html += `<td style="background:#f0fdf4; text-align:center;"><input type="text" style="width:100%; min-width:120px; padding:8px; border:1px solid #a7f3d0; border-radius:8px; font-family:'Cairo'; font-size:12px; text-align:center;" placeholder="أدخل السيريال" value="${serialNumbers[key] || ''}" onchange="updateSerialNumber('${containerId}', ${idx}, this.value)"></td>`;
         html += `</tr>`;
     });
     html += `</tbody></table>`;
@@ -597,15 +615,15 @@ function renderPareto(metric){
       <span style="font-weight:700; color:var(--purple);">📊 تحليل خاص بالأصناف المتوفرة في ابيس</span>
       <span style="font-size:13px; color:#4b5563; margin-right:12px;">(إجمالي مخزن ابيس: ${totalAbis.toLocaleString()} قطعة)</span>
     </div>
-    <div class="pareto-filters"><span style="font-weight:700;font-size:13px;">عرض حسب:</span><button class="pareto-filter-btn ${paretoMetric==='المبيعات'?'active':''}" onclick="renderPareto('المبيعات')">📈 المبيعات</button><button class="pareto-filter-btn ${paretoMetric==='الكمية_المخصصة'?'active':''}" onclick="renderPareto('الكمية_المخصصة')">📦 الكمية المخصصة</button><button class="pareto-filter-btn ${paretoMetric==='رصيد'?'active':''}" onclick="renderPareto('رصيد')">🏪 الرصيد</button></div>
+    <div class="pareto-filters"><span style="font-weight:700;font-size:13px;">عرض حسب:</span><button class="pareto-filter-btn ${paretoMetric==='المبيعات'?'active':''}" onclick="renderPareto('المبيعات')">📈 الكمية المباعة</button><button class="pareto-filter-btn ${paretoMetric==='الكمية_المخصصة'?'active':''}" onclick="renderPareto('الكمية_المخصصة')">📦 الكمية المخصصة</button><button class="pareto-filter-btn ${paretoMetric==='رصيد'?'active':''}" onclick="renderPareto('رصيد')">🏪 الرصيد</button></div>
   </div>
   <div class="chart-card" style="margin-bottom:20px;"><h4>📊 باريتو — 🟢 A (80%) | 🟡 B | 🔴 C — خط بنفسجي = % تراكمي</h4><div class="chart-wrap-tall"><canvas id="pareto-chart"></canvas></div></div>
-  <div class="table-card"><div class="table-header"><h4>📋 جدول الأصناف مرتبة (${paretoMetric})</h4></div><div style="max-height:600px; overflow-y:auto; border-radius:12px;"><table class="data-table" style="width:100%;"><thead style="position:sticky; top:0; background:var(--gray-light); z-index:1;"><tr><th>#</th><th>إسم الصنف</th><th>القيمة</th><th>% من الإجمالي</th><th>% تراكمي</th></tr></thead><tbody>${sorted.map(([name,val],i)=>{const p=total>0?(val/total*100).toFixed(1):0;const cp=cumPct[i];return `<tr><td style="text-align:center;">${i+1}</td><td title="${name}">${name.length>35?name.slice(0,35)+'...':name}</td><td style="text-align:center;">${val.toLocaleString()}</td><td style="text-align:center;">${p}%</td><td style="text-align:center;">${cp}%</td></tr>`;}).join('')}</tbody></table></div></div>`;
+  <div class="table-card"><div class="table-header"><h4>📋 جدول الأصناف مرتبة (${paretoMetric === 'المبيعات' ? 'الكمية المباعة' : (paretoMetric === 'الكمية_المخصصة' ? 'الكمية المخصصة' : 'الرصيد')})</h4></div><div style="max-height:600px; overflow-y:auto; border-radius:12px;"><table class="data-table" style="width:100%;"><thead style="position:sticky; top:0; background:var(--gray-light); z-index:1;"><tr><th>#</th><th>إسم الصنف</th><th>الكمية</th><th>% من الإجمالي</th><th>% تراكمي</th></tr></thead><tbody>${sorted.map(([name,val],i)=>{const p=total>0?(val/total*100).toFixed(1):0;const cp=cumPct[i];return `<tr><td style="text-align:center;">${i+1}</td><td title="${name}">${name.length>35?name.slice(0,35)+'...':name}</td><td style="text-align:center;">${val.toLocaleString()}</td><td style="text-align:center;">${p}%</td><td style="text-align:center;">${cp}%</td></tr>`;}).join('')}</tbody></table></div></div>`;
   container.innerHTML=html;
   if(paretoChart)paretoChart.destroy();
   const ctx=document.getElementById('pareto-chart')?.getContext('2d');
   if(ctx){
-    paretoChart=new Chart(ctx,{data:{labels:labels.slice(0,30),datasets:[{type:'bar',label:paretoMetric,data:values.slice(0,30),backgroundColor:bgColors.slice(0,30),yAxisID:'y',borderRadius:4},{type:'line',label:'% تراكمي',data:cumPct.slice(0,30),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.06)',yAxisID:'y1',tension:0.3,pointRadius:3,pointBackgroundColor:'#7c3aed',fill:true,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{family:'Cairo',size:12}}},tooltip:{mode:'index',intersect:false,callbacks:{title:ctx=>sorted[ctx[0].dataIndex]?sorted[ctx[0].dataIndex][0]:ctx[0].label,label:ctx=>ctx.datasetIndex===1?'تراكمي: '+ctx.raw+'%':'القيمة: '+ctx.raw.toLocaleString()}}},scales:{y:{beginAtZero:true,position:'right',grid:{color:'#f0f4f0'},ticks:{font:{family:'Cairo'}}},y1:{beginAtZero:true,max:100,position:'left',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%',font:{family:'Cairo'}}}}}});
+    paretoChart=new Chart(ctx,{data:{labels:labels.slice(0,30),datasets:[{type:'bar',label:paretoMetric === 'المبيعات' ? 'الكمية المباعة' : (paretoMetric === 'الكمية_المخصصة' ? 'الكمية المخصصة' : 'الرصيد'),data:values.slice(0,30),backgroundColor:bgColors.slice(0,30),yAxisID:'y',borderRadius:4},{type:'line',label:'% تراكمي',data:cumPct.slice(0,30),borderColor:'#7c3aed',backgroundColor:'rgba(124,58,237,0.06)',yAxisID:'y1',tension:0.3,pointRadius:3,pointBackgroundColor:'#7c3aed',fill:true,borderWidth:2}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'top',labels:{font:{family:'Cairo',size:12}}},tooltip:{mode:'index',intersect:false,callbacks:{title:ctx=>sorted[ctx[0].dataIndex]?sorted[ctx[0].dataIndex][0]:ctx[0].label,label:ctx=>ctx.datasetIndex===1?'تراكمي: '+ctx.raw+'%':'الكمية: '+ctx.raw.toLocaleString()}}},scales:{y:{beginAtZero:true,position:'right',grid:{color:'#f0f4f0'},ticks:{font:{family:'Cairo'}}},y1:{beginAtZero:true,max:100,position:'left',grid:{drawOnChartArea:false},ticks:{callback:v=>v+'%',font:{family:'Cairo'}}}}}});
   }
 }
 
@@ -650,8 +668,8 @@ function exportToExcel(){
   addSheet(classifiedData.substitute,'بديل');addSheet(classifiedData.balance,'متابعة');
   const donor=transferData.filter(r=>(r['اسم الفرع']||r['فرع_مصدر']||'')===currentBranch);
   const ben=transferData.filter(r=>(r['فرع_مستقبل']||'')===currentBranch);
-  let donorWithSerial=donor.map((row,idx)=>{const key=`table-transfer-donor_${idx}`;return {...row,'شرح كمية الإرسال (سيريال)':serialNumbers[key]||''};});
-  let benWithSerial=ben.map((row,idx)=>{const key=`table-transfer-beneficiary_${idx}`;return {...row,'شرح كمية الإرسال (سيريال)':serialNumbers[key]||''};});
+  let donorWithSerial=donor.map((row,idx)=>{const key=`table-transfer-donor_${idx}`;return {...row,'📦 شرح كمية الإرسال (سيريال)':serialNumbers[key]||''};});
+  let benWithSerial=ben.map((row,idx)=>{const key=`table-transfer-beneficiary_${idx}`;return {...row,'📦 شرح كمية الإرسال (سيريال)':serialNumbers[key]||''};});
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(donorWithSerial.length?donorWithSerial:[{'تنبيه':'لا توجد توصيات'}]),'ترانزيت - مانح');
   XLSX.utils.book_append_sheet(wb,XLSX.utils.json_to_sheet(benWithSerial.length?benWithSerial:[{'تنبيه':'لا توجد توصيات'}]),'ترانزيت - مستقبل');
   XLSX.writeFile(wb,`تقرير_${currentBranch}_${new Date().toISOString().slice(0,10)}.xlsx`);
