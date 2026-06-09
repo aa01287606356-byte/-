@@ -31,20 +31,20 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f5f7f5;color:#1a1a1a;m
 .metric .val.green{color:#1D9E75}
 .metric .val.amber{color:#BA7517}
 .metric .val.red{color:#A32D2D}
-.metric .chg{font-size:11px;margin-top:4px;color:#888}
-.tab-bar{display:flex;gap:6px;margin-bottom:16px;background:#fff;border-radius:10px;padding:6px;border:1px solid #e8f0ec;width:fit-content}
+.tab-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap}
+.tab-bar{display:flex;gap:6px;background:#fff;border-radius:10px;padding:6px;border:1px solid #e8f0ec;width:fit-content}
 .tab{padding:7px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:#555;border:none;background:transparent}
 .tab.active{background:#1D9E75;color:#fff;font-weight:600}
+.btn-download{background:#1D9E75;color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
+.btn-download:hover{background:#157556}
 .section{background:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px;border:1px solid #e8f0ec}
 .section h2{font-size:13px;font-weight:600;color:#555;margin-bottom:14px}
 .note{font-size:11px;color:#BA7517;margin-top:10px;padding:8px 12px;background:#FAEEDA;border-radius:8px}
-canvas{width:100%!important}
 #dashboard{display:none}
 .tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e8f0ec;max-height:500px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{background:#f8faf9;padding:9px 12px;text-align:right;font-weight:600;font-size:11px;color:#555;border-bottom:1px solid #e8f0ec;position:sticky;top:0}
 td{padding:8px 12px;border-bottom:1px solid #f0f4f2}
-tr:last-child td{border-bottom:none}
 tr:hover td{background:#f8faf9}
 .badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
 .badge.up{background:#EAF3DE;color:#3B6D11}
@@ -62,7 +62,7 @@ tr:hover td{background:#f8faf9}
 <div class="container">
   <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
     <h2>⬆ ارفع ملف Excel الخاص بالمبيعات</h2>
-    <p>الأعمدة: تاريخ — إسم الصنف — صافي الكمية — المجموعة الرئيسية — المجموعة الفرعية — القسم<br>الرصيد الحالي — الرصيد الإفتتاحي</p>
+    <p>يدعم الكود الآن تخطي الأسطر الفارغة العلوية والتعرف التلقائي الذكي على العناوين المعكوسة</p>
   </div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
 
@@ -74,10 +74,14 @@ tr:hover td{background:#f8faf9}
   <div id="dashboard">
     <div class="filters" id="filters-bar"></div>
     <div class="metrics" id="metrics-bar"></div>
-    <div class="tab-bar">
-      <button class="tab active" onclick="switchTab('trend')">تريند الشركة</button>
-      <button class="tab" onclick="switchTab('groups')">المجموعات</button>
-      <button class="tab" onclick="switchTab('items')">الأصناف</button>
+    
+    <div class="tab-controls">
+      <div class="tab-bar">
+        <button class="tab active" onclick="switchTab('trend')">تريند الشركة</button>
+        <button class="tab" onclick="switchTab('groups')">المجموعات</button>
+        <button class="tab" onclick="switchTab('items')">الأصناف</button>
+      </div>
+      <button class="btn-download" onclick="downloadForecastExcel()">📥 تحميل التوقعات (Excel)</button>
     </div>
 
     <div id="tab-trend">
@@ -88,7 +92,6 @@ tr:hover td{background:#f8faf9}
       <div class="section">
         <h2>توقع مقابل الفعلي</h2>
         <canvas id="forecast-chart" height="220"></canvas>
-        <div class="note">التوقع مبني على نفس الفترة من السنة الماضية — الصفوف ذات الرصيد الضعيف بتتجاهل تلقائياً</div>
       </div>
     </div>
 
@@ -132,7 +135,7 @@ function findCol(headers,candidates){
     for(var j=0;j<nh.length;j++){if(nh[j].n===cn) return nh[j].orig;}
   }
   for(var i=0;i<candidates.length;i++){
-    var cn=normH(candidates[i]).substring(0,6);
+    var cn=normH(candidates[i]).substring(0,4); // بحث جزئي أعمق
     for(var j=0;j<nh.length;j++){if(cn&&nh[j].n.indexOf(cn)>=0) return nh[j].orig;}
   }
   return null;
@@ -141,16 +144,14 @@ function findCol(headers,candidates){
 function parsePeriod(str){
   if(!str) return null;
   var s=str.toString().trim();
-  // معالجة صيغة السطر مثل: "نص اخر 1-2026" أو التواريخ العادية
   var m=s.match(/(\d{1,2})-(\d{4})/);
   if(!m) {
-    // محاولة أخرى إذا كان التاريخ بصيغة مختلفة مثل 2026/01
     m = s.match(/(\d{4})[\/\-](\d{1,2})/);
     if(!m) return null;
-    var half=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
+    var half=(s.indexOf('اول')>=0||s.indexOf('أول')>=0||s.indexOf('اولى')>=0)?1:2;
     return {year:parseInt(m[1]),month:parseInt(m[2]),half:half,label:s};
   }
-  var half=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
+  var half=(s.indexOf('اول')>=0||s.indexOf('أول')>=0||s.indexOf('اولى')>=0)?1:2;
   return {year:parseInt(m[2]),month:parseInt(m[1]),half:half,label:s};
 }
 
@@ -167,98 +168,127 @@ document.getElementById('fi').addEventListener('change',function(e){
   document.getElementById('file-badge').textContent=f.name;
   document.getElementById('progress-area').style.display='block';
   document.getElementById('drop-zone').style.display='none';
-  setProgress(10,'جاري قراءة الملف...');
+  setProgress(15,'جاري فتح وقراءة ملف الإكسيل...');
 
   var reader=new FileReader();
   reader.onload=function(ev){
-    setProgress(40,'جاري تحليل البيانات...');
     setTimeout(function(){
       try{
-        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var data = new Uint8Array(ev.target.result);
+        var wb=XLSX.read(data,{type:'array', cellDates:true, cellText:true});
         var ws=wb.Sheets[wb.SheetNames[0]];
-        setProgress(65,'جاري التجميع...');
+        
+        setProgress(50,'جاري الفحص الذكي لتخطى الأسطر الفارغة والدمج...');
+        
+        // تحويل المصفوفة ثنائية الأبعاد متبوعة بتنظيف الأسطر العلوية الفارغة تمامًا
+        var range = XLSX.utils.decode_range(ws['!ref']);
+        var rawRows = XLSX.utils.sheet_to_json(ws, {header:1, defval:''});
+        
+        // البحث عن أول سطر يحتوي فعليًا على عناوين الأعمدة وتجاهل الخلايا المدمجة الفارغة
+        var headerIndex = 0;
+        for(var i=0; i<rawRows.length; i++){
+          var rowHasData = rawRows[i].filter(function(c){ return c!==''; }).length;
+          if(rowHasData > 3) { // إذا كان السطر به أكثر من 3 خلايا مليئة، فهو سطر العناوين
+            headerIndex = i;
+            break;
+          }
+        }
+        
+        // إعادة بناء شيت البيانات بناءً على سطر العناوين الحقيقي المكتشف
+        var raw = XLSX.utils.sheet_to_json(ws, {range: headerIndex, defval:'', raw:false});
+        
+        if(!raw||!raw.length){
+          alert('تعذر قراءة أسطر البيانات. يرجى التأكد من أن الملف غير محمي بكلمة سر ويحتوي على بيانات أسفل سطر العناوين.');
+          resetUploadArea();
+          return;
+        }
+        
+        var headers=Object.keys(raw[0]);
+        
+        // توسيع مصفوفات البحث لتشمل كافة الكلمات الغريبة المكتوبة مقلوبة في جهازك
+        var pC=findCol(headers,['تاريخ','التاريخ','ريخ','ريـخ','تاريخ الفعالية','التا']);
+        var sC=findCol(headers,['صافي الكمية','صافي الكمية المباعه','كمية مباعة','في مباع','كمية','مباع','صا']);
+        var iC=findCol(headers,['إسم الصنف','اسم الصنف','الصنف','م الصنف','صنف','اسم']);
+        var gC=findCol(headers,['المجموعة الرئيسية','مجموعه الرئيسيه','المجموعة الرئيسيه','جمي','رئيسية']);
+        var sgC=findCol(headers,['المجموعة الفرعية','مجموعه الفرعيه','المجموعة الفرعيه','فرعية']);
+        var dC=findCol(headers,['القسم','قسم','الفرع','د']);
+        var stC=findCol(headers,['الرصيد الحالي','رصيد حالي','يد حالي','حالي']);
+        var opC=findCol(headers,['الرصيد الإفتتاحي','الرصيد الافتتاحي','يد بدايه','افتتاحي']);
+
+        if(!pC || !sC || !iC){
+          alert('لم يتعرف النظام على الأعمدة الأساسية!\nتأكد من احتواء السطر الأول على (التاريخ/ريخ) و (اسم الصنف/م الصنف) و (صافي الكمية/في مباع).\n\nالأعمدة الحالية المكتشفة هي:\n' + headers.slice(0,6).join(' | '));
+          resetUploadArea();
+          return;
+        }
+
+        byItem={};byGroup={};
+        var periodsMap={},groupsSet={},subgroupsSet={},deptsSet={};
+
+        for(var i=0;i<raw.length;i++){
+          var r=raw[i];
+          var period=r[pC] || '';
+          var pp=parsePeriod(period);
+          if(!pp) continue;
+          
+          var pk=pKey(pp);
+          var item=iC?r[iC]:'غير محدد';
+          var group=gC?r[gC]:'غير محدد';
+          var subgroup=sgC?r[sgC]:'غير محدد';
+          var dept=dC?r[dC]:'غير محدد';
+          var sold=sC?(parseFloat(r[sC])||0):0;
+          var stock=stC?(parseFloat(r[stC])||0):0;
+          var opening=opC?(parseFloat(r[opC])||0):0;
+          var weak=(stock<=1&&opening<=2)?1:0;
+
+          periodsMap[pk]={raw:period,parsed:pp};
+          groupsSet[group]=true;
+          subgroupsSet[subgroup]=true;
+          deptsSet[dept]=true;
+
+          var ikey=item+'|||'+group+'|||'+subgroup+'|||'+dept;
+          if(!byItem[ikey]) byItem[ikey]={item:item,group:group,subgroup:subgroup,dept:dept,periods:{}};
+          if(!byItem[ikey].periods[pk]) byItem[ikey].periods[pk]={sold:0,weak:0,count:0};
+          byItem[ikey].periods[pk].sold+=sold;
+          byItem[ikey].periods[pk].weak+=weak;
+          byItem[ikey].periods[pk].count++;
+
+          if(!byGroup[group]) byGroup[group]={periods:{}};
+          if(!byGroup[group].periods[pk]) byGroup[group].periods[pk]={sold:0};
+          byGroup[group].periods[pk].sold+=sold;
+        }
+
+        allPeriods=Object.values(periodsMap).sort(function(a,b){return pOrder(a.parsed)-pOrder(b.parsed);});
+        allGroups=Object.keys(groupsSet).sort();
+        allSubGroups=Object.keys(subgroupsSet).sort();
+        allDepts=Object.keys(deptsSet).sort();
+
+        if(allPeriods.length === 0){
+           alert('تم العثور على الأعمدة، ولكن الكود لم يجد تواريخ صالحة في الصفوف بالأسفل (تأكد من صيغة تاريخ مثل 1-2026 أو 2026/01).');
+           resetUploadArea();
+           return;
+        }
+
+        setProgress(100,'تم التحميل والمعالجة بنجاح!');
         setTimeout(function(){
-          var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
-          if(!raw||!raw.length){alert('الملف فارغ');return;}
-          var headers=Object.keys(raw[0]);
-
-          // إضافة كافة الاحتمالات المقطوعة والمعكوسة من الشيت الخاص بك هنا لضمان القراءة الفورية
-          var pC=findCol(headers,['تاريخ','التاريخ','ريخ','ريـخ','تاريخ الفعالية']);
-          var sC=findCol(headers,['صافي الكمية','صافي الكمية المباعه','كمية مباعة','في مباع','كمية','مباع']);
-          var iC=findCol(headers,['إسم الصنف','اسم الصنف','الصنف','م الصنف','صنف']);
-          var gC=findCol(headers,['المجموعة الرئيسية','مجموعه الرئيسيه','المجموعة الرئيسيه','جمي']);
-          var sgC=findCol(headers,['المجموعة الفرعية','مجموعه الفرعيه','المجموعة الفرعيه']);
-          var dC=findCol(headers,['القسم','قسم','الفرع','د']);
-          var stC=findCol(headers,['الرصيد الحالي','رصيد حالي','يد حالي']);
-          var opC=findCol(headers,['الرصيد الإفتتاحي','الرصيد الافتتاحي','يد بدايه']);
-
-          if(!pC){
-            alert('لم يتم التعرف على عمود التاريخ في الملف! تأكد من وجود عمود يحتوي على التاريخ أو كلمة (ريخ)');
-            document.getElementById('progress-area').style.display='none';
-            document.getElementById('drop-zone').style.display='block';
-            return;
-          }
-
-          byItem={};byGroup={};
-          var periodsMap={},groupsSet={},subgroupsSet={},deptsSet={};
-
-          for(var i=0;i<raw.length;i++){
-            var r=raw[i];
-            var period=pC?r[pC]:'';
-            var pp=parsePeriod(period);
-            if(!pp) continue;
-            var pk=pKey(pp);
-            var item=iC?r[iC]:'غير محدد';
-            var group=gC?r[gC]:'غير محدد';
-            var subgroup=sgC?r[sgC]:'غير محدد';
-            var dept=dC?r[dC]:'غير محدد';
-            var sold=sC?(parseFloat(r[sC])||0):0;
-            var stock=stC?(parseFloat(r[stC])||0):0;
-            var opening=opC?(parseFloat(r[opC])||0):0;
-            var weak=(stock<=1&&opening<=2)?1:0;
-
-            periodsMap[pk]={raw:period,parsed:pp};
-            groupsSet[group]=true;
-            subgroupsSet[subgroup]=true;
-            deptsSet[dept]=true;
-
-            // التجميع حسب الصنف
-            var ikey=item+'|||'+group+'|||'+subgroup+'|||'+dept;
-            if(!byItem[ikey]) byItem[ikey]={item:item,group:group,subgroup:subgroup,dept:dept,periods:{}};
-            if(!byItem[ikey].periods[pk]) byItem[ikey].periods[pk]={sold:0,weak:0,count:0};
-            byItem[ikey].periods[pk].sold+=sold;
-            byItem[ikey].periods[pk].weak+=weak;
-            byItem[ikey].periods[pk].count++;
-
-            // التجميع حسب المجموعة
-            if(!byGroup[group]) byGroup[group]={periods:{}};
-            if(!byGroup[group].periods[pk]) byGroup[group].periods[pk]={sold:0};
-            byGroup[group].periods[pk].sold+=sold;
-          }
-
-          allPeriods=Object.values(periodsMap).sort(function(a,b){return pOrder(a.parsed)-pOrder(b.parsed);});
-          allGroups=Object.keys(groupsSet).sort();
-          allSubGroups=Object.keys(subgroupsSet).sort();
-          allDepts=Object.keys(deptsSet).sort();
-
-          if(allPeriods.length === 0){
-             alert('تم العثور على عمود التاريخ ولكن لم نتمكن من قراءة التواريخ بداخل الصفوف بشكل سليم.');
-             return;
-          }
-
-          setProgress(100,'تم تحميل البيانات بنجاح!');
-          setTimeout(function(){
-            document.getElementById('progress-area').style.display='none';
-            buildFilters();
-            renderAll();
-            document.getElementById('dashboard').style.display='block';
-          },300);
-        },50);
-      }catch(err){alert('خطأ في قراءة الملف: '+err.message);}
+          document.getElementById('progress-area').style.display='none';
+          buildFilters();
+          renderAll();
+          document.getElementById('dashboard').style.display='block';
+        },300);
+      }catch(err){
+        alert('حدث خطأ داخلي أثناء التحليل المعمق للملف: '+err.message);
+        resetUploadArea();
+      }
     },50);
   };
   reader.readAsArrayBuffer(f);
 });
+
+function resetUploadArea(){
+  document.getElementById('progress-area').style.display='none';
+  document.getElementById('drop-zone').style.display='block';
+  document.getElementById('file-badge').textContent = 'لم يتم رفع ملف';
+}
 
 function buildFilters(){
   document.getElementById('filters-bar').innerHTML=
@@ -319,9 +349,9 @@ function renderAll(){
 
   document.getElementById('metrics-bar').innerHTML=
     '<div class="metric"><div class="lbl">إجمالي المبيعات</div><div class="val">'+total.toLocaleString()+'</div><div class="chg">'+allPeriods.length+' فترة</div></div>'+
-    '<div class="metric"><div class="lbl">آخر فترة</div><div class="val '+(trnd>=0?'green':'red')+'">'+lastSold.toLocaleString()+'</div><div class="chg">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'% عن السابق</div></div>'+
-    '<div class="metric"><div class="lbl">توقع الفترة الجاية</div><div class="val green">'+nxtTotal.toLocaleString()+'</div></div>'+
-    '<div class="metric"><div class="lbl">عدد الأصناف</div><div class="val amber">'+items.length.toLocaleString()+'</div></div>';
+    '<div class="metric"><div class="lbl">آخر فترة فعلي</div><div class="val '+(trnd>=0?'green':'red')+'">'+lastSold.toLocaleString()+'</div><div class="chg">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'% عن السابقة</div></div>'+
+    '<div class="metric"><div class="lbl">توقع الفترة القادمة</div><div class="val green">'+nxtTotal.toLocaleString()+'</div></div>'+
+    '<div class="metric"><div class="lbl">عدد الأصناف المفلترة</div><div class="val amber">'+items.length.toLocaleString()+'</div></div>';
 
   var labels=allPeriods.map(function(p){return p.raw;});
   var vals=byPeriod.map(function(r){return r.sold;});
@@ -329,7 +359,7 @@ function renderAll(){
   if(trendChart) trendChart.destroy();
   trendChart=new Chart(document.getElementById('trend-chart').getContext('2d'),{
     type:'bar',
-    data:{labels:labels,datasets:[{label:'مبيعات فعلية',data:vals,backgroundColor:'#1D9E75',borderRadius:4}]},
+    data:{labels:labels,datasets:[{label:'مبيعات فعلي',data:vals,backgroundColor:'#1D9E75',borderRadius:4}]},
     options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
   });
 
@@ -347,7 +377,7 @@ function renderAll(){
       {label:'فعلي',data:[...vals,null],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',pointRadius:4,tension:0.3,fill:true,borderWidth:2},
       {label:'توقع',data:[...forecastVals,nxtTotal],borderColor:'#BA7517',backgroundColor:'transparent',borderDash:[6,3],pointRadius:4,tension:0.3,borderWidth:2}
     ]},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12}}}},scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
   });
 
   renderGroupTable(items);
@@ -356,15 +386,12 @@ function renderAll(){
 
 function renderGroupTable(items){
   var f=getFilters();
-  // تعديل ذكي: يعرض فقط المجموعات المتاحة بناءً على الفلترة الحالية بدلاً من المصفوفة الثابتة
   var activeGroups = f.fg ? [f.fg] : [...new Set(items.map(function(r){return r.group;}))].sort();
-  
   var lastPk=allPeriods.length?pKey(allPeriods[allPeriods.length-1].parsed):'';
   var thead=document.querySelector('#grp-table thead');
   var tbody=document.querySelector('#grp-table tbody');
   
-  thead.innerHTML='<tr><th>المجموعة الرئيسية</th><th>آخر فترة</th><th>توقع الجاية</th><th>التغيير</th></tr>';
-  
+  thead.innerHTML='<tr><th>المجموعة الرئيسية</th><th>آخر فترة فعلي</th><th>توقع القادمة</th><th>التغيير المتوقع</th></tr>';
   tbody.innerHTML=activeGroups.map(function(g){
     var gItems=items.filter(function(r){return r.group===g;});
     var lastSold=gItems.reduce(function(s,item){var d=item.periods[lastPk];return s+(d?d.sold:0);},0);
@@ -379,7 +406,7 @@ var allItemRows=[];
 function renderItemTable(items){
   var lastPk=allPeriods.length?pKey(allPeriods[allPeriods.length-1].parsed):'';
   var thead=document.querySelector('#item-table thead');
-  thead.innerHTML='<tr><th>اسم الصنف</th><th>المجموعة</th><th>آخر فترة</th><th>توقع الجاية</th><th>التغيير</th></tr>';
+  thead.innerHTML='<tr><th>اسم الصنف</th><th>المجموعة الرئيسية</th><th>آخر فترة فعلي</th><th>توقع القادمة</th><th>التغيير</th></tr>';
   allItemRows=items.map(function(item){
     var lastSold=item.periods[lastPk]?item.periods[lastPk].sold:0;
     var nxt=Math.round(forecastItem(item.periods)) || 0;
@@ -396,13 +423,38 @@ function filterItemTable(){
   document.querySelector('#item-table tbody').innerHTML=show.map(function(r){
     return'<tr><td>'+r.item+'</td><td>'+r.group+'</td><td>'+r.lastSold.toLocaleString()+'</td><td><strong>'+r.nxt.toLocaleString()+'</strong></td>'+
       '<td><span class="badge '+(r.chg>5?'up':r.chg<-5?'down':'flat')+'">'+(r.chg>=0?'+':'')+r.chg+'%</span></td></tr>';
-  }).join('')+(rows.length>200?'<tr><td colspan="5" style="text-align:center;color:#888;font-size:11px">يعرض أول 200 صنف — استخدم الفلتر للبحث</td></tr>':'');
+  }).join('')+(rows.length>200?'<tr><td colspan="5" style="text-align:center;color:#888;font-size:11px">يعرض أول 200 صنف — استخدم البحث للتصفية الدقيقة</td></tr>':'');
+}
+
+function downloadForecastExcel(){
+  var filteredItems = getFilteredItems();
+  if(!filteredItems || filteredItems.length === 0){
+    alert('لا توجد بيانات متاحة حالياً.');
+    return;
+  }
+  var lastPk = allPeriods.length ? pKey(allPeriods[allPeriods.length-1].parsed) : '';
+  var excelData = filteredItems.map(function(row){
+    var lastSold = row.periods[lastPk] ? row.periods[lastPk].sold : 0;
+    var predicted = Math.round(forecastItem(row.periods)) || 0;
+    return {
+      'اسم الصنف': row.item,
+      'المجموعة الرئيسية': row.group,
+      'المجموعة الفرعية': row.subgroup,
+      'القسم': row.dept,
+      'مبيعات آخر فترة فعلي': lastSold,
+      'التوقع للفترة القادمة': predicted,
+      'النمو المتوقع بالكمية': predicted - lastSold
+    };
+  });
+  var ws = XLSX.utils.json_to_sheet(excelData);
+  var wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, "التوقعات");
+  XLSX.writeFile(wb, "توقعات_المبيعات_TREE.xlsx");
 }
 
 function switchTab(tab){
   ['trend','groups','items'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===tab?'block':'none';});
   document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('active',['trend','groups','items'][i]===tab);});
-  // مسح نص البحث عند تغيير التبويب لراحة المستخدم
   if(tab !== 'items' && document.getElementById('item-search')) {
      document.getElementById('item-search').value = '';
   }
