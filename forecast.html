@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توقع المبيعات — TREE</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f5f7f5;color:#1a1a1a;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e8e4;padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.logo{width:36px;height:36px;background:#1D9E75;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0}
+.header h1{font-size:17px;font-weight:600;color:#1a1a1a}
+.header .sub{font-size:12px;color:#888;margin-right:auto}
+#file-name-badge{font-size:11px;background:#EAF3DE;color:#3B6D11;padding:3px 10px;border-radius:20px;white-space:nowrap}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px}
+.upload-card{background:#fff;border:1.5px dashed #9FE1CB;border-radius:14px;padding:36px;text-align:center;cursor:pointer;transition:background 0.15s;margin-bottom:20px}
+.upload-card:hover{background:#f0faf6}
+.upload-card .icon{font-size:36px;color:#1D9E75;margin-bottom:10px}
+.upload-card h2{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:6px}
+.upload-card p{font-size:12px;color:#888;line-height:1.7}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.filters select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #d5e8df;background:#fff;color:#1a1a1a;width:100%;appearance:none;cursor:pointer;outline:none}
+.filters select:focus{border-color:#1D9E75}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.metric{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e8f0ec}
+.metric .lbl{font-size:11px;color:#888;margin-bottom:6px}
+.metric .val{font-size:22px;font-weight:700;color:#1a1a1a;line-height:1}
+.metric .val.green{color:#1D9E75}
+.metric .val.amber{color:#BA7517}
+.metric .val.red{color:#A32D2D}
+.metric .chg{font-size:11px;margin-top:4px;color:#888}
+.tab-bar{display:flex;gap:6px;margin-bottom:16px;background:#fff;border-radius:10px;padding:6px;border:1px solid #e8f0ec;width:fit-content}
+.tab{padding:7px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:#555;transition:all 0.15s;border:none;background:transparent}
+.tab.active{background:#1D9E75;color:#fff;font-weight:600}
+.tab:hover:not(.active){background:#f0faf6;color:#1D9E75}
+.section{background:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px;border:1px solid #e8f0ec}
+.section h2{font-size:13px;font-weight:600;color:#555;margin-bottom:14px}
+.note{font-size:11px;color:#BA7517;margin-top:10px;padding:8px 12px;background:#FAEEDA;border-radius:8px;display:none}
+.note.show{display:block}
+.table-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e8f0ec}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:550px}
+th{background:#f8faf9;padding:10px 14px;text-align:right;font-weight:600;font-size:12px;color:#555;border-bottom:1px solid #e8f0ec;white-space:nowrap}
+td{padding:9px 14px;border-bottom:1px solid #f0f4f2;color:#1a1a1a;white-space:nowrap}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8faf9}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.up{background:#EAF3DE;color:#3B6D11}
+.badge.down{background:#FCEBEB;color:#A32D2D}
+.badge.flat{background:#F1EFE8;color:#5F5E5A}
+.badge.warn{background:#FAEEDA;color:#854F0B}
+canvas{width:100%!important}
+#dashboard{display:none}
+.empty-msg{text-align:center;padding:2rem;color:#aaa;font-size:13px}
+@media(max-width:600px){.metrics{grid-template-columns:1fr 1fr}.tab{padding:6px 12px;font-size:12px}}
+</style>
+</head>
+<body>
+<div class="header">
+  <div class="logo">T</div>
+  <div>
+    <h1>توقع المبيعات</h1>
+  </div>
+  <span class="sub" id="file-name-badge">لم يتم رفع ملف</span>
+</div>
+
+<div class="container">
+  <div class="upload-card" id="drop-zone" onclick="document.getElementById('file-input').click()">
+    <div class="icon">⬆</div>
+    <h2>ارفع ملف Excel الخاص بالمبيعات</h2>
+    <p>الأعمدة المطلوبة: الفرع — تاريخ — صافي الكمية المباعه — إسم الصنف<br>ريشيو — متاح الفئه.الحاله — الرصيد الحالي — الرصيد الإفتتاحي</p>
+  </div>
+  <input type="file" id="file-input" accept=".xlsx,.xls,.csv" style="display:none">
+
+  <div id="dashboard">
+    <div class="filters" id="filters-bar"></div>
+    <div class="metrics" id="metrics-bar"></div>
+
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('trend')">تريند المبيعات</button>
+      <button class="tab" onclick="switchTab('forecast')">التوقع</button>
+      <button class="tab" onclick="switchTab('table')">جدول الفروع</button>
+    </div>
+
+    <div id="tab-trend">
+      <div class="section">
+        <h2>مبيعات الفترات الفعلية</h2>
+        <canvas id="trend-chart" height="220"></canvas>
+        <div class="note" id="weak-note"></div>
+      </div>
+    </div>
+
+    <div id="tab-forecast" style="display:none">
+      <div class="section">
+        <h2>توقع مقابل الفعلي</h2>
+        <canvas id="forecast-chart" height="220"></canvas>
+        <div class="note show">التوقع مبني على نفس الفترة من السنة الماضية مع تعديل لمشكلة الرصيد الضعيف — الصفوف اللي رصيدها ≤1 بتتجاهل في حساب المتوسط</div>
+      </div>
+    </div>
+
+    <div id="tab-table" style="display:none">
+      <div class="section">
+        <h2>تفاصيل التوقع بالفروع</h2>
+        <div class="table-wrap">
+          <table id="detail-table">
+            <thead></thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+let allData=[], filteredData=[], trendChart=null, forecastChart=null;
+
+const colMap={
+  branch:['الفرع'],
+  period:['تاريخ','التاريخ'],
+  sold:['صافي الكمية المباعه','صافي الكمية\n المباعه','كمية مباعة'],
+  item:['إسم الصنف','اسم الصنف'],
+  group:['المجموعة الرئيسية'],
+  subgroup:['المجموعة الفرعية'],
+  dept:['القسم'],
+  ratio:['يشيو.ريشيو','ريشيو'],
+  available:['متاح الفئه.الحاله','متاح الفئة'],
+  stock:['الرصيد الحالي'],
+  opening:['الرصيد الإفتتاحي','الرصيد الافتتاحي'],
+  occasion:['مناسبات'],
+  occasion_main:['مناسبات رئيسي'],
+  color:['اللون']
+};
+
+function findCol(headers,key){
+  const candidates=colMap[key]||[];
+  for(const c of candidates){
+    const f=headers.find(h=>h&&h.toString().trim()===c.trim());
+    if(f) return f;
+  }
+  for(const c of candidates){
+    const f=headers.find(h=>h&&h.toString().trim().includes(c.trim().substring(0,5)));
+    if(f) return f;
+  }
+  return null;
+}
+
+function parsePeriod(str){
+  if(!str) return null;
+  const s=str.toString().trim();
+  const m=s.match(/(\d{1,2})-(\d{4})/);
+  if(!m) return null;
+  const half=s.includes('اول')||s.includes('أول')?1:2;
+  return {year:parseInt(m[2]),month:parseInt(m[1]),half,label:s};
+}
+
+function periodOrder(p){return p.year*1000+p.month*10+(p.half===2?1:0);}
+
+function detectWeakStock(row){
+  return (parseFloat(row._stock)||0)<=1 && (parseFloat(row._opening)||0)<=2;
+}
+
+function forecastAvg(rows){
+  const valid=rows.filter(r=>!detectWeakStock(r));
+  const src=valid.length?valid:rows;
+  return src.reduce((s,r)=>s+(parseFloat(r._sold)||0),0)/Math.max(src.length,1);
+}
+
+document.getElementById('file-input').addEventListener('change',function(e){
+  const f=e.target.files[0]; if(!f) return;
+  document.getElementById('file-name-badge').textContent=f.name;
+  const reader=new FileReader();
+  reader.onload=function(ev){
+    const wb=XLSX.read(ev.target.result,{type:'array'});
+    const ws=wb.Sheets[wb.SheetNames[0]];
+    const raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+    if(!raw.length){alert('الملف فاضي أو مش متعرف عليه');return;}
+    const headers=Object.keys(raw[0]);
+    const bC=findCol(headers,'branch'),pC=findCol(headers,'period'),
+          sC=findCol(headers,'sold'),iC=findCol(headers,'item'),
+          gC=findCol(headers,'group'),dC=findCol(headers,'dept'),
+          rC=findCol(headers,'ratio'),aC=findCol(headers,'available'),
+          stC=findCol(headers,'stock'),opC=findCol(headers,'opening'),
+          sgC=findCol(headers,'subgroup');
+    allData=raw.map(function(r){return{
+      _branch:bC?r[bC]:'',_period:pC?r[pC]:'',
+      _sold:sC?parseFloat(r[sC])||0:0,_item:iC?r[iC]:'',
+      _group:gC?r[gC]:'',_subgroup:sgC?r[sgC]:'',_dept:dC?r[dC]:'',
+      _ratio:rC?parseFloat(r[rC])||0:0,_available:aC?r[aC]:'',
+      _stock:stC?parseFloat(r[stC])||0:0,_opening:opC?parseFloat(r[opC])||0:0
+    };}).filter(function(r){return r._branch&&r._period;});
+    buildFilters();
+    applyFilters();
+    document.getElementById('dashboard').style.display='block';
+    document.getElementById('drop-zone').style.display='none';
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+function uniq(arr){return [...new Set(arr.filter(Boolean))].sort();}
+
+function buildFilters(){
+  const branches=uniq(allData.map(function(r){return r._branch;}));
+  const groups=uniq(allData.map(function(r){return r._group;}));
+  const depts=uniq(allData.map(function(r){return r._dept;}));
+  document.getElementById('filters-bar').innerHTML=
+    '<select id="f-branch" onchange="applyFilters()"><option value="">كل الفروع</option>'+branches.map(function(b){return'<option>'+b+'</option>';}).join('')+'</select>'+
+    '<select id="f-group" onchange="applyFilters()"><option value="">كل المجموعات</option>'+groups.map(function(g){return'<option>'+g+'</option>';}).join('')+'</select>'+
+    '<select id="f-dept" onchange="applyFilters()"><option value="">كل الأقسام</option>'+depts.map(function(d){return'<option>'+d+'</option>';}).join('')+'</select>';
+}
+
+function applyFilters(){
+  const fb=document.getElementById('f-branch').value;
+  const fg=document.getElementById('f-group').value;
+  const fd=document.getElementById('f-dept').value;
+  filteredData=allData.filter(function(r){
+    return(!fb||r._branch===fb)&&(!fg||r._group===fg)&&(!fd||r._dept===fd);
+  });
+  renderAll();
+}
+
+function getPeriods(){
+  const seen={};
+  filteredData.forEach(function(r){seen[r._period]=true;});
+  return Object.keys(seen).map(function(p){return{raw:p,parsed:parsePeriod(p)};})
+    .filter(function(p){return p.parsed;})
+    .sort(function(a,b){return periodOrder(a.parsed)-periodOrder(b.parsed);});
+}
+
+function computeNextForecast(data){
+  const periods=getPeriods();
+  if(!periods.length) return 0;
+  const last=periods[periods.length-1].parsed;
+  const lyRows=(data||filteredData).filter(function(r){
+    const p=parsePeriod(r._period);
+    return p&&p.month===last.month&&p.half===last.half&&p.year===last.year-1;
+  });
+  const recent=periods.slice(-4).reduce(function(s,p){
+    return s+(data||filteredData).filter(function(r){return r._period===p.raw;}).reduce(function(ss,r){return ss+r._sold;},0);
+  },0)/Math.min(4,periods.length);
+  if(lyRows.length){
+    const lyAvg=forecastAvg(lyRows)*lyRows.length;
+    return lyAvg*0.6+recent*0.4;
+  }
+  return recent*1.05;
+}
+
+function renderAll(){
+  renderMetrics();
+  renderTrend();
+  renderForecast();
+  renderTable();
+}
+
+function renderMetrics(){
+  const periods=getPeriods();
+  const total=filteredData.reduce(function(s,r){return s+r._sold;},0);
+  const weak=filteredData.filter(detectWeakStock);
+  const wPct=filteredData.length?Math.round(weak.length/filteredData.length*100):0;
+  const lastP=periods[periods.length-1];
+  const prevP=periods[periods.length-2];
+  const lastSold=lastP?filteredData.filter(function(r){return r._period===lastP.raw;}).reduce(function(s,r){return s+r._sold;},0):0;
+  const prevSold=prevP?filteredData.filter(function(r){return r._period===prevP.raw;}).reduce(function(s,r){return s+r._sold;},0):0;
+  const trnd=prevSold?Math.round((lastSold-prevSold)/prevSold*100):0;
+  const nxt=Math.round(computeNextForecast());
+  document.getElementById('metrics-bar').innerHTML=
+    '<div class="metric"><div class="lbl">إجمالي المبيعات</div><div class="val">'+total.toLocaleString()+'</div><div class="chg">'+periods.length+' فترة</div></div>'+
+    '<div class="metric"><div class="lbl">آخر فترة</div><div class="val '+(trnd>=0?'green':'red')+'">'+lastSold.toLocaleString()+'</div><div class="chg">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'% عن السابق</div></div>'+
+    '<div class="metric"><div class="lbl">توقع الفترة الجاية</div><div class="val green">'+nxt.toLocaleString()+'</div><div class="chg">مع تعديل رصيد ضعيف</div></div>'+
+    '<div class="metric"><div class="lbl">رصيد ضعيف</div><div class="val '+(wPct>20?'red':'amber')+'">'+wPct+'%</div><div class="chg">من إجمالي الصفوف</div></div>';
+}
+
+function renderTrend(){
+  const periods=getPeriods();
+  const labels=periods.map(function(p){return p.raw;});
+  const vals=periods.map(function(p){return filteredData.filter(function(r){return r._period===p.raw;}).reduce(function(s,r){return s+r._sold;},0);});
+  const wkVals=periods.map(function(p){
+    const rows=filteredData.filter(function(r){return r._period===p.raw;});
+    return rows.length?Math.round(rows.filter(detectWeakStock).length/rows.length*100):0;
+  });
+  const badPeriods=periods.filter(function(_,i){return wkVals[i]>30;}).map(function(p){return p.raw;});
+  const noteEl=document.getElementById('weak-note');
+  if(badPeriods.length){noteEl.textContent='⚠ فترات فيها رصيد ضعيف أكتر من 30%: '+badPeriods.join(' | ')+'  — التوقع بيتجاهلها تلقائياً';noteEl.classList.add('show');}
+  else noteEl.classList.remove('show');
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart(document.getElementById('trend-chart').getContext('2d'),{
+    type:'bar',
+    data:{labels:labels,datasets:[
+      {label:'مبيعات فعلية',data:vals,backgroundColor:'#1D9E75',borderRadius:4,yAxisID:'y'},
+      {label:'% رصيد ضعيف',data:wkVals,type:'line',borderColor:'#BA7517',backgroundColor:'transparent',pointRadius:4,yAxisID:'y2',tension:0.3,borderWidth:2}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},
+      scales:{y:{position:'right',ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},
+              y2:{position:'left',min:0,max:100,ticks:{font:{size:11},callback:function(v){return v+'%';}},grid:{drawOnChartArea:false}}}}
+  });
+}
+
+function renderForecast(){
+  const periods=getPeriods();
+  if(!periods.length) return;
+  const labels=periods.map(function(p){return p.raw;});
+  const actual=periods.map(function(p){return filteredData.filter(function(r){return r._period===p.raw;}).reduce(function(s,r){return s+r._sold;},0);});
+  const forecast=periods.map(function(p){
+    const pp=p.parsed;
+    const ly=filteredData.filter(function(r){const q=parsePeriod(r._period);return q&&q.month===pp.month&&q.half===pp.half&&q.year===pp.year-1;});
+    return ly.length?Math.round(forecastAvg(ly)*ly.length):null;
+  });
+  const nextLabel='الفترة القادمة';
+  const nextVal=Math.round(computeNextForecast());
+  if(forecastChart) forecastChart.destroy();
+  forecastChart=new Chart(document.getElementById('forecast-chart').getContext('2d'),{
+    type:'line',
+    data:{labels:[...labels,nextLabel],datasets:[
+      {label:'فعلي',data:[...actual,null],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',pointRadius:4,tension:0.3,fill:true,borderWidth:2},
+      {label:'توقع',data:[...forecast,nextVal],borderColor:'#BA7517',backgroundColor:'transparent',borderDash:[6,3],pointRadius:4,tension:0.3,borderWidth:2}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},
+      scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+}
+
+function renderTable(){
+  const branches=uniq(filteredData.map(function(r){return r._branch;}));
+  const periods=getPeriods();
+  const lastP=periods[periods.length-1];
+  const thead=document.querySelector('#detail-table thead');
+  const tbody=document.querySelector('#detail-table tbody');
+  if(!branches.length||!lastP){
+    thead.innerHTML='';tbody.innerHTML='<tr><td class="empty-msg">لا توجد بيانات</td></tr>';return;
+  }
+  thead.innerHTML='<tr><th>الفرع</th><th>آخر فترة (فعلي)</th><th>توقع الفترة الجاية</th><th>التغيير</th><th>رصيد ضعيف%</th></tr>';
+  tbody.innerHTML=branches.map(function(b){
+    const bRows=filteredData.filter(function(r){return r._branch===b;});
+    const lastSold=bRows.filter(function(r){return r._period===lastP.raw;}).reduce(function(s,r){return s+r._sold;},0);
+    const lp=lastP.parsed;
+    const ly=bRows.filter(function(r){const p=parsePeriod(r._period);return p&&p.month===lp.month&&p.half===lp.half&&p.year===lp.year-1;});
+    const nxt=ly.length?Math.round(forecastAvg(ly)*ly.length):Math.round(computeNextForecast(bRows));
+    const chg=lastSold?Math.round((nxt-lastSold)/lastSold*100):0;
+    const wk=bRows.length?Math.round(bRows.filter(detectWeakStock).length/bRows.length*100):0;
+    const cb=chg>5?'up':chg<-5?'down':'flat';
+    const wb=wk>30?'warn':'flat';
+    return'<tr><td>'+b+'</td><td>'+lastSold.toLocaleString()+'</td><td><strong>'+nxt.toLocaleString()+'</strong></td>'+
+      '<td><span class="badge '+cb+'">'+(chg>=0?'+':'')+chg+'%</span></td>'+
+      '<td><span class="badge '+wb+'">'+wk+'%</span></td></tr>';
+  }).join('');
+}
+
+function switchTab(tab){
+  ['trend','forecast','table'].forEach(function(t){
+    document.getElementById('tab-'+t).style.display=t===tab?'block':'none';
+  });
+  document.querySelectorAll('.tab').forEach(function(el,i){
+    el.classList.toggle('active',['trend','forecast','table'][i]===tab);
+  });
+}
+
+const dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.background='#e8f7f1';});
+dz.addEventListener('dragleave',function(){dz.style.background='';});
+dz.addEventListener('drop',function(e){
+  e.preventDefault();dz.style.background='';
+  const f=e.dataTransfer.files[0];
+  if(f){
+    const dt=new DataTransfer();dt.items.add(f);
+    document.getElementById('file-input').files=dt.files;
+    document.getElementById('file-input').dispatchEvent(new Event('change'));
+  }
+});
+</script>
+</body>
+</html>
