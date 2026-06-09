@@ -119,7 +119,8 @@ let allData=[], filteredData=[], trendChart=null, forecastChart=null;
 const colMap={
   branch:['الفرع'],
   period:['تاريخ','التاريخ'],
-  sold:['صافي الكمية المباعه','صافي الكمية\n المباعه','كمية مباعة'],
+  sold:['صافي الكمية المباعه','صافي الكمية
+ المباعه','كمية مباعة','صافي الكمية  المباعه'],
   item:['إسم الصنف','اسم الصنف'],
   group:['المجموعة الرئيسية'],
   subgroup:['المجموعة الفرعية'],
@@ -135,13 +136,16 @@ const colMap={
 
 function findCol(headers,key){
   const candidates=colMap[key]||[];
+  const normHeaders=headers.map(h=>({orig:h,norm:normalizeHeader(h)}));
   for(const c of candidates){
-    const f=headers.find(h=>h&&h.toString().trim()===c.trim());
-    if(f) return f;
+    const cn=normalizeHeader(c);
+    const f=normHeaders.find(h=>h.norm===cn);
+    if(f) return f.orig;
   }
   for(const c of candidates){
-    const f=headers.find(h=>h&&h.toString().trim().includes(c.trim().substring(0,5)));
-    if(f) return f;
+    const cn=normalizeHeader(c).substring(0,5);
+    const f=normHeaders.find(h=>h.norm.includes(cn));
+    if(f) return f.orig;
   }
   return null;
 }
