@@ -3,200 +3,341 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>توقع المبيعات — تشخيص</title>
+<title>توقع المبيعات — TREE</title>
 <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <style>
     *{margin:0;padding:0;box-sizing:border-box}
-    body{font-family:'Segoe UI',sans-serif;background:#f0f4f0;padding:20px}
-    .container{max-width:1000px;margin:0 auto}
-    .card{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
-    .upload-area{background:#fff;border:2px dashed #1D9E75;border-radius:16px;padding:48px;text-align:center;cursor:pointer}
-    .debug{background:#f8f9fa;border:1px solid #dee2e6;border-radius:12px;padding:16px;font-family:monospace;font-size:12px;margin-top:20px;white-space:pre-wrap;word-break:break-all}
-    .error{background:#fcebeb;color:#a32d2d;padding:12px;border-radius:12px;margin-top:16px}
-    .success{background:#eaf3de;color:#3b6d11;padding:12px;border-radius:12px;margin-top:16px}
-    button{background:#1D9E75;color:#fff;border:none;padding:8px 20px;border-radius:8px;cursor:pointer;margin-top:12px}
-    table{width:100%;border-collapse:collapse;margin-top:16px}
-    th,td{border:1px solid #ddd;padding:8px;text-align:right}
-    th{background:#f0f0f0}
+    body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f0f4f0;color:#1a2e1a;padding:20px}
+    .container{max-width:1200px;margin:0 auto}
+    .header{background:#fff;padding:16px 24px;border-radius:16px;margin-bottom:20px;display:flex;align-items:center;justify-content:space-between}
+    .logo{font-size:24px;font-weight:900;color:#1D9E75}
+    .badge{background:#EAF3DE;color:#3B6D11;padding:6px 14px;border-radius:20px;font-size:12px}
+    .upload-card{background:#fff;border:2px dashed #9FE1CB;border-radius:20px;padding:48px;text-align:center;cursor:pointer;margin-bottom:24px;transition:all 0.2s}
+    .upload-card:hover{background:#f0faf6}
+    .progress-area{background:#fff;border-radius:16px;padding:20px;margin-bottom:24px;display:none}
+    .progress-bar-wrap{background:#e8f0ec;border-radius:20px;height:8px;margin-top:12px}
+    .progress-bar{background:#1D9E75;height:8px;border-radius:20px;width:0%}
+    .filters{display:flex;gap:12px;margin-bottom:20px;flex-wrap:wrap}
+    .filters select{background:#fff;border:1px solid #d5e8df;border-radius:10px;padding:8px 16px;font-family:inherit}
+    .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:16px;margin-bottom:24px}
+    .metric-card{background:#fff;border-radius:16px;padding:20px;text-align:center;border-right:4px solid #1D9E75}
+    .metric-value{font-size:28px;font-weight:900}
+    .metric-label{font-size:12px;color:#6b7280;margin-top:8px}
+    .tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+    .tab{background:#fff;border:none;padding:10px 24px;border-radius:30px;cursor:pointer;font-family:inherit;font-size:14px}
+    .tab.active{background:#1D9E75;color:#fff}
+    .section{background:#fff;border-radius:20px;padding:24px;margin-bottom:24px}
+    .section h3{font-size:16px;margin-bottom:16px;border-bottom:2px solid #e8f0ec;padding-bottom:8px}
+    .note{background:#FAEEDA;padding:12px;border-radius:12px;font-size:12px;color:#854F0B;margin-top:16px}
+    canvas{max-height:300px;width:100%}
+    .table-wrap{overflow-x:auto}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f8faf9;padding:12px;text-align:right}
+    td{padding:12px;border-bottom:1px solid #e8f0ec}
+    .status-up{color:#3B6D11;background:#EAF3DE;padding:4px 12px;border-radius:20px;display:inline-block}
+    .status-down{color:#A32D2D;background:#FCEBEB;padding:4px 12px;border-radius:20px;display:inline-block}
     .hidden{display:none}
 </style>
 </head>
 <body>
 <div class="container">
-    <div class="card">
-        <h2>🔍 توقع المبيعات — نسخة تشخيصية</h2>
-        <p style="color:#666;margin-top:8px">سيتم عرض تفاصيل القراءة لمعرفة أين المشكلة</p>
+    <div class="header">
+        <div class="logo">🌳 TREE | توقع المبيعات</div>
+        <div class="badge" id="fileBadge">لم يتم رفع ملف</div>
     </div>
 
-    <div class="upload-area" id="dropZone" onclick="document.getElementById('fileInput').click()">
-        <div style="font-size:48px">📊</div>
-        <h3>اضغط لرفع ملف Excel</h3>
+    <div class="upload-card" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <div style="font-size:48px;margin-bottom:12px">📊</div>
+        <h3>ارفع ملف Excel الخاص بالمبيعات</h3>
         <p style="color:#888;font-size:12px;margin-top:8px">xlsx, xls, csv</p>
     </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
 
-    <div id="debugPanel" class="debug">
-        <strong>📋 سجل التشخيص:</strong><br>
-        في انتظار رفع ملف...
+    <div class="progress-area" id="progressArea">
+        <div id="progressText">⏳ جاري تحميل الملف...</div>
+        <div class="progress-bar-wrap"><div class="progress-bar" id="progressBar"></div></div>
     </div>
 
     <div id="dashboard" class="hidden">
-        <div class="card">
-            <h3>📊 إجمالي المبيعات</h3>
-            <div id="metrics"></div>
-            <canvas id="trendChart" style="max-height:300px;margin-top:20px"></canvas>
+        <div class="filters" id="filtersBar"></div>
+        <div class="metrics" id="metricsBar"></div>
+        
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('trend')">📈 تريند المبيعات</button>
+            <button class="tab" onclick="switchTab('forecast')">🔮 التوقع</button>
+            <button class="tab" onclick="switchTab('table')">📋 تفاصيل المجموعات</button>
+        </div>
+
+        <div id="tabTrend">
+            <div class="section">
+                <h3>المبيعات الفعلية حسب الفترة</h3>
+                <canvas id="trendChart"></canvas>
+            </div>
+        </div>
+
+        <div id="tabForecast" class="hidden">
+            <div class="section">
+                <h3>توقع المبيعات — الفعلي مقابل المتوقع</h3>
+                <canvas id="forecastChart"></canvas>
+                <div class="note">📌 التوقع مبني على متوسط آخر 4 فترات × 1.05 (نمو 5%)</div>
+            </div>
+        </div>
+
+        <div id="TabTable" class="hidden">
+            <div class="section">
+                <h3>تفاصيل التوقع حسب المجموعة الرئيسية</h3>
+                <div class="table-wrap">
+                    <table id="groupTable">
+                        <thead><tr><th>المجموعة الرئيسية</th><th>آخر فترة</th><th>التوقع</th><th>التغيير</th></tr></thead>
+                        <tbody></tbody>
+                    点able
+                </div>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
-let chart = null;
+let allData = [];
+let filteredData = [];
+let trendChart = null;
+let forecastChart = null;
 
-function log(msg, isError = false) {
-    const panel = document.getElementById('debugPanel');
-    const color = isError ? 'red' : '#333';
-    panel.innerHTML += `<div style="color:${color};margin-top:4px">${new Date().toLocaleTimeString()} - ${msg}</div>`;
-    panel.scrollTop = panel.scrollHeight;
-    console.log(msg);
+function showProgress(percent, text) {
+    const area = document.getElementById('progressArea');
+    const bar = document.getElementById('progressBar');
+    const txt = document.getElementById('progressText');
+    area.style.display = 'block';
+    bar.style.width = percent + '%';
+    txt.textContent = text;
+    if (percent >= 100) {
+        setTimeout(() => { area.style.display = 'none'; }, 1000);
+    }
 }
 
-document.getElementById('fileInput').addEventListener('change', async function(e) {
+function parsePeriod(str) {
+    if (!str) return null;
+    const s = str.toString().trim();
+    const match = s.match(/(\d{1,2})-(\d{4})/);
+    if (!match) return null;
+    const half = s.includes('اول') || s.includes('أول') ? 1 : 2;
+    return {
+        year: parseInt(match[2]),
+        month: parseInt(match[1]),
+        half: half,
+        label: s,
+        key: `${match[2]}-${match[1]}-${half}`
+    };
+}
+
+document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    log(`📁 تم اختيار الملف: ${file.name} (${(file.size/1024).toFixed(2)} KB)`);
+    document.getElementById('fileBadge').textContent = file.name;
+    document.getElementById('dropZone').style.display = 'none';
+    showProgress(10, '⏳ جاري قراءة الملف...');
     
     const reader = new FileReader();
     reader.onload = function(ev) {
-        try {
-            log(`📖 قراءة الملف بنجاح، حجم البيانات: ${ev.target.result.byteLength} bytes`);
-            
-            const data = new Uint8Array(ev.target.result);
-            const workbook = XLSX.read(data, { type: 'array' });
-            
-            log(`📚 عدد الأوراق: ${workbook.SheetNames.length} - الأوراق: ${workbook.SheetNames.join(', ')}`);
-            
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
-            const json = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
-            
-            log(`📊 عدد الصفوف في الورقة الأولى: ${json.length}`);
-            
-            if (json.length === 0) {
-                log(`❌ لا توجد بيانات في الملف`, true);
-                return;
-            }
-            
-            // عرض أول 3 صفوف
-            log(`📋 أول 3 صفوف من البيانات:`);
-            for (let i = 0; i < Math.min(3, json.length); i++) {
-                log(`   الصف ${i+1}: ${JSON.stringify(json[i]).substring(0, 200)}`);
-            }
-            
-            // عرض أسماء الأعمدة
-            const headers = Object.keys(json[0]);
-            log(`📌 أسماء الأعمدة (${headers.length} عمود):`);
-            headers.forEach((h, i) => {
-                log(`   ${i+1}. "${h}" - طول الاسم: ${h.length}`);
-                // كشف وجود أسطر جديدة
-                if (h.includes('\n')) {
-                    log(`      ⚠️ هذا العمود يحتوي على سطر جديد (\\n)`, true);
-                }
-                if (h.includes('\r')) {
-                    log(`      ⚠️ هذا العمود يحتوي على سطر جديد (\\r)`, true);
-                }
-            });
-            
-            // البحث عن أعمدة محددة
-            const dateCol = headers.find(h => h.includes('تاريخ'));
-            const qtyCol = headers.find(h => h.includes('صافي') || h.includes('الكمية'));
-            
-            log(`🔍 عمود التاريخ الموجود: "${dateCol || 'غير موجود'}"`);
-            log(`🔍 عمود الكمية الموجود: "${qtyCol || 'غير موجود'}"`);
-            
-            if (!dateCol) {
-                log(`❌ لم يتم العثور على عمود التاريخ`, true);
-                return;
-            }
-            if (!qtyCol) {
-                log(`❌ لم يتم العثور على عمود الكمية`, true);
-                return;
-            }
-            
-            // تحليل البيانات
-            let validRows = 0;
-            let parsedPeriods = [];
-            
-            for (let row of json) {
-                const periodStr = row[dateCol] || '';
-                const qty = parseFloat(row[qtyCol]) || 0;
+        showProgress(40, '⏳ جاري تحليل البيانات...');
+        setTimeout(() => {
+            try {
+                const wb = XLSX.read(ev.target.result, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const raw = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
+                if (!raw || !raw.length) throw new Error('الملف فارغ');
                 
-                if (periodStr && qty > 0) {
-                    validRows++;
-                    parsedPeriods.push(periodStr);
+                // الأعمدة الجديدة
+                allData = [];
+                for (let row of raw) {
+                    const periodStr = row['التاريخ'] || '';
+                    const period = parsePeriod(periodStr);
+                    if (!period) continue;
+                    
+                    const qty = parseFloat(row['صافي مباع']) || 0;
+                    if (qty === 0) continue;
+                    
+                    allData.push({
+                        periodRaw: periodStr,
+                        period: period,
+                        group: row['المجموعه الرئيسيه'] || 'غير محدد',
+                        branch: row['فرع'] || 'غير محدد',
+                        sold: qty,
+                        stock: parseFloat(row['رصيد حالي']) || 0,
+                        opening: parseFloat(row['رصيد بدايه']) || 0
+                    });
                 }
-            }
-            
-            log(`✅ عدد الصفوف الصالحة (تاريخ غير فارغ + كمية > 0): ${validRows}`);
-            
-            if (validRows === 0) {
-                log(`⚠️ لا توجد صفوف صالحة. تأكد من أن عمود "صافي الكمية" يحتوي على أرقام أكبر من 0`, true);
-                // عرض أول 5 قيم للكمية
-                log(`📊 عينة من قيم الكمية (أول 5 صفوف):`);
-                for (let i = 0; i < Math.min(5, json.length); i++) {
-                    const val = json[i][qtyCol];
-                    log(`   الصف ${i+1}: "${val}" → رقم: ${parseFloat(val)}`);
-                }
-                return;
-            }
-            
-            log(`✅ الملف صالح ويحتوي على ${validRows} صف!`);
-            document.getElementById('dashboard').classList.remove('hidden');
-            
-            // تجميع البيانات
-            const groupMap = new Map();
-            for (let row of json) {
-                const periodStr = row[dateCol] || '';
-                const qty = parseFloat(row[qtyCol]) || 0;
-                if (!periodStr || qty === 0) continue;
                 
-                const group = row['المجموعة الرئيسية'] || 'غير محدد';
-                if (!groupMap.has(group)) groupMap.set(group, 0);
-                groupMap.set(group, groupMap.get(group) + qty);
+                if (allData.length === 0) throw new Error('⚠️ لا توجد بيانات صالحة');
+                
+                showProgress(100, `✅ تم تحميل ${allData.length} صف بنجاح`);
+                setTimeout(() => {
+                    buildFilters();
+                    applyFilters();
+                    document.getElementById('dashboard').classList.remove('hidden');
+                }, 500);
+                
+            } catch(err) {
+                alert(err.message);
+                document.getElementById('dropZone').style.display = 'block';
+                showProgress(0, '');
             }
-            
-            const labels = Array.from(groupMap.keys());
-            const values = Array.from(groupMap.values());
-            
-            // رسم الرسم البياني
-            if (chart) chart.destroy();
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: labels, datasets: [{ label: 'المبيعات', data: values, backgroundColor: '#1D9E75' }] },
-                options: { responsive: true }
-            });
-            
-            document.getElementById('metrics').innerHTML = `
-                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:20px">
-                    <div style="text-align:center"><div style="font-size:32px;font-weight:900">${validRows}</div><div style="color:#666">صف صالح</div></div>
-                    <div style="text-align:center"><div style="font-size:32px;font-weight:900">${labels.length}</div><div style="color:#666">مجموعة</div></div>
-                    <div style="text-align:center"><div style="font-size:32px;font-weight:900">${values.reduce((a,b)=>a+b,0).toLocaleString()}</div><div style="color:#666">إجمالي المبيعات</div></div>
-                </div>
-            `;
-            
-        } catch(err) {
-            log(`❌ خطأ: ${err.message}`, true);
-            console.error(err);
-        }
+        }, 100);
     };
     reader.readAsArrayBuffer(file);
 });
 
-// Drag and drop
+function uniq(arr) {
+    return [...new Set(arr.filter(v => v))].sort();
+}
+
+function buildFilters() {
+    const groups = uniq(allData.map(d => d.group));
+    const branches = uniq(allData.map(d => d.branch));
+    
+    let html = '';
+    if (branches.length > 1) {
+        html += `<select id="branchFilter" onchange="applyFilters()"><option value="">🌍 كل الفروع</option>${branches.map(b => `<option>${b}</option>`).join('')}</select>`;
+    }
+    html += `<select id="groupFilter" onchange="applyFilters()"><option value="">📁 كل المجموعات</option>${groups.map(g => `<option>${g}</option>`).join('')}</select>`;
+    document.getElementById('filtersBar').innerHTML = html;
+}
+
+function applyFilters() {
+    const branch = document.getElementById('branchFilter')?.value || '';
+    const group = document.getElementById('groupFilter')?.value || '';
+    
+    filteredData = allData.filter(d => {
+        if (branch && d.branch !== branch) return false;
+        if (group && d.group !== group) return false;
+        return true;
+    });
+    
+    renderDashboard();
+}
+
+function getPeriods(data) {
+    const periodMap = new Map();
+    for (let d of data) {
+        if (!periodMap.has(d.period.key)) {
+            periodMap.set(d.period.key, { period: d.period, raw: d.periodRaw });
+        }
+    }
+    return Array.from(periodMap.values())
+        .sort((a, b) => (a.period.year * 100 + a.period.month) - (b.period.year * 100 + b.period.month));
+}
+
+function aggregateByPeriod(data, periods) {
+    const result = [];
+    for (let p of periods) {
+        const sold = data.filter(d => d.period.key === p.period.key).reduce((s, d) => s + d.sold, 0);
+        result.push({ period: p.period, raw: p.raw, sold: sold });
+    }
+    return result;
+}
+
+function calculateForecast(data, periods) {
+    if (periods.length === 0) return 0;
+    const last4 = periods.slice(-4);
+    let sum = 0;
+    for (let p of last4) {
+        sum += data.filter(d => d.period.key === p.period.key).reduce((s, d) => s + d.sold, 0);
+    }
+    const avg = sum / last4.length;
+    return Math.round(avg * 1.05);
+}
+
+function renderDashboard() {
+    const periods = getPeriods(filteredData);
+    const byPeriod = aggregateByPeriod(filteredData, periods);
+    const total = byPeriod.reduce((s, p) => s + p.sold, 0);
+    const last = byPeriod[byPeriod.length - 1] || { sold: 0 };
+    const prev = byPeriod[byPeriod.length - 2] || { sold: 0 };
+    const trend = prev.sold ? Math.round((last.sold - prev.sold) / prev.sold * 100) : 0;
+    const forecast = calculateForecast(filteredData, periods);
+    
+    document.getElementById('metricsBar').innerHTML = `
+        <div class="metric-card"><div class="metric-value">${total.toLocaleString()}</div><div class="metric-label">📦 إجمالي المبيعات</div><div class="metric-label" style="font-size:10px">${periods.length} فترات</div></div>
+        <div class="metric-card"><div class="metric-value ${trend >= 0 ? '' : 'status-down'}">${last.sold.toLocaleString()}</div><div class="metric-label">📅 آخر فترة</div><div class="metric-label" style="font-size:10px">${trend >= 0 ? '▲+' : '▼'} ${Math.abs(trend)}%</div></div>
+        <div class="metric-card"><div class="metric-value" style="color:#1D9E75">${forecast.toLocaleString()}</div><div class="metric-label">🔮 توقع الفترة القادمة</div><div class="metric-label" style="font-size:10px">نمو 5%</div></div>
+    `;
+    
+    const labels = byPeriod.map(p => p.raw);
+    const values = byPeriod.map(p => p.sold);
+    
+    if (trendChart) trendChart.destroy();
+    const ctx1 = document.getElementById('trendChart').getContext('2d');
+    trendChart = new Chart(ctx1, {
+        type: 'bar',
+        data: { labels: labels, datasets: [{ label: 'المبيعات', data: values, backgroundColor: '#1D9E75', borderRadius: 8 }] },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+    });
+    
+    // توقع لكل فترة سابقة
+    const forecastByPeriod = periods.map(p => {
+        const samePeriodLastYear = periods.find(pp => 
+            pp.period.month === p.period.month && 
+            pp.period.half === p.period.half && 
+            pp.period.year === p.period.year - 1
+        );
+        if (!samePeriodLastYear) return null;
+        const sold = filteredData.filter(d => d.period.key === samePeriodLastYear.period.key).reduce((s, d) => s + d.sold, 0);
+        return sold;
+    });
+    
+    if (forecastChart) forecastChart.destroy();
+    const ctx2 = document.getElementById('forecastChart').getContext('2d');
+    forecastChart = new Chart(ctx2, {
+        type: 'line',
+        data: { 
+            labels: [...labels, 'الفترة القادمة'], 
+            datasets: [
+                { label: 'فعلي', data: [...values, null], borderColor: '#1D9E75', backgroundColor: 'rgba(29,158,117,0.1)', tension: 0.3, fill: true, pointRadius: 4 },
+                { label: 'توقع', data: [...forecastByPeriod, forecast], borderColor: '#BA7517', backgroundColor: 'transparent', borderDash: [6, 4], tension: 0.3, pointRadius: 4 }
+            ]
+        },
+        options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+    });
+    
+    // جدول المجموعات
+    const groups = {};
+    for (let d of filteredData) {
+        if (!groups[d.group]) groups[d.group] = [];
+        groups[d.group].push(d);
+    }
+    
+    const lastPeriodKey = periods.length ? periods[periods.length-1].period.key : '';
+    const tbody = document.querySelector('#groupTable tbody');
+    tbody.innerHTML = Object.keys(groups).sort().map(group => {
+        const groupData = groups[group];
+        const lastSold = groupData.filter(d => d.period.key === lastPeriodKey).reduce((s, d) => s + d.sold, 0);
+        const groupForecast = calculateForecast(groupData, getPeriods(groupData));
+        const change = lastSold ? Math.round((groupForecast - lastSold) / lastSold * 100) : 0;
+        const changeClass = change > 5 ? 'status-up' : (change < -5 ? 'status-down' : '');
+        return `<tr>
+            <td>${group}</td>
+            <td>${lastSold.toLocaleString()}</td>
+            <td><strong>${groupForecast.toLocaleString()}</strong></td>
+            <td><span class="${changeClass}" style="padding:4px 12px;border-radius:20px;display:inline-block">${change >= 0 ? '+':''}${change}%</span></td>
+        </tr>`;
+    }).join('');
+}
+
+function switchTab(tab) {
+    document.getElementById('tabTrend').classList.toggle('hidden', tab !== 'trend');
+    document.getElementById('tabForecast').classList.toggle('hidden', tab !== 'forecast');
+    document.getElementById('TabTable').classList.toggle('hidden', tab !== 'table');
+    document.querySelectorAll('.tab').forEach((btn, i) => {
+        const tabs = ['trend', 'forecast', 'table'];
+        btn.classList.toggle('active', tabs[i] === tab);
+    });
+}
+
+// Drag & Drop
 const dropZone = document.getElementById('dropZone');
-dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#e8f7f1'; });
+dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#f0faf6'; });
 dropZone.addEventListener('dragleave', () => { dropZone.style.background = ''; });
 dropZone.addEventListener('drop', (e) => {
     e.preventDefault();
