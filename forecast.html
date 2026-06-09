@@ -26,7 +26,7 @@
 <div class="container">
     <div class="upload" onclick="document.getElementById('fileInput').click()">
         <div style="font-size:48px">📊</div>
-        <h3>ارفع ملف Excel أو CSV</h3>
+        <h3>ارفع ملف Excel</h3>
         <p style="color:#888;font-size:12px;margin-top:8px">xlsx, xls, csv</p>
     </div>
     <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
@@ -54,41 +54,30 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function(ev) {
         try {
-            let workbook, sheet, rows;
+            let rows = [];
             
             if (file.name.endsWith('.csv')) {
-                // معالجة CSV
                 const text = ev.target.result;
                 const lines = text.split(/\r?\n/);
                 rows = lines.map(line => line.split(','));
             } else {
-                // معالجة Excel
                 const data = ev.target.result;
-                workbook = XLSX.read(data, { type: 'array' });
-                sheet = workbook.Sheets[workbook.SheetNames[0]];
+                const workbook = XLSX.read(data, { type: 'array' });
+                const sheet = workbook.Sheets[workbook.SheetNames[0]];
                 rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
             }
             
             if (!rows || rows.length < 2) throw new Error('الملف فارغ');
             
-            // أسماء الأعمدة
-            const headers = rows[0];
+            // نستخدم الأرقام الثابتة للأعمدة حسب ملفك
+            // العمود 3 = التاريخ (لأن العد يبدأ من 0)
+            // العمود 9 = صافي الكمية المباعه
+            const dateCol = 2;    // العمود الثالث
+            const qtyCol = 8;     // العمود التاسع
             
-            // البحث عن أعمدة التاريخ والكمية
-            let dateCol = -1, qtyCol = -1;
-            for (let i = 0; i < headers.length; i++) {
-                const h = String(headers[i] || '').toLowerCase();
-                if (h === 'تاريخ' || h.includes('التاريخ') || h === 'date') dateCol = i;
-                if (h === 'صافي الكمية المباعه' || h.includes('صافي') || h.includes('مباع')) qtyCol = i;
-            }
-            
-            // إذا لم نجد، نجرب أرقاماً افتراضية
-            if (dateCol === -1) dateCol = 2;  // التاريخ غالباً العمود الثالث
-            if (qtyCol === -1) qtyCol = 8;    // الكمية غالباً العمود التاسع
-            
-            // تجميع البيانات حسب الفترة
+            // تجميع البيانات
             const periodMap = new Map();
-            let validCount = 0;
+            let validRows = 0;
             
             for (let i = 1; i < rows.length; i++) {
                 const row = rows[i];
@@ -101,24 +90,22 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
                 if (isNaN(qty)) qty = 0;
                 if (qty <= 0) continue;
                 
-                validCount++;
+                validRows++;
                 periodMap.set(period, (periodMap.get(period) || 0) + qty);
             }
             
             if (periodMap.size === 0) {
-                throw new Error(`لا توجد بيانات صالحة. تم فحص ${rows.length-1} صف. تأكد من وجود أرقام في عمود الكمية`);
+                throw new Error(`لا توجد بيانات. تم فحص ${rows.length-1} صف. تأكد من وجود أرقام في العمود ${qtyCol+1}`);
             }
             
-            // ترتيب الفترات (حسب الشهر والسنة)
+            // ترتيب الفترات
             const periods = Array.from(periodMap.keys());
             const sales = Array.from(periodMap.values());
-            
-            // حساب الإجمالي والتوقع
             const total = sales.reduce((a, b) => a + b, 0);
             const avg = total / sales.length;
             const forecast = Math.round(avg * 1.05);
             
-            // عرض الإحصائيات
+            // عرض النتائج
             document.getElementById('metrics').innerHTML = `
                 <div class="metric"><div class="metric-value">${total.toLocaleString()}</div><div>إجمالي المبيعات</div><div style="font-size:11px;color:#888">${periods.length} فترات</div></div>
                 <div class="metric"><div class="metric-value">${sales[0].toLocaleString()}</div><div>${periods[0]}</div></div>
@@ -127,25 +114,12 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
             
             document.getElementById('forecastValue').innerHTML = `${forecast.toLocaleString()} قطعة`;
             
-            // رسم الرسم البياني
             if (chart) chart.destroy();
             const ctx = document.getElementById('trendChart').getContext('2d');
             chart = new Chart(ctx, {
                 type: 'bar',
-                data: { 
-                    labels: periods, 
-                    datasets: [{ 
-                        label: 'المبيعات (قطعة)', 
-                        data: sales, 
-                        backgroundColor: '#1D9E75', 
-                        borderRadius: 8 
-                    }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: true,
-                    plugins: { legend: { position: 'bottom' } }
-                }
+                data: { labels: periods, datasets: [{ label: 'المبيعات (قطعة)', data: sales, backgroundColor: '#1D9E75', borderRadius: 8 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
             });
             
             document.getElementById('dashboard').classList.remove('hidden');
