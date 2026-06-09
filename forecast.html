@@ -3,158 +3,118 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>توقع المبيعات — TREE</title>
+<title>قارئ ملفات TREE الفوري</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f5f7f5;color:#1a1a1a;min-height:100vh}
-.header{background:#fff;border-bottom:1px solid #e0e8e4;padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
-.logo{width:36px;height:36px;background:#1D9E75;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0}
-.header h1{font-size:17px;font-weight:600}
-#file-badge{font-size:11px;background:#EAF3DE;color:#3B6D11;padding:3px 10px;border-radius:20px;margin-right:auto}
-.container{max-width:1000px;margin:0 auto;padding:20px 16px}
-.upload-card{background:#fff;border:1.5px dashed #9FE1CB;border-radius:14px;padding:40px;text-align:center;cursor:pointer;margin-bottom:20px}
-.upload-card:hover{background:#f0faf6}
-.upload-card h2{font-size:15px;font-weight:600;margin-bottom:6px}
-.upload-card p{font-size:12px;color:#888;line-height:1.8}
-#progress-area{display:none;background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e8f0ec;text-align:center}
-#progress-bar-wrap{background:#e8f0ec;border-radius:20px;height:8px;margin:10px 0}
-#progress-bar{background:#1D9E75;height:8px;border-radius:20px;width:0%;transition:width 0.3s}
-#progress-text{font-size:12px;color:#888}
-.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:10px;margin-bottom:16px}
-.filters select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #d5e8df;background:#fff;color:#1a1a1a;width:100%;outline:none}
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
-.metric{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e8f0ec}
-.metric .lbl{font-size:11px;color:#888;margin-bottom:6px}
-.metric .val{font-size:22px;font-weight:700;line-height:1}
-.metric .val.green{color:#1D9E75}
-.metric .val.amber{color:#BA7517}
-.metric .val.red{color:#A32D2D}
-.tab-controls{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;gap:10px;flex-wrap:wrap}
-.tab-bar{display:flex;gap:6px;background:#fff;border-radius:10px;padding:6px;border:1px solid #e8f0ec;width:fit-content}
-.tab{padding:7px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:#555;border:none;background:transparent}
-.tab.active{background:#1D9E75;color:#fff;font-weight:600}
-.btn-download{background:#1D9E75;color:#fff;border:none;padding:8px 16px;border-radius:10px;font-size:12px;font-weight:600;cursor:pointer;display:flex;align-items:center;gap:6px}
-.btn-download:hover{background:#157556}
-.section{background:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px;border:1px solid #e8f0ec}
-.section h2{font-size:13px;font-weight:600;color:#555;margin-bottom:14px}
-.note{font-size:11px;color:#BA7517;margin-top:10px;padding:8px 12px;background:#FAEEDA;border-radius:8px}
-#dashboard{display:none}
-.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e8f0ec;max-height:500px;overflow-y:auto}
-table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#f8faf9;padding:9px 12px;text-align:right;font-weight:600;font-size:11px;color:#555;border-bottom:1px solid #e8f0ec;position:sticky;top:0}
-td{padding:8px 12px;border-bottom:1px solid #f0f4f2}
-tr:hover td{background:#f8faf9}
-.badge{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600}
-.badge.up{background:#EAF3DE;color:#3B6D11}
-.badge.down{background:#FCEBEB;color:#A32D2D}
-.badge.flat{background:#F1EFE8;color:#5F5E5A}
-.search-box{width:100%;padding:8px 12px;border-radius:8px;border:1px solid #d5e8df;font-size:13px;margin-bottom:10px;outline:none}
+  body { font-family: 'Segoe UI', Tahoma, sans-serif; background: #f4f6f4; color: #333; padding: 20px; }
+  .container { max-width: 1100px; margin: 0 auto; }
+  .upload-box { background: #fff; border: 2px dashed #1D9E75; border-radius: 12px; padding: 30px; text-align: center; cursor: pointer; margin-bottom: 20px; }
+  .status { font-weight: bold; color: #1D9E75; margin-bottom: 15px; font-size: 14px; text-align: center; }
+  .stats-bar { display: flex; gap: 15px; margin-bottom: 20px; }
+  .stat-card { background: #fff; padding: 15px; border-radius: 8px; flex: 1; border: 1px solid #e0e0e0; text-align: center; }
+  .stat-card h3 { font-size: 12px; color: #666; margin-bottom: 5px; }
+  .stat-card p { font-size: 20px; font-weight: bold; color: #1D9E75; }
+  .table-wrap { background: #fff; border-radius: 8px; border: 1px solid #e0e0e0; overflow-x: auto; max-height: 600px; }
+  table { width: 100%; border-collapse: collapse; text-align: right; font-size: 13px; }
+  th { background: #f8faf9; padding: 12px; border-bottom: 2px solid #e0e0e0; position: sticky; top: 0; color: #444; }
+  td { padding: 10px 12px; border-bottom: 1px solid #eee; }
+  tr:hover { background: #f9f9f9; }
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="logo">T</div>
-  <h1>توقع المبيعات — TREE</h1>
-  <span id="file-badge">لم يتم رفع ملف</span>
-</div>
+
 <div class="container">
-  <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
-    <h2>⬆ ارفع ملف Excel الخاص بالمبيعات</h2>
-    <p>تم تحديث الكود ليتطابق تماماً مع نظام الأعمدة والتواريخ الحالي في الشيت الخاص بك</p>
-  </div>
-  <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
-
-  <div id="progress-area">
-    <div id="progress-text">جاري تحميل الملف...</div>
-    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  <div class="upload-box" onclick="document.getElementById('excel-file').click()">
+    <h2>اضغط هنا لرفع ملف الإكسيل وقراءته فوراً 📄</h2>
+    <p>سيقوم الكود بمسح الشيت وعرض البيانات المكتشفة بالكامل</p>
+    <input type="file" id="excel-file" accept=".xlsx,.xls,.csv" style="display:none">
   </div>
 
-  <div id="dashboard">
-    <div class="filters" id="filters-bar"></div>
-    <div class="metrics" id="metrics-bar"></div>
-    
-    <div class="tab-controls">
-      <div class="tab-bar">
-        <button class="tab active" onclick="switchTab('trend')">تريند الشركة</button>
-        <button class="tab" onclick="switchTab('groups')">المجموعات</button>
-        <button class="tab" onclick="switchTab('items')">الأصناف</button>
-      </div>
-      <button class="btn-download" onclick="downloadForecastExcel()">📥 تحميل التوقعات (Excel)</button>
-    </div>
+  <div id="status-msg" class="status">جاهز بانتظار رفع الملف...</div>
 
-    <div id="tab-trend">
-      <div class="section">
-        <h2>مبيعات الفترات — إجمالي الشركة</h2>
-        <canvas id="trend-chart" height="220"></canvas>
-      </div>
-      <div class="section">
-        <h2>توقع مقابل الفعلي</h2>
-        <canvas id="forecast-chart" height="220"></canvas>
-      </div>
-    </div>
+  <div class="stats-bar" id="stats" style="display:none;">
+    <div class="stat-card"><h3>إجمالي السطور المقروءة</h3><p id="total-rows">0</p></div>
+    <div class="stat-card"><h3>إجمالي الكميات المباعة</h3><p id="total-qty">0</p></div>
+  </div>
 
-    <div id="tab-groups" style="display:none">
-      <div class="section">
-        <h2>توقع بالمجموعة الرئيسية</h2>
-        <div class="tbl-wrap">
-          <table id="grp-table"><thead></thead><tbody></tbody></table>
-        </div>
-      </div>
-    </div>
-
-    <div id="tab-items" style="display:none">
-      <div class="section">
-        <h2>توقع بالصنف</h2>
-        <input type="text" class="search-box" id="item-search" placeholder="ابحث عن صنف..." oninput="filterItemTable()">
-        <div class="tbl-wrap">
-          <table id="item-table"><thead></thead><tbody></tbody></table>
-        </div>
-      </div>
-    </div>
+  <div class="table-wrap" id="table-container" style="display:none;">
+    <table id="result-table">
+      <thead><tr id="table-headers"></tr></thead>
+      <tbody id="table-body"></tbody>
+    </table>
   </div>
 </div>
 
 <script>
-var byItem={};
-var byGroup={};
-var allPeriods=[];
-var allGroups=[],allSubGroups=[],allDepts=[];
-var trendChart=null,forecastChart=null;
+document.getElementById('excel-file').addEventListener('change', function(e) {
+  var file = e.target.files[0];
+  if (!file) return;
 
-// دالة تحويل الأرقام العربية الشرقية إلى أرقام إنجليزية ليفهمها الكود
-function toEnDigits(str) {
-  return str.replace(/[٠-٩]/g, function(d) {
-    return d.charCodeAt(0) - 1632;
-  });
-}
-
-function normH(h){
-  if(!h) return '';
-  return h.toString().replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim();
-}
-
-function findCol(headers, candidates){
-  var nh = headers.map(function(h){ return {orig:h, n:normH(h)}; });
-  for(var i=0; i<candidates.length; i++){
-    var cn = normH(candidates[i]);
-    for(var j=0; j<nh.length; j++){ if(nh[j].n === cn) return nh[j].orig; }
-  }
-  for(var i=0; i<candidates.length; i++){
-    var cn = normH(candidates[i]);
-    for(var j=0; j<nh.length; j++){ if(cn && nh[j].n.indexOf(cn) >= 0) return nh[j].orig; }
-  }
-  return null;
-}
-
-function parsePeriod(str){
-  if(!str) return null;
-  // تحويل الأرقام مثل (١-٢٠٢٦) إلى (1-2026)
-  var s = toEnDigits(str.toString().trim());
+  document.getElementById('status-msg').textContent = "جاري قراءة الملف فوريًا...";
   
-  // فحص نمط التاريخ المعكوس أو العادي
-  var m1 = s.match(/(\d{1,2})-(\d{4})/);
-  var m2 = s.match(/(\d{4})-(\d{1,2})/);
-  
-  var half = (s.indexOf('اول') >= 0 || s.indexOf('أول') >= 0 || s.indexOf('اولى') >= 0) ? 1 : 2;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    try {
+      var data = new Uint8Array(ev.target.result);
+      var workbook = XLSX.read(data, {type: 'array'});
+      var sheetName = workbook.SheetNames[0];
+      var worksheet = workbook.Sheets[sheetName];
+      
+      // تحويل الشيت لصفوف خام للبحث عن السطر الصحيح
+      var rawRows = XLSX.utils.sheet_to_json(worksheet, {header: 1, defval: ''});
+      
+      var headerIndex = 0;
+      for (var i = 0; i < rawRows.length; i++) {
+        var rowText = rawRows[i].join(' ');
+        // البحث عن أي كلمة تدل على الجدول لتبدأ القراءة منها
+        if (rowText.includes('ريخ') || rowText.includes('صنف') || rowText.includes('مباع')) {
+          headerIndex = i;
+          break;
+        }
+      }
+
+      // إعادة القراءة بناءً على السطر المكتشف
+      var jsonData = XLSX.utils.sheet_to_json(worksheet, {range: headerIndex, defval: ''});
+      
+      if (jsonData.length === 0) {
+        document.getElementById('status-msg').textContent = "❌ تم فتح الملف ولكن لم يتم العثور على بيانات في الجدول.";
+        return;
+      }
+
+      // عرض الإحصائيات
+      document.getElementById('total-rows').textContent = jsonData.length.toLocaleString();
+      
+      // حساب إجمالي الكميات dynamically
+      var qtyKey = Object.keys(jsonData[0]).find(k => k.includes('مباع') || k.includes('الكمية'));
+      var totalQty = 0;
+      if (qtyKey) {
+        totalQty = jsonData.reduce((sum, row) => sum + (parseFloat(row[qtyKey]) || 0), 0);
+      }
+      document.getElementById('total-qty').textContent = Math.round(totalQty).toLocaleString();
+
+      // بناء عناوين الجدول
+      var headers = Object.keys(jsonData[0]);
+      var headerHtml = headers.map(h => `<th>${h}</th>`).join('');
+      document.getElementById('table-headers').innerHTML = headerHtml;
+
+      // بناء أسطر البيانات (أول 300 سطر للسرعة والأداء)
+      var rowsHtml = jsonData.slice(0, 300).map(row => {
+        return `<tr>${headers.map(h => `<td>${row[h] || ''}</td>`).join('')}</tr>`;
+      }).join('');
+      
+      document.getElementById('table-body').innerHTML = rowsHtml;
+      
+      // إظهار العناصر
+      document.getElementById('status-msg').textContent = "✅ تم جلب وقراءة البيانات بنجاح!";
+      document.getElementById('stats').style.display = 'flex';
+      document.getElementById('table-container').style.display = 'block';
+
+    } catch (err) {
+      document.getElementById('status-msg').textContent = "❌ حدث خطأ أثناء القراءة: " + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+});
+</script>
+</body>
+</html>
