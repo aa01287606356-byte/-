@@ -27,9 +27,9 @@
     <div class="upload" onclick="document.getElementById('fileInput').click()">
         <div style="font-size:48px">📊</div>
         <h3>ارفع ملف Excel</h3>
-        <p style="color:#888;font-size:12px;margin-top:8px">xlsx, xls, csv</p>
+        <p style="color:#888;font-size:12px;margin-top:8px">xlsx, xls</p>
     </div>
-    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
     <div id="dashboard" class="hidden">
         <div class="metrics" id="metrics"></div>
         <div class="tabs">
@@ -54,28 +54,19 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
     const reader = new FileReader();
     reader.onload = function(ev) {
         try {
-            let rows = [];
-            
-            if (file.name.endsWith('.csv')) {
-                const text = ev.target.result;
-                const lines = text.split(/\r?\n/);
-                rows = lines.map(line => line.split(','));
-            } else {
-                const data = ev.target.result;
-                const workbook = XLSX.read(data, { type: 'array' });
-                const sheet = workbook.Sheets[workbook.SheetNames[0]];
-                rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-            }
+            // قراءة الملف كـ Excel فقط
+            const data = ev.target.result;
+            const workbook = XLSX.read(data, { type: 'array' });
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
+            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
             
             if (!rows || rows.length < 2) throw new Error('الملف فارغ');
             
-            // نستخدم الأرقام الثابتة للأعمدة حسب ملفك
-            // العمود 3 = التاريخ (لأن العد يبدأ من 0)
-            // العمود 9 = صافي الكمية المباعه
-            const dateCol = 2;    // العمود الثالث
-            const qtyCol = 8;     // العمود التاسع
+            // العمود الثالث = تاريخ (index 2)
+            // العمود التاسع = الكمية (index 8)
+            const dateCol = 2;
+            const qtyCol = 8;
             
-            // تجميع البيانات
             const periodMap = new Map();
             let validRows = 0;
             
@@ -95,17 +86,15 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
             }
             
             if (periodMap.size === 0) {
-                throw new Error(`لا توجد بيانات. تم فحص ${rows.length-1} صف. تأكد من وجود أرقام في العمود ${qtyCol+1}`);
+                throw new Error(`لا توجد بيانات. تأكد من وجود أرقام في عمود الكمية (العمود 9)`);
             }
             
-            // ترتيب الفترات
             const periods = Array.from(periodMap.keys());
             const sales = Array.from(periodMap.values());
             const total = sales.reduce((a, b) => a + b, 0);
             const avg = total / sales.length;
             const forecast = Math.round(avg * 1.05);
             
-            // عرض النتائج
             document.getElementById('metrics').innerHTML = `
                 <div class="metric"><div class="metric-value">${total.toLocaleString()}</div><div>إجمالي المبيعات</div><div style="font-size:11px;color:#888">${periods.length} فترات</div></div>
                 <div class="metric"><div class="metric-value">${sales[0].toLocaleString()}</div><div>${periods[0]}</div></div>
@@ -129,6 +118,9 @@ document.getElementById('fileInput').addEventListener('change', function(e) {
             alert('❌ ' + err.message);
             console.error(err);
         }
+    };
+    reader.onerror = function() {
+        alert('❌ لا يمكن قراءة الملف');
     };
     reader.readAsArrayBuffer(file);
 });
