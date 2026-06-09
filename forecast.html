@@ -3,49 +3,40 @@
 <head>
     <meta charset="UTF-8">
     <title>توقع المبيعات - TREE</title>
-    <link rel="icon" type="image/png" href="https://cdn-icons-png.flaticon.com/512/1674/1674072.png">
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
         *{margin:0;padding:0;box-sizing:border-box}
         body{font-family:'Segoe UI',sans-serif;background:#f0f4f0;padding:20px}
-        .container{max-width:1100px;margin:0 auto}
-        .upload{background:#fff;border:2px dashed #1D9E75;border-radius:20px;padding:60px;text-align:center;cursor:pointer;margin-bottom:24px}
+        .container{max-width:1000px;margin:0 auto}
+        .upload{background:#fff;border:2px dashed #1D9E75;border-radius:20px;padding:50px;text-align:center;cursor:pointer;margin-bottom:20px}
         .upload:hover{background:#f0faf6}
         .hidden{display:none}
-        .success{background:#EAF3DE;color:#3B6D11;padding:12px;border-radius:12px;margin-bottom:16px}
-        .error{background:#FCEBEB;color:#A32D2D;padding:12px;border-radius:12px;margin-bottom:16px}
         .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
-        .metric{background:#fff;border-radius:16px;padding:20px;text-align:center;border-right:4px solid #1D9E75}
-        .metric-value{font-size:32px;font-weight:900}
+        .metric{background:#fff;border-radius:16px;padding:20px;text-align:center}
+        .metric-value{font-size:32px;font-weight:900;color:#1D9E75}
         canvas{max-height:300px;width:100%}
-        .tabs{display:flex;gap:8px;margin-bottom:20px}
-        .tab{background:#fff;border:none;padding:10px 24px;border-radius:30px;cursor:pointer}
+        .tab{background:#fff;border:none;padding:10px 24px;border-radius:30px;cursor:pointer;margin-left:8px}
         .tab.active{background:#1D9E75;color:#fff}
-        .debug{background:#f8f9fa;padding:16px;border-radius:12px;margin-bottom:16px;font-size:11px;font-family:monospace;display:none}
     </style>
 </head>
 <body>
 <div class="container">
     <div class="upload" onclick="document.getElementById('fileInput').click()">
         <div style="font-size:48px">📊</div>
-        <h3>ارفع ملف Excel الخاص بالمبيعات</h3>
-        <p style="color:#888;font-size:12px;margin-top:8px">xlsx, xls, csv</p>
+        <div>اضغط لرفع ملف CSV أو Excel</div>
+        <div style="font-size:12px;color:#888;margin-top:8px">يفضل استخدام ملف CSV للحصول على أفضل نتيجة</div>
     </div>
-    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
-    
-    <div id="debugPanel" class="debug"></div>
-    
+    <input type="file" id="fileInput" accept=".csv,.xlsx,.xls" style="display:none">
     <div id="dashboard" class="hidden">
         <div class="metrics" id="metrics"></div>
-        <div class="tabs">
-            <button class="tab active" onclick="showTab('trend')">📈 تريند المبيعات</button>
-            <button class="tab" onclick="showTab('forecast')">🔮 توقع الفترة القادمة</button>
+        <div style="margin-bottom:16px">
+            <button class="tab active" onclick="showTab('trend')">📈 تريند</button>
+            <button class="tab" onclick="showTab('forecast')">🔮 توقع</button>
         </div>
         <div id="trendDiv"><canvas id="trendChart"></canvas></div>
         <div id="forecastDiv" style="display:none;background:#fff;border-radius:16px;padding:40px;text-align:center">
             <div style="font-size:48px;font-weight:900;color:#1D9E75" id="forecastValue"></div>
-            <div style="margin-top:16px;color:#888">توقع الفترة القادمة (نمو 5%)</div>
         </div>
     </div>
 </div>
@@ -53,153 +44,129 @@
 <script>
 let chart = null;
 
-function debugLog(msg) {
-    const panel = document.getElementById('debugPanel');
-    panel.style.display = 'block';
-    panel.innerHTML += `<div>${new Date().toLocaleTimeString()} - ${msg}</div>`;
-    panel.scrollTop = panel.scrollHeight;
-    console.log(msg);
-}
-
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
     
-    document.getElementById('debugPanel').innerHTML = '';
-    debugLog(`📁 بدء قراءة الملف: ${file.name} (${(file.size/1024).toFixed(2)} KB)`);
-    
     const reader = new FileReader();
     reader.onload = function(ev) {
         try {
-            const data = ev.target.result;
-            debugLog(`✅ تم قراءة ${data.byteLength} bytes`);
+            let data = [];
+            const content = ev.target.result;
             
-            const workbook = XLSX.read(data, { type: 'array' });
-            debugLog(`✅ تم فتح الملف - عدد الأوراق: ${workbook.SheetNames.length}`);
-            
-            const sheetName = workbook.SheetNames[0];
-            const sheet = workbook.Sheets[sheetName];
-            debugLog(`📄 الورقة الأولى: "${sheetName}"`);
-            
-            // قراءة البيانات مع الاحتفاظ بالصف الأول كعناوين
-            const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-            debugLog(`📊 عدد الصفوف الإجمالي: ${rows.length}`);
-            
-            if (!rows || rows.length < 2) {
-                throw new Error('الملف لا يحتوي على بيانات كافية');
-            }
-            
-            // أسماء الأعمدة من الصف الأول
-            const headers = rows[0];
-            debugLog(`📋 أسماء الأعمدة: ${headers.join(' | ')}`);
-            
-            // البحث عن أرقام الأعمدة المطلوبة
-            let dateCol = -1;
-            let qtyCol = -1;
-            let groupCol = -1;
-            let branchCol = -1;
-            
-            for (let i = 0; i < headers.length; i++) {
-                const h = String(headers[i] || '').toLowerCase();
-                if (h.includes('تاريخ') || h.includes('التاريخ')) dateCol = i;
-                if (h.includes('صافي') || h.includes('مباع')) qtyCol = i;
-                if (h.includes('المجموعة الرئيسية')) groupCol = i;
-                if (h.includes('فرع')) branchCol = i;
-            }
-            
-            debugLog(`🔍 موقع عمود التاريخ: ${dateCol}`);
-            debugLog(`🔍 موقع عمود الكمية: ${qtyCol}`);
-            
-            if (dateCol === -1) throw new Error('لم يتم العثور على عمود التاريخ');
-            if (qtyCol === -1) throw new Error('لم يتم العثور على عمود الكمية');
-            
-            // تجميع البيانات
-            const periodMap = new Map();
-            let validRows = 0;
-            
-            for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
-                const period = String(row[dateCol] || '').trim();
-                if (!period) continue;
+            // إذا كان CSV
+            if (file.name.endsWith('.csv')) {
+                const lines = content.split(/\r?\n/);
+                const headers = lines[0].split(',');
                 
-                let qty = parseFloat(row[qtyCol]);
-                if (isNaN(qty)) qty = 0;
-                if (qty <= 0) continue;
-                
-                validRows++;
-                periodMap.set(period, (periodMap.get(period) || 0) + qty);
-            }
-            
-            debugLog(`✅ عدد الصفوف الصالحة: ${validRows}`);
-            debugLog(`📊 عدد الفترات المختلفة: ${periodMap.size}`);
-            
-            if (periodMap.size === 0) {
-                throw new Error('لا توجد بيانات صالحة (الكميات كلها صفر أو التاريخ غير موجود)');
-            }
-            
-            // ترتيب الفترات
-            const periods = Array.from(periodMap.keys());
-            const sales = Array.from(periodMap.values());
-            const total = sales.reduce((a, b) => a + b, 0);
-            const avg = total / sales.length;
-            const forecast = Math.round(avg * 1.05);
-            
-            debugLog(`📈 إجمالي المبيعات: ${total}`);
-            debugLog(`🔮 التوقع: ${forecast}`);
-            
-            // عرض الإحصائيات
-            document.getElementById('metrics').innerHTML = `
-                <div class="metric"><div class="metric-value">${total.toLocaleString()}</div><div>إجمالي المبيعات</div><div style="font-size:11px;color:#888">${periods.length} فترات</div></div>
-                <div class="metric"><div class="metric-value">${sales[0].toLocaleString()}</div><div>${periods[0]}</div></div>
-                <div class="metric"><div class="metric-value" style="color:#1D9E75">${forecast.toLocaleString()}</div><div>توقع القادمة</div><div style="font-size:11px">نمو 5%</div></div>
-            `;
-            
-            document.getElementById('forecastValue').innerHTML = `${forecast.toLocaleString()} قطعة`;
-            
-            // رسم الرسم البياني
-            if (chart) chart.destroy();
-            const ctx = document.getElementById('trendChart').getContext('2d');
-            chart = new Chart(ctx, {
-                type: 'bar',
-                data: { 
-                    labels: periods, 
-                    datasets: [{ 
-                        label: 'المبيعات', 
-                        data: sales, 
-                        backgroundColor: '#1D9E75', 
-                        borderRadius: 8 
-                    }] 
-                },
-                options: { 
-                    responsive: true, 
-                    maintainAspectRatio: true,
-                    plugins: { legend: { position: 'bottom' } }
+                // البحث عن أرقام الأعمدة
+                let dateIdx = -1, qtyIdx = -1;
+                for (let i = 0; i < headers.length; i++) {
+                    const h = headers[i].toLowerCase();
+                    if (h.includes('تاريخ') || h.includes('التاريخ')) dateIdx = i;
+                    if (h.includes('صافي') || h.includes('مباع') || h.includes('كمية')) qtyIdx = i;
                 }
-            });
-            
-            document.getElementById('dashboard').classList.remove('hidden');
-            document.querySelector('.upload').style.display = 'none';
-            
-            debugLog(`✅ تم التحميل بنجاح!`);
+                
+                if (dateIdx === -1) dateIdx = 2; // العمود الثالث غالباً تاريخ
+                if (qtyIdx === -1) qtyIdx = 8; // العمود التاسع غالباً كمية
+                
+                const periodMap = new Map();
+                
+                for (let i = 1; i < lines.length; i++) {
+                    const parts = lines[i].split(',');
+                    if (parts.length < 2) continue;
+                    
+                    const period = parts[dateIdx]?.trim();
+                    let qty = parseFloat(parts[qtyIdx]);
+                    if (isNaN(qty)) qty = 0;
+                    
+                    if (period && qty > 0) {
+                        periodMap.set(period, (periodMap.get(period) || 0) + qty);
+                    }
+                }
+                
+                if (periodMap.size === 0) throw new Error('لا توجد بيانات');
+                
+                const periods = Array.from(periodMap.keys());
+                const sales = Array.from(periodMap.values());
+                displayResults(periods, sales);
+            }
+            else {
+                // إذا كان Excel
+                const wb = XLSX.read(ev.target.result, { type: 'array' });
+                const ws = wb.Sheets[wb.SheetNames[0]];
+                const json = XLSX.utils.sheet_to_json(ws, { header: 1 });
+                
+                if (!json || json.length < 2) throw new Error('الملف فارغ');
+                
+                const headers = json[0];
+                let dateIdx = -1, qtyIdx = -1;
+                
+                for (let i = 0; i < headers.length; i++) {
+                    const h = String(headers[i] || '').toLowerCase();
+                    if (h.includes('تاريخ') || h.includes('التاريخ')) dateIdx = i;
+                    if (h.includes('صافي') || h.includes('مباع')) qtyIdx = i;
+                }
+                
+                if (dateIdx === -1) dateIdx = 2;
+                if (qtyIdx === -1) qtyIdx = 8;
+                
+                const periodMap = new Map();
+                
+                for (let i = 1; i < json.length; i++) {
+                    const row = json[i];
+                    const period = String(row[dateIdx] || '').trim();
+                    if (!period) continue;
+                    
+                    let qty = parseFloat(row[qtyIdx]);
+                    if (isNaN(qty)) qty = 0;
+                    if (qty <= 0) continue;
+                    
+                    periodMap.set(period, (periodMap.get(period) || 0) + qty);
+                }
+                
+                if (periodMap.size === 0) throw new Error('لا توجد بيانات');
+                
+                const periods = Array.from(periodMap.keys());
+                const sales = Array.from(periodMap.values());
+                displayResults(periods, sales);
+            }
             
         } catch(err) {
-            debugLog(`❌ خطأ: ${err.message}`);
-            alert(`خطأ: ${err.message}\n\nراجع لوحة التصحيح لمزيد من التفاصيل.`);
+            alert('خطأ: ' + err.message + '\n\nحاول تحويل الملف إلى CSV من Excel ثم ارفعه');
         }
-    };
-    reader.onerror = function() {
-        debugLog(`❌ لا يمكن قراءة الملف`);
-        alert('لا يمكن قراءة الملف');
     };
     reader.readAsArrayBuffer(file);
 });
 
+function displayResults(periods, sales) {
+    const total = sales.reduce((a,b) => a+b, 0);
+    const avg = total / sales.length;
+    const forecast = Math.round(avg * 1.05);
+    
+    document.getElementById('metrics').innerHTML = `
+        <div class="metric"><div class="metric-value">${total.toLocaleString()}</div><div>إجمالي المبيعات</div><div style="font-size:11px;color:#888">${periods.length} فترات</div></div>
+        <div class="metric"><div class="metric-value">${sales[0].toLocaleString()}</div><div>${periods[0]}</div></div>
+        <div class="metric"><div class="metric-value" style="color:#1D9E75">${forecast.toLocaleString()}</div><div>توقع القادمة</div><div style="font-size:11px">نمو 5%</div></div>
+    `;
+    
+    document.getElementById('forecastValue').innerHTML = `${forecast.toLocaleString()} قطعة`;
+    
+    if (chart) chart.destroy();
+    const ctx = document.getElementById('trendChart').getContext('2d');
+    chart = new Chart(ctx, {
+        type: 'bar',
+        data: { labels: periods, datasets: [{ label: 'المبيعات', data: sales, backgroundColor: '#1D9E75', borderRadius: 8 }] },
+        options: { responsive: true, maintainAspectRatio: true }
+    });
+    
+    document.getElementById('dashboard').classList.remove('hidden');
+    document.querySelector('.upload').style.display = 'none';
+}
+
 function showTab(tab) {
     document.getElementById('trendDiv').style.display = tab === 'trend' ? 'block' : 'none';
     document.getElementById('forecastDiv').style.display = tab === 'forecast' ? 'block' : 'none';
-    document.querySelectorAll('.tab').forEach((btn, i) => {
-        btn.classList.toggle('active', (i === 0 && tab === 'trend') || (i === 1 && tab === 'forecast'));
-    });
 }
 </script>
 </body>
