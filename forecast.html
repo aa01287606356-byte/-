@@ -2,64 +2,191 @@
 <html lang="ar" dir="rtl">
 <head>
     <meta charset="UTF-8">
-    <title>اختبار قراءة الملف</title>
+    <title>توقع المبيعات - TREE</title>
     <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <style>
-        body{font-family:sans-serif;padding:20px;background:#f0f4f0}
-        .area{background:#fff;border:2px dashed #1D9E75;border-radius:16px;padding:40px;text-align:center;cursor:pointer;margin-bottom:20px}
-        pre{background:#f8f9fa;padding:16px;border-radius:12px;overflow:auto;font-size:12px}
-        .success{color:#3B6D11;background:#EAF3DE;padding:12px;border-radius:12px}
-        .error{color:#A32D2D;background:#FCEBEB;padding:12px;border-radius:12px}
+        *{margin:0;padding:0;box-sizing:border-box}
+        body{font-family:'Segoe UI',sans-serif;background:#f0f4f0;padding:20px}
+        .container{max-width:1100px;margin:0 auto}
+        .upload{background:#fff;border:2px dashed #1D9E75;border-radius:20px;padding:60px;text-align:center;cursor:pointer;margin-bottom:24px}
+        .upload:hover{background:#f0faf6}
+        .card{background:#fff;border-radius:16px;padding:24px;margin-bottom:20px}
+        .hidden{display:none}
+        .success{color:#3B6D11;background:#EAF3DE;padding:12px;border-radius:12px;margin-bottom:16px}
+        .error{color:#A32D2D;background:#FCEBEB;padding:12px;border-radius:12px;margin-bottom:16px}
+        .metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-bottom:24px}
+        .metric{text-align:center;padding:20px;background:#fff;border-radius:16px;border-right:4px solid #1D9E75}
+        .metric-value{font-size:32px;font-weight:900}
+        canvas{max-height:300px;width:100%}
+        .tabs{display:flex;gap:8px;margin-bottom:20px}
+        .tab{background:#fff;border:none;padding:10px 24px;border-radius:30px;cursor:pointer}
+        .tab.active{background:#1D9E75;color:#fff}
+        table{width:100%;border-collapse:collapse;margin-top:16px}
+        th,td{padding:12px;text-align:right;border-bottom:1px solid #e8f0ec}
+        th{background:#f8faf9}
     </style>
 </head>
 <body>
-<div style="max-width:800px;margin:0 auto">
-    <div class="area" onclick="document.getElementById('fileInput').click()">
-        📂 اضغط لرفع ملف Excel
+<div class="container">
+    <div class="upload" onclick="document.getElementById('fileInput').click()">
+        <div style="font-size:48px;margin-bottom:12px">📊</div>
+        <h3>ارفع ملف Excel</h3>
+        <p style="color:#888;font-size:12px;margin-top:8px">xlsx, xls, csv</p>
     </div>
-    <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
-    <div id="result"></div>
+    <input type="file" id="fileInput" accept=".xlsx,.xls,.csv" style="display:none">
+
+    <div id="dashboard" class="hidden">
+        <div class="metrics" id="metrics"></div>
+        <div class="tabs">
+            <button class="tab active" onclick="showTab('trend')">📈 تريند</button>
+            <button class="tab" onclick="showTab('forecast')">🔮 توقع</button>
+        </div>
+        <div class="card">
+            <canvas id="myChart"></canvas>
+        </div>
+        <div class="card" id="forecastCard" style="display:none">
+            <h3>التوقع للفترة القادمة</h3>
+            <div id="forecastResult" style="font-size:48px;font-weight:900;color:#1D9E75;text-align:center;padding:40px"></div>
+            <div id="tableResult"></div>
+        </div>
+    </div>
 </div>
 
 <script>
+let chart = null;
+let salesByPeriod = [];
+let periods = [];
+
 document.getElementById('fileInput').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (!file) return;
-    
-    const resultDiv = document.getElementById('result');
-    resultDiv.innerHTML = '<div class="success">⏳ جاري قراءة الملف...</div>';
-    
+
     const reader = new FileReader();
     reader.onload = function(ev) {
         try {
-            // قراءة الملف
+            // أبسط طريقة لقراءة الملف
             const data = new Uint8Array(ev.target.result);
             const workbook = XLSX.read(data, { type: 'array' });
-            
-            // أول ورقة
-            const sheetName = workbook.SheetNames[0];
-            const worksheet = workbook.Sheets[sheetName];
+            const sheet = workbook.Sheets[workbook.SheetNames[0]];
             
             // تحويل إلى JSON
-            const json = XLSX.utils.sheet_to_json(worksheet, { defval: '', raw: false });
+            let rows = XLSX.utils.sheet_to_json(sheet, { header: 1 });
             
-            // عرض النتيجة
-            resultDiv.innerHTML = `
-                <div class="success">✅ تم قراءة الملف بنجاح</div>
-                <div style="background:#fff;padding:16px;border-radius:12px;margin-top:16px">
-                    <p><strong>📊 عدد الصفوف:</strong> ${json.length}</p>
-                    <p><strong>📌 أسماء الأعمدة:</strong></p>
-                    <ul>${Object.keys(json[0] || {}).map(h => `<li>${h}</li>`).join('')}</ul>
-                    <p><strong>📋 أول 3 صفوف:</strong></p>
-                    <pre>${JSON.stringify(json.slice(0, 3), null, 2)}</pre>
-                </div>
+            if (!rows || rows.length < 2) throw new Error('الملف فارغ');
+            
+            // أول صف هو العناوين
+            const headers = rows[0];
+            
+            // البحث عن أرقام الأعمدة
+            let dateCol = -1, qtyCol = -1, groupCol = -1;
+            for (let i = 0; i < headers.length; i++) {
+                const h = String(headers[i] || '').toLowerCase();
+                if (h.includes('تاريخ') || h.includes('التاريخ')) dateCol = i;
+                if (h.includes('صافي') || h.includes('مباع') || h.includes('الكمية')) qtyCol = i;
+                if (h.includes('مجموعة') || h.includes('المجموعه')) groupCol = i;
+            }
+            
+            if (dateCol === -1) throw new Error('لم أجد عمود التاريخ');
+            if (qtyCol === -1) throw new Error('لم أجد عمود الكمية');
+            
+            // تجميع البيانات حسب الفترة
+            const periodMap = new Map();
+            
+            for (let i = 1; i < rows.length; i++) {
+                const row = rows[i];
+                const period = String(row[dateCol] || '').trim();
+                if (!period) continue;
+                
+                let qty = parseFloat(row[qtyCol]);
+                if (isNaN(qty)) qty = 0;
+                if (qty === 0) continue;
+                
+                // استخراج الشهر والسنة من التاريخ (مثل: "نص اخر 1-2026")
+                const match = period.match(/(\d{1,2})-(\d{4})/);
+                if (!match) continue;
+                
+                const month = parseInt(match[1]);
+                const year = parseInt(match[2]);
+                const half = period.includes('اول') || period.includes('أول') ? 1 : 2;
+                const periodKey = `${year}-${month}-${half}`;
+                const periodLabel = period;
+                
+                if (!periodMap.has(periodKey)) {
+                    periodMap.set(periodKey, { label: periodLabel, sold: 0, year, month, half });
+                }
+                periodMap.get(periodKey).sold += qty;
+            }
+            
+            if (periodMap.size === 0) throw new Error('لا توجد بيانات صالحة');
+            
+            // ترتيب الفترات
+            periods = Array.from(periodMap.values()).sort((a, b) => {
+                if (a.year !== b.year) return a.year - b.year;
+                if (a.month !== b.month) return a.month - b.month;
+                return a.half - b.half;
+            });
+            
+            salesByPeriod = periods.map(p => p.sold);
+            
+            // عرض لوحة التحكم
+            const total = salesByPeriod.reduce((s, v) => s + v, 0);
+            const last = salesByPeriod[salesByPeriod.length - 1] || 0;
+            const prev = salesByPeriod[salesByPeriod.length - 2] || 0;
+            const trend = prev ? Math.round((last - prev) / prev * 100) : 0;
+            
+            // توقع: متوسط آخر 4 فترات × 1.05
+            const last4 = salesByPeriod.slice(-4);
+            const avgLast4 = last4.reduce((s, v) => s + v, 0) / last4.length;
+            const forecast = Math.round(avgLast4 * 1.05);
+            
+            document.getElementById('metrics').innerHTML = `
+                <div class="metric"><div class="metric-value">${total.toLocaleString()}</div><div>إجمالي المبيعات</div><div style="font-size:11px;color:#888">${periods.length} فترات</div></div>
+                <div class="metric"><div class="metric-value" style="color:${trend>=0?'#1D9E75':'#A32D2D'}">${last.toLocaleString()}</div><div>آخر فترة</div><div style="font-size:11px">${trend>=0?'▲':'▼'} ${Math.abs(trend)}%</div></div>
+                <div class="metric"><div class="metric-value" style="color:#1D9E75">${forecast.toLocaleString()}</div><div>توقع القادمة</div><div style="font-size:11px">نمو 5%</div></div>
             `;
+            
+            // رسم الرسم البياني
+            if (chart) chart.destroy();
+            const ctx = document.getElementById('myChart').getContext('2d');
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: periods.map(p => p.label),
+                    datasets: [{ label: 'المبيعات', data: salesByPeriod, backgroundColor: '#1D9E75', borderRadius: 8 }]
+                },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom' } } }
+            });
+            
+            // التوقع
+            document.getElementById('forecastResult').innerHTML = `${forecast.toLocaleString()} قطعة`;
+            
+            // جدول تفاصيل
+            document.getElementById('tableResult').innerHTML = `
+                <h3 style="margin-top:24px">📋 تفاصيل الفترات</h3>
+                <table>
+                    <thead><tr><th>الفترة</th><th>المبيعات</th></tr></thead>
+                    <tbody>${periods.map((p, i) => `<tr><td>${p.label}</td><td>${salesByPeriod[i].toLocaleString()}</td></tr>`).join('')}</tbody>
+                点able
+            `;
+            
+            document.getElementById('dashboard').classList.remove('hidden');
+            document.querySelector('.upload').style.display = 'none';
+            
         } catch(err) {
-            resultDiv.innerHTML = `<div class="error">❌ خطأ: ${err.message}</div>`;
+            alert('خطأ: ' + err.message);
+            console.error(err);
         }
     };
     reader.readAsArrayBuffer(file);
 });
+
+function showTab(tab) {
+    document.getElementById('forecastCard').style.display = tab === 'forecast' ? 'block' : 'none';
+    document.querySelectorAll('.tab').forEach((btn, i) => {
+        btn.classList.toggle('active', (i === 0 && tab === 'trend') || (i === 1 && tab === 'forecast'));
+    });
+}
 </script>
 </body>
 </html>
