@@ -162,7 +162,7 @@ document.getElementById('fi').addEventListener('change',function(e){
           if(!raw||!raw.length){alert('الملف فاضي');return;}
           var headers=Object.keys(raw[0]);
           var pC=findCol(headers,['تاريخ','التاريخ']);
-          var sC=findCol(headers,['صافي الكمية المباعه','صافي الكمية  المباعه','كمية مباعة','صافي']);
+          var sC=findCol(headers,['صافي الكمية','صافي الكمية المباعه','صافي الكمية  المباعه','كمية مباعة','صافي']);
           var gC=findCol(headers,['المجموعة الرئيسية']);
           var dC=findCol(headers,['القسم']);
           var stC=findCol(headers,['الرصيد الحالي']);
