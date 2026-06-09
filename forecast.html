@@ -18,6 +18,7 @@ body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f5f7f5;color:#1a1a1a;m
 .upload-card:hover{background:#f0faf6}
 .upload-card h2{font-size:15px;font-weight:600;color:#1a1a1a;margin-bottom:6px}
 .upload-card p{font-size:12px;color:#888;line-height:1.7}
+#upload-status{margin-top:12px;padding:8px;border-radius:8px;font-size:12px;text-align:center;display:none}
 .filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
 .filters select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #d5e8df;background:#fff;color:#1a1a1a;width:100%;outline:none}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
@@ -60,8 +61,9 @@ canvas{width:100%!important}
 <div class="container">
   <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
     <h2>⬆ ارفع ملف Excel الخاص بالمبيعات</h2>
-    <p>xlsx / xls / csv — الأعمدة المطلوبة: الفرع، تاريخ، صافي الكمية المباعه، المجموعة الرئيسية، القسم، الرصيد الحالي، الرصيد الإفتتاحي</p>
+    <p>xlsx / xls / csv — الأعمدة المطلوبة: الفرع، تاريخ، صافي الكمية المباعه، المجموعة الرئيسية، الرصيد الحالي، الرصيد الإفتتاحي</p>
   </div>
+  <div id="upload-status"></div>
   <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
   <div id="dashboard">
     <div class="filters" id="filters-bar"></div>
@@ -94,11 +96,12 @@ canvas{width:100%!important}
   </div>
 </div>
 <script>
-var allData=[],filteredData=[],trendChart=null,forecastChart=null;
+var allData=[], filteredData=[], trendChart=null, forecastChart=null;
 
 function normH(h){
   if(!h) return '';
-  return h.toString().replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim();
+  // إزالة أي مسافات أو أسطر جديدة زائدة
+  return h.toString().replace(/[\n\r]+/g,' ').replace(/\s+/g,' ').trim();
 }
 
 function findCol(headers,candidates){
@@ -136,8 +139,23 @@ function avgSold(rows){
   return sum/Math.max(src.length,1);
 }
 
+function showStatus(msg,isError){
+  var statusDiv=document.getElementById('upload-status');
+  statusDiv.style.display='block';
+  statusDiv.textContent=msg;
+  if(isError){
+    statusDiv.style.background='#FCEBEB';
+    statusDiv.style.color='#A32D2D';
+  }else{
+    statusDiv.style.background='#EAF3DE';
+    statusDiv.style.color='#3B6D11';
+  }
+  if(!isError) setTimeout(function(){statusDiv.style.display='none';},3000);
+}
+
 document.getElementById('fi').addEventListener('change',function(e){
   var f=e.target.files[0]; if(!f) return;
+  showStatus('⏳ جاري تحميل الملف ومعالجته...',false);
   document.getElementById('file-name-badge').textContent=f.name;
   var reader=new FileReader();
   reader.onload=function(ev){
@@ -145,35 +163,36 @@ document.getElementById('fi').addEventListener('change',function(e){
       var wb=XLSX.read(ev.target.result,{type:'array'});
       var ws=wb.Sheets[wb.SheetNames[0]];
       var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
-      if(!raw||!raw.length){alert('الملف فاضي');return;}
+      if(!raw||!raw.length){showStatus('❌ الملف فاضي أو لا يحتوي على بيانات',true);return;}
       var headers=Object.keys(raw[0]);
+      
+      // البحث عن الأعمدة (مع دعم وجود \n في الاسم)
       var bC=findCol(headers,['الفرع']);
       var pC=findCol(headers,['تاريخ','التاريخ']);
-      var sC=findCol(headers,['صافي الكمية المباعه','صافي الكمية  المباعه','صافي الكميه المباعه','كمية مباعة','صافي']);
+      var sC=findCol(headers,['صافي الكمية المباعه','صافي الكمية  المباعه','صافي الكمية\n المباعه','كمية مباعة','صافي الكمية']);
       var gC=findCol(headers,['المجموعة الرئيسية']);
-      var dC=findCol(headers,['القسم']);
       var stC=findCol(headers,['الرصيد الحالي']);
       var opC=findCol(headers,['الرصيد الإفتتاحي','الرصيد الافتتاحي']);
-      var sgC=findCol(headers,['المجموعة الفرعية']);
-      var iC=findCol(headers,['إسم الصنف','اسم الصنف']);
-      if(!bC||!pC){alert('مش لاقي عمود الفرع أو التاريخ — تأكد من أسماء الأعمدة');return;}
+      
+      if(!bC||!pC){showStatus('❌ لم يتم العثور على عمود "الفرع" أو "تاريخ"',true);return;}
+      
       allData=raw.map(function(r){return{
         _branch:bC?r[bC]:'',
         _period:pC?r[pC]:'',
         _sold:sC?(parseFloat(r[sC])||0):0,
-        _item:iC?r[iC]:'',
         _group:gC?r[gC]:'',
-        _subgroup:sgC?r[sgC]:'',
-        _dept:dC?r[dC]:'',
         _stock:stC?(parseFloat(r[stC])||0):0,
         _opening:opC?(parseFloat(r[opC])||0):0
       };}).filter(function(r){return r._branch&&r._period;});
-      if(!allData.length){alert('البيانات اتحملت بس مفيش صفوف فيها فرع وتاريخ');return;}
+      
+      if(!allData.length){showStatus('❌ لا توجد صفوف تحتوي على فرع وتاريخ',true);return;}
+      
       buildFilters();
       applyFilters();
       document.getElementById('dashboard').style.display='block';
       document.getElementById('drop-zone').style.display='none';
-    }catch(err){alert('خطأ في قراءة الملف: '+err.message);}
+      showStatus('✅ تم تحميل ومعالجة '+allData.length+' صف بنجاح',false);
+    }catch(err){showStatus('❌ خطأ: '+err.message,true);}
   };
   reader.readAsArrayBuffer(f);
 });
@@ -183,19 +202,16 @@ function uniq(arr){return arr.filter(function(v,i,a){return v&&a.indexOf(v)===i;
 function buildFilters(){
   var branches=uniq(allData.map(function(r){return r._branch;}));
   var groups=uniq(allData.map(function(r){return r._group;}));
-  var depts=uniq(allData.map(function(r){return r._dept;}));
   document.getElementById('filters-bar').innerHTML=
     '<select id="f-branch" onchange="applyFilters()"><option value="">كل الفروع</option>'+branches.map(function(b){return'<option>'+b+'</option>';}).join('')+'</select>'+
-    '<select id="f-group" onchange="applyFilters()"><option value="">كل المجموعات</option>'+groups.map(function(g){return'<option>'+g+'</option>';}).join('')+'</select>'+
-    '<select id="f-dept" onchange="applyFilters()"><option value="">كل الأقسام</option>'+depts.map(function(d){return'<option>'+d+'</option>';}).join('')+'</select>';
+    '<select id="f-group" onchange="applyFilters()"><option value="">كل المجموعات</option>'+groups.map(function(g){return'<option>'+g+'</option>';}).join('')+'</select>';
 }
 
 function applyFilters(){
   var fb=document.getElementById('f-branch').value;
   var fg=document.getElementById('f-group').value;
-  var fd=document.getElementById('f-dept').value;
   filteredData=allData.filter(function(r){
-    return(!fb||r._branch===fb)&&(!fg||r._group===fg)&&(!fd||r._dept===fd);
+    return(!fb||r._branch===fb)&&(!fg||r._group===fg);
   });
   renderAll();
 }
@@ -229,7 +245,8 @@ function renderAll(){renderMetrics();renderTrend();renderForecast();renderTable(
 function renderMetrics(){
   var periods=getPeriods();
   var total=filteredData.reduce(function(s,r){return s+r._sold;},0);
-  var wPct=filteredData.length?Math.round(filteredData.filter(weakStock).length/filteredData.length*100):0;
+  var weak=filteredData.filter(weakStock);
+  var wPct=filteredData.length?Math.round(weak.length/filteredData.length*100):0;
   var lastP=periods[periods.length-1];
   var prevP=periods[periods.length-2];
   var lastSold=lastP?filteredData.filter(function(r){return r._period===lastP.raw;}).reduce(function(s,r){return s+r._sold;},0):0;
@@ -253,19 +270,22 @@ function renderTrend(){
   });
   var bad=periods.filter(function(_,i){return wkVals[i]>30;}).map(function(p){return p.raw;});
   var noteEl=document.getElementById('weak-note');
-  if(bad.length){noteEl.textContent='فترات رصيد ضعيف >30%: '+bad.join(' | ');noteEl.classList.add('show');}
+  if(bad.length){noteEl.textContent='⚠ فترات فيها رصيد ضعيف أكثر من 30%: '+bad.join(' | ');noteEl.classList.add('show');}
   else noteEl.classList.remove('show');
   if(trendChart) trendChart.destroy();
-  trendChart=new Chart(document.getElementById('trend-chart').getContext('2d'),{
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'مبيعات فعلية',data:vals,backgroundColor:'#1D9E75',borderRadius:4,yAxisID:'y'},
-      {label:'% رصيد ضعيف',data:wkVals,type:'line',borderColor:'#BA7517',backgroundColor:'transparent',pointRadius:4,yAxisID:'y2',tension:0.3,borderWidth:2}
-    ]},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},
-      scales:{y:{position:'right',ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},
-              y2:{position:'left',min:0,max:100,ticks:{font:{size:11},callback:function(v){return v+'%';}},grid:{drawOnChartArea:false}}}}
-  });
+  var ctx=document.getElementById('trend-chart').getContext('2d');
+  if(ctx){
+    trendChart=new Chart(ctx,{
+      type:'bar',
+      data:{labels:labels,datasets:[
+        {label:'مبيعات فعلية',data:vals,backgroundColor:'#1D9E75',borderRadius:4,yAxisID:'y'},
+        {label:'% رصيد ضعيف',data:wkVals,type:'line',borderColor:'#BA7517',backgroundColor:'transparent',pointRadius:4,yAxisID:'y2',tension:0.3,borderWidth:2}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},
+        scales:{y:{position:'right',ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}},
+                y2:{position:'left',min:0,max:100,ticks:{font:{size:11},callback:function(v){return v+'%';}},grid:{drawOnChartArea:false}}}}
+    });
+  }
 }
 
 function renderForecast(){
@@ -280,15 +300,18 @@ function renderForecast(){
   });
   var nxt=Math.round(nextForecast());
   if(forecastChart) forecastChart.destroy();
-  forecastChart=new Chart(document.getElementById('forecast-chart').getContext('2d'),{
-    type:'line',
-    data:{labels:[...labels,'الفترة القادمة'],datasets:[
-      {label:'فعلي',data:[...actual,null],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',pointRadius:4,tension:0.3,fill:true,borderWidth:2},
-      {label:'توقع',data:[...forecast,nxt],borderColor:'#BA7517',backgroundColor:'transparent',borderDash:[6,3],pointRadius:4,tension:0.3,borderWidth:2}
-    ]},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},
-      scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
-  });
+  var ctx=document.getElementById('forecast-chart').getContext('2d');
+  if(ctx){
+    forecastChart=new Chart(ctx,{
+      type:'line',
+      data:{labels:[...labels,'الفترة القادمة'],datasets:[
+        {label:'فعلي',data:[...actual,null],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',pointRadius:4,tension:0.3,fill:true,borderWidth:2},
+        {label:'توقع',data:[...forecast,nxt],borderColor:'#BA7517',backgroundColor:'transparent',borderDash:[6,3],pointRadius:4,tension:0.3,borderWidth:2}
+      ]},
+      options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},
+        scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
+    });
+  }
 }
 
 function renderTable(){
@@ -297,8 +320,8 @@ function renderTable(){
   var lastP=periods[periods.length-1];
   var thead=document.querySelector('#detail-table thead');
   var tbody=document.querySelector('#detail-table tbody');
-  if(!branches.length||!lastP){thead.innerHTML='';tbody.innerHTML='<tr><td class="empty-msg">لا توجد بيانات</td></tr>';return;}
-  thead.innerHTML='<tr><th>الفرع</th><th>آخر فترة</th><th>توقع الفترة الجاية</th><th>التغيير</th><th>رصيد ضعيف%</th></tr>';
+  if(!branches.length||!lastP){thead.innerHTML='';tbody.innerHTML='<tr><td class="empty-msg">لا توجد بيانات<td></tr>';return;}
+  thead.innerHTML='<tr><th>الفرع</th><th>آخر فترة (فعلي)</th><th>توقع الفترة الجاية</th><th>التغيير</th><th>رصيد ضعيف%</th><tr>';
   tbody.innerHTML=branches.map(function(b){
     var bRows=filteredData.filter(function(r){return r._branch===b;});
     var lastSold=bRows.filter(function(r){return r._period===lastP.raw;}).reduce(function(s,r){return s+r._sold;},0);
@@ -314,8 +337,12 @@ function renderTable(){
 }
 
 function switchTab(tab){
-  ['trend','forecast','table'].forEach(function(t){document.getElementById('tab-'+t).style.display=t===tab?'block':'none';});
-  document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('active',['trend','forecast','table'][i]===tab);});
+  document.getElementById('tab-trend').style.display=tab==='trend'?'block':'none';
+  document.getElementById('tab-forecast').style.display=tab==='forecast'?'block':'none';
+  document.getElementById('tab-table').style.display=tab==='table'?'block':'none';
+  document.querySelectorAll('.tab').forEach(function(el,i){
+    el.classList.toggle('active',['trend','forecast','table'][i]===tab);
+  });
 }
 
 var dz=document.getElementById('drop-zone');
