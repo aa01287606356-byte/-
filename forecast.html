@@ -1,705 +1,345 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TREE | التخطيط الموسمي وتوقع المبيعات</title>
-    <script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        body {
-            font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
-            background: #f1f5f9;
-            color: #0f172a;
-            font-size: 14px;
-        }
-        .app {
-            display: flex;
-            min-height: 100vh;
-        }
-        /* ========== SIDEBAR ========== */
-        .sidebar {
-            width: 300px;
-            background: #ffffff;
-            border-left: 1px solid #e2e8f0;
-            padding: 20px 16px;
-            overflow-y: auto;
-            flex-shrink: 0;
-            box-shadow: -4px 0 12px rgba(0, 0, 0, 0.02);
-            z-index: 10;
-        }
-        .sidebar h3 {
-            font-size: 13px;
-            font-weight: 700;
-            margin: 20px 0 12px 0;
-            color: #0f3b2c;
-            border-right: 3px solid #1D9E75;
-            padding-right: 10px;
-        }
-        .sidebar h3:first-child {
-            margin-top: 0;
-        }
-        .filter-group {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            margin-bottom: 20px;
-            max-height: 220px;
-            overflow-y: auto;
-            padding: 4px 2px;
-            border-radius: 8px;
-        }
-        .filter-check {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 12px;
-            cursor: pointer;
-            padding: 6px 8px;
-            border-radius: 6px;
-            transition: all 0.2s;
-            color: #334155;
-        }
-        .filter-check:hover {
-            background: #f0fdf4;
-        }
-        .filter-check input {
-            cursor: pointer;
-            accent-color: #1D9E75;
-            width: 16px;
-            height: 16px;
-        }
-        .select-all {
-            font-weight: 700;
-            color: #1D9E75;
-            background: #f0fdf4;
-            margin-bottom: 6px;
-            border-bottom: 1px solid #dcfce7;
-        }
-        .btn-export {
-            background: #1D9E75;
-            color: white;
-            border: none;
-            padding: 10px 14px;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 600;
-            width: 100%;
-            margin-top: 20px;
-            font-family: inherit;
-            font-size: 13px;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-        }
-        .btn-export:hover {
-            background: #0f7a5a;
-            transform: translateY(-1px);
-        }
-        /* ========== MAIN ========== */
-        .main {
-            flex: 1;
-            padding: 24px;
-            min-width: 0;
-        }
-        .upload-card {
-            background: white;
-            border: 2px dashed #9FE1CB;
-            border-radius: 20px;
-            padding: 48px;
-            text-align: center;
-            cursor: pointer;
-            margin-bottom: 24px;
-            transition: all 0.2s;
-        }
-        .upload-card:hover {
-            background: #f0faf6;
-            border-color: #1D9E75;
-        }
-        .upload-card h2 {
-            font-size: 16px;
-            font-weight: 700;
-            margin-bottom: 8px;
-            color: #0f3b2c;
-        }
-        .upload-card p {
-            font-size: 12px;
-            color: #64748b;
-            line-height: 1.6;
-        }
-        /* Metrics Cards */
-        .metrics-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 12px;
-            margin-bottom: 24px;
-        }
-        .metric-card {
-            background: white;
-            border-radius: 16px;
-            padding: 16px 12px;
-            text-align: center;
-            border: 1px solid #e2e8f0;
-            transition: all 0.2s;
-        }
-        .metric-card .label {
-            font-size: 11px;
-            color: #64748b;
-            margin-bottom: 6px;
-        }
-        .metric-card .value {
-            font-size: 24px;
-            font-weight: 800;
-            line-height: 1.2;
-        }
-        .value.green { color: #1D9E75; }
-        .value.amber { color: #BA7517; }
-        .value.red { color: #A32D2D; }
-        .value.blue { color: #1A5FA8; }
-        /* Tabs */
-        .tabs {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-            background: white;
-            padding: 6px;
-            border-radius: 14px;
-            border: 1px solid #e2e8f0;
-        }
-        .tab {
-            padding: 8px 20px;
-            border-radius: 10px;
-            font-size: 13px;
-            font-weight: 600;
-            cursor: pointer;
-            background: transparent;
-            border: none;
-            font-family: inherit;
-            color: #475569;
-            transition: all 0.2s;
-        }
-        .tab.active {
-            background: #1D9E75;
-            color: white;
-            box-shadow: 0 2px 6px rgba(29, 158, 117, 0.3);
-        }
-        /* Sections */
-        .section {
-            background: white;
-            border-radius: 20px;
-            padding: 20px;
-            margin-bottom: 24px;
-            border: 1px solid #e2e8f0;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.03);
-        }
-        .section h2 {
-            font-size: 14px;
-            font-weight: 700;
-            margin-bottom: 16px;
-            color: #1e293b;
-            border-right: 3px solid #1D9E75;
-            padding-right: 12px;
-        }
-        .forecast-5 {
-            display: grid;
-            grid-template-columns: repeat(5, 1fr);
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-        .fc-card {
-            padding: 14px 8px;
-            border-radius: 14px;
-            text-align: center;
-        }
-        .fc-card .fc-val {
-            font-size: 20px;
-            font-weight: 800;
-        }
-        .fc-card .fc-lbl {
-            font-size: 11px;
-            margin-top: 6px;
-            opacity: 0.8;
-        }
-        .fc-pessimist { background: #FEF2F2; color: #A32D2D; }
-        .fc-base { background: #F0FAF6; color: #1D9E75; }
-        .fc-optimist { background: #EAF3DE; color: #3B6D11; }
-        .fc-full { background: #E3EEF9; color: #1A5FA8; }
-        .fc-rec { background: #FFFBEB; color: #BA7517; }
-        /* Tables */
-        .table-wrapper {
-            overflow-x: auto;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            max-height: 500px;
-            overflow-y: auto;
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 12px;
-        }
-        th {
-            background: #f8fafc;
-            padding: 10px 12px;
-            text-align: right;
-            font-weight: 700;
-            font-size: 11px;
-            color: #475569;
-            border-bottom: 1px solid #e2e8f0;
-            position: sticky;
-            top: 0;
-            z-index: 2;
-        }
-        td {
-            padding: 8px 12px;
-            border-bottom: 1px solid #f1f5f9;
-            white-space: nowrap;
-        }
-        tr:hover td {
-            background: #f8fafc;
-        }
-        .badge {
-            display: inline-block;
-            padding: 2px 8px;
-            border-radius: 20px;
-            font-size: 10px;
-            font-weight: 700;
-        }
-        .badge.A { background: #EAF3DE; color: #3B6D11; }
-        .badge.B { background: #FAEEDA; color: #854F0B; }
-        .badge.C { background: #FCEBEB; color: #A32D2D; }
-        .badge.blue { background: #E3EEF9; color: #1A5FA8; }
-        .search-input {
-            width: 100%;
-            padding: 10px 14px;
-            border-radius: 12px;
-            border: 1px solid #e2e8f0;
-            font-size: 12px;
-            margin-bottom: 16px;
-            outline: none;
-            font-family: inherit;
-        }
-        .pareto-filters {
-            display: flex;
-            gap: 16px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
-            align-items: center;
-            background: #f8fafc;
-            padding: 10px 16px;
-            border-radius: 14px;
-        }
-        .pareto-filters label {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 500;
-        }
-        canvas {
-            max-height: 280px;
-            width: 100%;
-        }
-        .note {
-            font-size: 11px;
-            color: #BA7517;
-            background: #FAEEDA;
-            padding: 10px 14px;
-            border-radius: 12px;
-            margin-top: 16px;
-        }
-        .hidden { display: none; }
-        @media (max-width: 768px) {
-            .sidebar { width: 240px; }
-            .forecast-5 { grid-template-columns: repeat(2, 1fr); }
-        }
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>توقع المبيعات — TREE</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',Tahoma,sans-serif;background:#f5f7f5;color:#1a1a1a;min-height:100vh}
+.header{background:#fff;border-bottom:1px solid #e0e8e4;padding:14px 24px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.logo{width:36px;height:36px;background:#1D9E75;border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:16px;flex-shrink:0}
+.header h1{font-size:17px;font-weight:600;color:#1a1a1a}
+#file-badge{font-size:11px;background:#EAF3DE;color:#3B6D11;padding:3px 10px;border-radius:20px;margin-right:auto}
+.container{max-width:1100px;margin:0 auto;padding:20px 16px}
+.upload-card{background:#fff;border:1.5px dashed #9FE1CB;border-radius:14px;padding:40px;text-align:center;cursor:pointer;margin-bottom:20px}
+.upload-card:hover{background:#f0faf6}
+.upload-card h2{font-size:15px;font-weight:600;margin-bottom:6px}
+.upload-card p{font-size:12px;color:#888;line-height:1.7}
+#progress-area{display:none;background:#fff;border-radius:12px;padding:20px;margin-bottom:16px;border:1px solid #e8f0ec;text-align:center}
+#progress-bar-wrap{background:#e8f0ec;border-radius:20px;height:8px;margin:10px 0}
+#progress-bar{background:#1D9E75;height:8px;border-radius:20px;width:0%;transition:width 0.2s}
+#progress-text{font-size:12px;color:#888}
+.filters{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:16px}
+.filters select{font-size:13px;padding:8px 12px;border-radius:8px;border:1px solid #d5e8df;background:#fff;color:#1a1a1a;width:100%;outline:none}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin-bottom:20px}
+.metric{background:#fff;border-radius:12px;padding:14px 16px;border:1px solid #e8f0ec}
+.metric .lbl{font-size:11px;color:#888;margin-bottom:6px}
+.metric .val{font-size:22px;font-weight:700;line-height:1}
+.metric .val.green{color:#1D9E75}
+.metric .val.amber{color:#BA7517}
+.metric .val.red{color:#A32D2D}
+.metric .chg{font-size:11px;margin-top:4px;color:#888}
+.tab-bar{display:flex;gap:6px;margin-bottom:16px;background:#fff;border-radius:10px;padding:6px;border:1px solid #e8f0ec;width:fit-content}
+.tab{padding:7px 18px;border-radius:8px;font-size:13px;cursor:pointer;color:#555;border:none;background:transparent}
+.tab.active{background:#1D9E75;color:#fff;font-weight:600}
+.section{background:#fff;border-radius:14px;padding:18px 20px;margin-bottom:16px;border:1px solid #e8f0ec}
+.section h2{font-size:13px;font-weight:600;color:#555;margin-bottom:14px}
+.note{font-size:11px;color:#BA7517;margin-top:10px;padding:8px 12px;background:#FAEEDA;border-radius:8px}
+canvas{width:100%!important}
+#dashboard{display:none}
+.tbl-wrap{overflow-x:auto;border-radius:10px;border:1px solid #e8f0ec}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8faf9;padding:10px 14px;text-align:right;font-weight:600;font-size:12px;color:#555;border-bottom:1px solid #e8f0ec}
+td{padding:9px 14px;border-bottom:1px solid #f0f4f2}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#f8faf9}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:600}
+.badge.up{background:#EAF3DE;color:#3B6D11}
+.badge.down{background:#FCEBEB;color:#A32D2D}
+.badge.flat{background:#F1EFE8;color:#5F5E5A}
+</style>
 </head>
 <body>
-<div class="app">
-    <div class="main">
-        <div class="upload-card" id="dropZone" onclick="document.getElementById('fileInput').click()">
-            <h2>⬆ ارفع ملف Excel الناتج من Power Query</h2>
-            <p>الأعمدة المطلوبة: تاريخ، إسم الصنف، اللون، المجموعة الرئيسية، المجموعة الفرعية، القسم، مناسبات، مناسبات رئيسي، ريشيو، صافي الكمية المباعه، إجمالي_الفروع، فروع_متاح، فروع_رصيد_كافي، فروع_رصيد_ضعيف</p>
-        </div>
-        <input type="file" id="fileInput" accept=".xlsx,.xls" style="display:none">
-        <div id="dashboard" class="hidden">
-            <div class="metrics-grid" id="metricsGrid"></div>
-            <div class="tabs" id="tabsContainer"></div>
-            <div id="tabContent"></div>
-        </div>
+<div class="header">
+  <div class="logo">T</div>
+  <h1>توقع المبيعات — TREE</h1>
+  <span id="file-badge">لم يتم رفع ملف</span>
+</div>
+<div class="container">
+  <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
+    <h2>⬆ ارفع ملف Excel الخاص بالمبيعات</h2>
+    <p>xlsx / xls / csv<br>الأعمدة المطلوبة: تاريخ — إسم الصنف — صافي الكمية المباعه — المجموعة الرئيسية — فروع_رصيد_كافي — فروع_رصيد_ضعيف — إجمالي_الفروع</p>
+  </div>
+  <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
+
+  <div id="progress-area">
+    <div id="progress-text">جاري تحميل الملف...</div>
+    <div id="progress-bar-wrap"><div id="progress-bar"></div></div>
+  </div>
+
+  <div id="dashboard">
+    <div class="filters" id="filters-bar"></div>
+    <div class="metrics" id="metrics-bar"></div>
+    <div class="tab-bar">
+      <button class="tab active" onclick="switchTab('trend')">📈 تريند المبيعات</button>
+      <button class="tab" onclick="switchTab('forecast')">🔮 التوقع</button>
+      <button class="tab" onclick="switchTab('table')">📋 جدول المجموعات</button>
     </div>
-    <div class="sidebar" id="sidebar">
-        <h3>📅 الفترات</h3>
-        <div id="filterPeriods" class="filter-group"></div>
-        <h3>📁 المجموعة الرئيسية</h3>
-        <div id="filterGroups" class="filter-group"></div>
-        <h3>📂 المجموعة الفرعية</h3>
-        <div id="filterSubGroups" class="filter-group"></div>
-        <h3>🏷️ القسم</h3>
-        <div id="filterDepts" class="filter-group"></div>
-        <h3>🎨 اللون</h3>
-        <div id="filterColors" class="filter-group"></div>
-        <h3>🎉 مناسبات</h3>
-        <div id="filterOccasions" class="filter-group"></div>
-        <h3>🌤️ مناسبات رئيسي (مواسم)</h3>
-        <div id="filterOccMain" class="filter-group"></div>
-        <button class="btn-export" onclick="exportToExcel()">📥 تحميل البيانات (Excel)</button>
+    <div id="tab-trend">
+      <div class="section">
+        <h2>مبيعات الفترات — إجمالي الشركة</h2>
+        <canvas id="trend-chart" height="220"></canvas>
+      </div>
     </div>
+    <div id="tab-forecast" style="display:none">
+      <div class="section">
+        <h2>توقع مقابل الفعلي</h2>
+        <canvas id="forecast-chart" height="220"></canvas>
+        <div class="note">التوقع مبني على نفس الفترة من السنة الماضية — الصفوف ذات الرصيد الضعيف (رصيد < ريشيو) بتتجاهل في المتوسط</div>
+      </div>
+    </div>
+    <div id="tab-table" style="display:none">
+      <div class="section">
+        <h2>توقع بالمجموعة الرئيسية</h2>
+        <div class="tbl-wrap"><table id="grp-table"><thead></thead><tbody></tbody></tr></div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <script>
-    // ---------- Global Data ----------
-    let allRows = [], allPeriods = [], allGroups = [], allSubGroups = [], allDepts = [];
-    let allColors = [], allOccasions = [], allOccasionsMain = [];
-    let filteredRows = [];
-    let trendChart = null, paretoChart = null;
+var allData=[], filteredData=[], trendChart=null, forecastChart=null;
+var allPeriods=[], allGroups=[], allDepts=[];
 
-    // ---------- Helpers ----------
-    function normalizeHeader(h) { if (!h) return ''; return h.toString().replace(/[\r\n\t]+/g, ' ').replace(/\s+/g, ' ').trim(); }
-    function findCol(headers, candidates) {
-        let nh = headers.map(h => ({ orig: h, norm: normalizeHeader(h) }));
-        for (let c of candidates) {
-            let cn = normalizeHeader(c);
-            let found = nh.find(h => h.norm === cn);
-            if (found) return found.orig;
+function normH(h){
+  if(!h) return '';
+  return h.toString().replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim();
+}
+
+function findCol(headers,candidates){
+  var nh=headers.map(function(h){return{orig:h,n:normH(h)};});
+  for(var i=0;i<candidates.length;i++){
+    var cn=normH(candidates[i]);
+    for(var j=0;j<nh.length;j++){if(nh[j].n===cn) return nh[j].orig;}
+  }
+  for(var i=0;i<candidates.length;i++){
+    var cn=normH(candidates[i]).substring(0,6);
+    for(var j=0;j<nh.length;j++){if(nh[j].n.indexOf(cn)>=0) return nh[j].orig;}
+  }
+  return null;
+}
+
+function parsePeriod(str){
+  if(!str) return null;
+  var s=str.toString().trim();
+  var m=s.match(/(\d{1,2})-(\d{4})/);
+  if(!m) return null;
+  var half=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
+  return {year:parseInt(m[2]),month:parseInt(m[1]),half:half,label:s};
+}
+
+function periodKey(p){return p.year+'_'+p.month+'_'+p.half;}
+function periodOrder(p){return p.year*1000+p.month*10+(p.half===2?1:0);}
+
+function weakStock(row){
+  return (parseFloat(row._weakStock)||0) > 0;
+}
+
+document.getElementById('fi').addEventListener('change',function(e){
+  var f=e.target.files[0]; if(!f) return;
+  document.getElementById('file-badge').textContent=f.name;
+  document.getElementById('progress-area').style.display='block';
+  document.getElementById('drop-zone').style.display='none';
+  var bar=document.getElementById('progress-bar');
+  var txt=document.getElementById('progress-text');
+  bar.style.width='30%'; txt.textContent='جاري قراءة الملف...';
+
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    bar.style.width='60%'; txt.textContent='جاري تحليل البيانات...';
+    setTimeout(function(){
+      try{
+        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+        if(!raw||!raw.length){alert('الملف فاضي');return;}
+        var headers=Object.keys(raw[0]);
+        var pC=findCol(headers,['تاريخ','التاريخ']);
+        var iC=findCol(headers,['إسم الصنف','اسم الصنف']);
+        var sC=findCol(headers,['صافي الكمية المباعه','صافي الكمية','الكمية','المبيعات']);
+        var gC=findCol(headers,['المجموعة الرئيسية']);
+        var dC=findCol(headers,['القسم']);
+        var weakC=findCol(headers,['فروع_رصيد_ضعيف']);
+        var okC=findCol(headers,['فروع_رصيد_كافي']);
+        var totC=findCol(headers,['إجمالي_الفروع']);
+        if(!pC||!iC){alert('مش لاقي أعمدة التاريخ أو الصنف');return;}
+        
+        allData=[];
+        var periodsSet={}, groupsSet={}, deptsSet={};
+        for(var i=0;i<raw.length;i++){
+          var r=raw[i];
+          var period=pC?r[pC]:'';
+          var pp=parsePeriod(period); if(!pp) continue;
+          var pk=periodKey(pp);
+          periodsSet[pk]={raw:period,parsed:pp};
+          var group=gC?r[gC]:'غير محدد';
+          var dept=dC?r[dC]:'غير محدد';
+          var sold=sC?parseFloat(r[sC])||0:0;
+          var weak=weakC?parseFloat(r[weakC])||0:0;
+          var ok=okC?parseFloat(r[okC])||0:0;
+          var tot=totC?parseFloat(r[totC])||0:0;
+          groupsSet[group]=true; deptsSet[dept]=true;
+          allData.push({
+            periodRaw:period, periodKey:pk, periodParsed:pp,
+            item:iC?r[iC]:'?', group:group, dept:dept,
+            sold:sold, weakStock:weak, okStock:ok, totBranches:tot
+          });
         }
-        for (let c of candidates) {
-            let cn = normalizeHeader(c).substring(0,6);
-            if (!cn) continue;
-            let found = nh.find(h => h.norm.indexOf(cn) >= 0);
-            if (found) return found.orig;
-        }
-        return null;
-    }
-    function parsePeriod(str) {
-        if (!str) return null;
-        let s = str.toString().trim();
-        let m = s.match(/(\d{1,2})-(\d{4})/);
-        if (!m) return null;
-        let half = (s.indexOf('اول') >= 0 || s.indexOf('أول') >= 0) ? 1 : 2;
-        return { year: parseInt(m[2]), month: parseInt(m[1]), half, label: s };
-    }
-    function periodKey(p) { return p.year + '_' + p.month + '_' + p.half; }
+        allPeriods=Object.values(periodsSet).sort(function(a,b){return periodOrder(a.parsed)-periodOrder(b.parsed);});
+        allGroups=Object.keys(groupsSet).sort();
+        allDepts=Object.keys(deptsSet).sort();
+        bar.style.width='100%'; txt.textContent='تم!';
+        setTimeout(function(){
+          document.getElementById('progress-area').style.display='none';
+          buildFilters();
+          applyFilters();
+          document.getElementById('dashboard').style.display='block';
+        },500);
+      }catch(err){alert('خطأ: '+err.message);}
+    },100);
+  };
+  reader.readAsArrayBuffer(f);
+});
 
-    // ---------- Load File ----------
-    document.getElementById('fileInput').addEventListener('change', function(e) {
-        let file = e.target.files[0];
-        if (!file) return;
-        let reader = new FileReader();
-        reader.onload = function(ev) {
-            try {
-                let wb = XLSX.read(ev.target.result, { type: 'array' });
-                let ws = wb.Sheets[wb.SheetNames[0]];
-                let raw = XLSX.utils.sheet_to_json(ws, { defval: '', raw: false });
-                if (!raw || !raw.length) { alert('الملف فاضي'); return; }
-                let headers = Object.keys(raw[0]);
-                let pC = findCol(headers, ['تاريخ']); let iC = findCol(headers, ['إسم الصنف','اسم الصنف']);
-                let clC = findCol(headers, ['اللون']); let gC = findCol(headers, ['المجموعة الرئيسية']);
-                let sgC = findCol(headers, ['المجموعة الفرعية']); let dC = findCol(headers, ['القسم']);
-                let ocC = findCol(headers, ['مناسبات']); let ocmC = findCol(headers, ['مناسبات رئيسي']);
-                let rC = findCol(headers, ['ريشيو','يشيو.ريشيو']); let sC = findCol(headers, ['صافي الكمية المباعه','صافي الكمية']);
-                let totC = findCol(headers, ['إجمالي_الفروع']); let availC = findCol(headers, ['فروع_متاح']);
-                let weakC = findCol(headers, ['فروع_رصيد_ضعيف']); let okC = findCol(headers, ['فروع_رصيد_كافي']);
-                if (!pC || !iC) { alert('مش لاقي أعمدة أساسية'); return; }
+function uniq(arr){return arr.filter(function(v,i,a){return v&&a.indexOf(v)===i;}).sort();}
 
-                allRows = []; let pMap = {}, gSet = {}, sgSet = {}, dSet = {}, colSet = {}, ocSet = {}, ocmSet = {};
-                for (let row of raw) {
-                    let period = row[pC] || '', pp = parsePeriod(period);
-                    if (!pp) continue;
-                    let pk = periodKey(pp);
-                    pMap[pk] = { raw: period, parsed: pp };
-                    let item = iC ? row[iC] : '?';
-                    let color = clC ? row[clC] : 'غير محدد';
-                    let group = gC ? row[gC] : 'غير محدد';
-                    let subgroup = sgC ? row[sgC] : 'غير محدد';
-                    let dept = dC ? row[dC] : 'غير محدد';
-                    let oc = ocC ? row[ocC] : '';
-                    let ocm = ocmC ? row[ocmC] : '';
-                    let ratio = rC ? parseFloat(row[rC]) || 3 : 3;
-                    let sold = sC ? parseFloat(row[sC]) || 0 : 0;
-                    let tot = totC ? parseFloat(row[totC]) || 0 : 0;
-                    let avail = availC ? parseFloat(row[availC]) || 0 : 0;
-                    let weak = weakC ? parseFloat(row[weakC]) || 0 : 0;
-                    let ok = okC ? parseFloat(row[okC]) || 0 : 0;
-                    gSet[group] = true; sgSet[subgroup] = true; dSet[dept] = true; colSet[color] = true;
-                    if (oc) ocSet[oc] = true; if (ocm) ocmSet[ocm] = true;
-                    allRows.push({ periodRaw: period, periodKey: pk, periodParsed: pp, item, color, group, subgroup, dept, oc, ocm, ratio, sold, tot, avail, weak, ok });
-                }
-                allPeriods = Object.values(pMap).sort((a,b) => (a.parsed.year*1000 + a.parsed.month*10 + a.parsed.half) - (b.parsed.year*1000 + b.parsed.month*10 + b.parsed.half));
-                allGroups = Object.keys(gSet).sort(); allSubGroups = Object.keys(sgSet).sort(); allDepts = Object.keys(dSet).sort();
-                allColors = Object.keys(colSet).sort(); allOccasions = Object.keys(ocSet).sort(); allOccasionsMain = Object.keys(ocmSet).sort();
-                buildSidebarFilters();
-                applyFilters();
-                document.getElementById('dashboard').classList.remove('hidden');
-                document.getElementById('dropZone').style.display = 'none';
-            } catch(err) { alert('خطأ: ' + err.message); }
-        };
-        reader.readAsArrayBuffer(file);
-    });
+function buildFilters(){
+  document.getElementById('filters-bar').innerHTML=
+    '<select id="f-period" onchange="applyFilters()"><option value="">كل الفترات</option>'+allPeriods.map(function(p){return'<option>'+p.raw+'</option>';}).join('')+'</select>'+
+    '<select id="f-group" onchange="applyFilters()"><option value="">كل المجموعات</option>'+allGroups.map(function(g){return'<option>'+g+'</option>';}).join('')+'</select>'+
+    '<select id="f-dept" onchange="applyFilters()"><option value="">كل الأقسام</option>'+allDepts.map(function(d){return'<option>'+d+'</option>';}).join('')+'</select>';
+}
 
-    // ---------- Sidebar with "Select All" ----------
-    function buildGroup(containerId, items, filterName) {
-        let container = document.getElementById(containerId);
-        if (!container) return;
-        let html = `<label class="filter-check select-all" data-group="${filterName}">
-                        <input type="checkbox" class="select-all-checkbox" data-group="${filterName}" onchange="toggleAllInGroup('${filterName}')"> ✅ تحديد الكل
-                    </label>`;
-        items.forEach(item => {
-            let safe = item.replace(/"/g, '&quot;');
-            html += `<label class="filter-check"><input type="checkbox" value="${safe}" data-filter="${filterName}" onchange="applyFilters()"> ${item}</label>`;
-        });
-        container.innerHTML = html;
-        // إضافة مستمع لكل checkbox عادي لتحديث حالة "تحديد الكل"
-        document.querySelectorAll(`input[data-filter="${filterName}"]`).forEach(cb => {
-            cb.addEventListener('change', () => updateSelectAllState(filterName));
-        });
-    }
-    function updateSelectAllState(filterName) {
-        let allBoxes = document.querySelectorAll(`input[data-filter="${filterName}"]`);
-        let selectAll = document.querySelector(`.select-all-checkbox[data-group="${filterName}"]`);
-        if (selectAll && allBoxes.length) {
-            let allChecked = Array.from(allBoxes).every(cb => cb.checked);
-            selectAll.checked = allChecked;
-        }
-        applyFilters();
-    }
-    function toggleAllInGroup(filterName) {
-        let selectAll = document.querySelector(`.select-all-checkbox[data-group="${filterName}"]`);
-        if (!selectAll) return;
-        let isChecked = selectAll.checked;
-        let allBoxes = document.querySelectorAll(`input[data-filter="${filterName}"]`);
-        allBoxes.forEach(cb => cb.checked = isChecked);
-        applyFilters();
-    }
-    function buildSidebarFilters() {
-        buildGroup('filterPeriods', allPeriods.map(p => p.raw), 'period');
-        buildGroup('filterGroups', allGroups, 'group');
-        buildGroup('filterSubGroups', allSubGroups, 'subgroup');
-        buildGroup('filterDepts', allDepts, 'dept');
-        buildGroup('filterColors', allColors, 'color');
-        buildGroup('filterOccasions', allOccasions, 'occasion');
-        buildGroup('filterOccMain', allOccasionsMain, 'occasionMain');
-    }
-    function getSelectedFilters() {
-        let get = (name) => [...document.querySelectorAll(`input[data-filter="${name}"]:checked`)].map(cb => cb.value);
-        return { periods: get('period'), groups: get('group'), subgroups: get('subgroup'), depts: get('dept'),
-                 colors: get('color'), occasions: get('occasion'), occasionsMain: get('occasionMain') };
-    }
-    function applyFilters() {
-        let f = getSelectedFilters();
-        filteredRows = allRows.filter(r => {
-            if (f.periods.length && !f.periods.includes(r.periodRaw)) return false;
-            if (f.groups.length && !f.groups.includes(r.group)) return false;
-            if (f.subgroups.length && !f.subgroups.includes(r.subgroup)) return false;
-            if (f.depts.length && !f.depts.includes(r.dept)) return false;
-            if (f.colors.length && !f.colors.includes(r.color)) return false;
-            if (f.occasions.length && !f.occasions.includes(r.oc)) return false;
-            if (f.occasionsMain.length && !f.occasionsMain.includes(r.ocm)) return false;
-            return true;
-        });
-        renderDashboard();
-    }
+function applyFilters(){
+  var fp=document.getElementById('f-period').value;
+  var fg=document.getElementById('f-group').value;
+  var fd=document.getElementById('f-dept').value;
+  filteredData=allData.filter(function(r){
+    return(!fp||r.periodRaw===fp)&&(!fg||r.group===fg)&&(!fd||r.dept===fd);
+  });
+  renderAll();
+}
 
-    // ---------- Core Logic ----------
-    function getItemsSummary() {
-        let items = {};
-        for (let r of filteredRows) {
-            let key = r.item + '||' + r.color;
-            if (!items[key]) items[key] = { item: r.item, color: r.color, group: r.group, dept: r.dept, periods: {} };
-            if (!items[key].periods[r.periodKey]) items[key].periods[r.periodKey] = { sold: 0, tot: 0, avail: 0, weak: 0, ok: 0, oc: r.oc, ocm: r.ocm };
-            items[key].periods[r.periodKey].sold += r.sold;
-            items[key].periods[r.periodKey].tot += r.tot;
-            items[key].periods[r.periodKey].avail += r.avail;
-            items[key].periods[r.periodKey].weak += r.weak;
-            items[key].periods[r.periodKey].ok += r.ok;
-        }
-        return items;
-    }
-    function forecastValues(periodData, currentPeriod) {
-        let samePeriod = null;
-        for (let p of allPeriods) {
-            if (p.parsed.month === currentPeriod.parsed.month && p.parsed.half === currentPeriod.parsed.half && p.parsed.year === currentPeriod.parsed.year - 1) samePeriod = p;
-        }
-        let lastYearSold = 0;
-        if (samePeriod && periodData[samePeriod.raw]) lastYearSold = periodData[samePeriod.raw].sold;
-        let base = Math.round(lastYearSold * 1.05);
-        let weakRatio = 0, availRatio = 1;
-        if (periodData[currentPeriod.raw]) {
-            let d = periodData[currentPeriod.raw];
-            weakRatio = d.tot ? d.weak / d.tot : 0;
-            availRatio = d.tot ? d.avail / d.tot : 1;
-        }
-        let pessimist = Math.round(base * (1 - weakRatio * 0.3));
-        let optimist = Math.round(base * (1 + weakRatio * 0.25));
-        let fullCoverage = Math.round(base / Math.max(availRatio, 0.1));
-        let recoup = Math.round(base * (1 + weakRatio * 0.5));
-        return { base, pessimist, optimist, fullCoverage, recoup, weakRatio, availRatio };
-    }
+function getPeriods(data){
+  var map={};
+  data.forEach(function(r){map[r.periodKey]=r.periodParsed;});
+  return Object.keys(map).map(function(k){return{key:k,parsed:map[k]};}).sort(function(a,b){return periodOrder(a.parsed)-periodOrder(b.parsed);});
+}
 
-    // ---------- Render Dashboard ----------
-    function renderDashboard() {
-        let itemsDict = getItemsSummary();
-        let activePeriods = allPeriods.filter(p => getSelectedFilters().periods.length ? getSelectedFilters().periods.includes(p.raw) : true);
-        if (!activePeriods.length) activePeriods = allPeriods;
-        let lastPeriod = activePeriods[activePeriods.length-1];
-        let itemsList = Object.values(itemsDict);
-        let totalSold = 0, totalWeak = 0, totalBranches = 0, totalAvail = 0;
-        for (let item of itemsList) {
-            let pd = item.periods[lastPeriod.raw];
-            if (pd) { totalSold += pd.sold; totalWeak += pd.weak; totalBranches += pd.tot; totalAvail += pd.avail; }
-        }
-        let fc = forecastValues({[lastPeriod.raw]: {sold: totalSold, tot: totalBranches, weak: totalWeak, avail: totalAvail}}, lastPeriod);
-        document.getElementById('metricsGrid').innerHTML = `
-            <div class="metric-card"><div class="label">📊 إجمالي المبيعات (آخر فترة)</div><div class="value">${totalSold.toLocaleString()}</div></div>
-            <div class="metric-card"><div class="label">🟡 توقع أساسي</div><div class="value green">${fc.base.toLocaleString()}</div></div>
-            <div class="metric-card"><div class="label">🔴 متشائم</div><div class="value red">${fc.pessimist.toLocaleString()}</div></div>
-            <div class="metric-card"><div class="label">🟢 متفائل</div><div class="value">${fc.optimist.toLocaleString()}</div></div>
-            <div class="metric-card"><div class="label">🔵 تغطية كاملة</div><div class="value blue">${fc.fullCoverage.toLocaleString()}</div></div>
-            <div class="metric-card"><div class="label">📦 تعويض الضائع</div><div class="value amber">${fc.recoup.toLocaleString()}</div></div>
-        `;
-        let tabsHtml = [
-            { id: 'trend', name: '📈 تريند' }, { id: 'items', name: '🏷 الأصناف' },
-            { id: 'paretosales', name: '🅰 باريتو مبيعات' }, { id: 'paretostock', name: '📦 باريتو رصيد' },
-            { id: 'paretoforecast', name: '🔮 باريتو توقع' }
-        ].map((t,i) => `<button class="tab ${i===0?'active':''}" onclick="switchTab('${t.id}')">${t.name}</button>`).join('');
-        document.getElementById('tabsContainer').innerHTML = tabsHtml;
-        renderTrendTab(itemsList, activePeriods, lastPeriod);
-        renderItemsTab(itemsList, activePeriods, lastPeriod);
-        renderParetoTab(itemsList, activePeriods, lastPeriod, 'sales');
-        renderParetoTab(itemsList, activePeriods, lastPeriod, 'stock');
-        renderParetoTab(itemsList, activePeriods, lastPeriod, 'forecast');
+function getByPeriod(data,periods){
+  var res={};
+  periods.forEach(function(p){res[p.key]={sold:0,weak:0,ok:0,tot:0};});
+  data.forEach(function(r){
+    if(res[r.periodKey]){
+      res[r.periodKey].sold+=r.sold;
+      res[r.periodKey].weak+=r.weakStock;
+      res[r.periodKey].ok+=r.okStock;
+      res[r.periodKey].tot+=r.totBranches;
     }
+  });
+  return periods.map(function(p){return res[p.key];});
+}
 
-    function renderTrendTab(items, periods, lastPeriod) {
-        let byPeriod = {};
-        periods.forEach(p => byPeriod[p.raw] = 0);
-        for (let item of items) for (let p of periods) if (item.periods[p.raw]) byPeriod[p.raw] += item.periods[p.raw].sold;
-        let labels = periods.map(p => p.raw), vals = labels.map(l => byPeriod[l]);
-        let fc = forecastValues({[lastPeriod.raw]: {sold: vals[vals.length-1]||0, tot:1, weak:0, avail:1}}, lastPeriod);
-        document.getElementById('tabContent').innerHTML = `
-            <div class="section"><h2>📈 اتجاه المبيعات</h2><canvas id="trendChart" height="200"></canvas></div>
-            <div class="section"><h2>🔮 التوقعات للفترة القادمة</h2>
-            <div class="forecast-5">
-                <div class="fc-card fc-base"><div class="fc-val">${fc.base.toLocaleString()}</div><div class="fc-lbl">🟡 أساسي</div></div>
-                <div class="fc-card fc-pessimist"><div class="fc-val">${fc.pessimist.toLocaleString()}</div><div class="fc-lbl">🔴 متشائم</div></div>
-                <div class="fc-card fc-optimist"><div class="fc-val">${fc.optimist.toLocaleString()}</div><div class="fc-lbl">🟢 متفائل</div></div>
-                <div class="fc-card fc-full"><div class="fc-val">${fc.fullCoverage.toLocaleString()}</div><div class="fc-lbl">🔵 تغطية كاملة</div></div>
-                <div class="fc-card fc-rec"><div class="fc-val">${fc.recoup.toLocaleString()}</div><div class="fc-lbl">📦 تعويض الضائع</div></div>
-            </div></div>
-        `;
-        let ctx = document.getElementById('trendChart')?.getContext('2d');
-        if (trendChart) trendChart.destroy();
-        if (ctx) trendChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'مبيعات', data: vals, backgroundColor: '#1D9E75', borderRadius: 8 }] }, options: { responsive: true, plugins: { legend: { display: false } } } });
+function forecastNext(data,periods){
+  if(!periods.length) return 0;
+  var last=periods[periods.length-1].parsed;
+  var lyKey=null;
+  for(var i=0;i<periods.length;i++){
+    var p=periods[i].parsed;
+    if(p.month===last.month && p.half===last.half && p.year===last.year-1){
+      lyKey=periods[i].key; break;
     }
+  }
+  var lySold=0;
+  if(lyKey){
+    for(var i=0;i<data.length;i++) if(data[i].periodKey===lyKey) lySold+=data[i].sold;
+  }
+  var recent=periods.slice(-4).reduce(function(s,p){
+    var sum=0;
+    for(var i=0;i<data.length;i++) if(data[i].periodKey===p.key) sum+=data[i].sold;
+    return s+sum;
+  },0)/Math.min(4,periods.length);
+  if(lySold>0) return Math.round(lySold*0.6 + recent*0.4);
+  return Math.round(recent*1.05);
+}
 
-    function renderItemsTab(items, periods, lastPeriod) {
-        let rows = [];
-        for (let item of items) {
-            let totalSold = 0, lastSold = 0, weakRatio = 0, availRatio = 1;
-            for (let p of periods) {
-                let d = item.periods[p.raw];
-                if (d) { totalSold += d.sold; if (p.raw === lastPeriod.raw) { lastSold = d.sold; weakRatio = d.tot ? d.weak/d.tot : 0; availRatio = d.tot ? d.avail/d.tot : 1; } }
-            }
-            let fc = forecastValues(item.periods, lastPeriod);
-            rows.push({ item: item.item, color: item.color, group: item.group, totalSold, lastSold, fc });
-        }
-        rows.sort((a,b)=>b.totalSold - a.totalSold);
-        let html = `<div class="section"><h2>🏷 تفاصيل التوقعات (أساسي / متشائم / متفائل / تغطية كاملة / تعويض)</h2><div class="table-wrapper"><table><thead><tr><th>الصنف</th><th>اللون</th><th>المجموعة</th><th>إجمالي</th><th>آخر فترة</th><th>🟡</th><th>🔴</th><th>🟢</th><th>🔵</th><th>📦</th></tr></thead><tbody>`;
-        for (let r of rows.slice(0,300)) html += `<tr><td>${r.item}</td><td>${r.color}</td><td>${r.group}</td><td>${r.totalSold.toLocaleString()}</td><td>${r.lastSold.toLocaleString()}</td><td><strong>${r.fc.base.toLocaleString()}</strong></td><td>${r.fc.pessimist.toLocaleString()}</td><td>${r.fc.optimist.toLocaleString()}</td><td class="badge blue">${r.fc.fullCoverage.toLocaleString()}</td><td class="badge">${r.fc.recoup.toLocaleString()}</td></tr>`;
-        html += `</tbody></table></div><div class="note">🔴 متشائم / 🟢 متفائل / 🔵 تغطية كاملة / 📦 تعويض الضائع</div></div>`;
-        document.getElementById('tabContent').innerHTML = html;
-    }
+function renderAll(){
+  var periods=getPeriods(filteredData);
+  var byPeriod=getByPeriod(filteredData,periods);
+  var total=byPeriod.reduce(function(s,r){return s+r.sold;},0);
+  var lastSold=byPeriod.length?byPeriod[byPeriod.length-1].sold:0;
+  var prevSold=byPeriod.length>1?byPeriod[byPeriod.length-2].sold:0;
+  var trnd=prevSold?Math.round((lastSold-prevSold)/prevSold*100):0;
+  var nxt=forecastNext(filteredData,periods);
+  document.getElementById('metrics-bar').innerHTML=
+    '<div class="metric"><div class="lbl">إجمالي المبيعات</div><div class="val">'+total.toLocaleString()+'</div><div class="chg">'+periods.length+' فترات</div></div>'+
+    '<div class="metric"><div class="lbl">آخر فترة</div><div class="val '+(trnd>=0?'green':'red')+'">'+lastSold.toLocaleString()+'</div><div class="chg">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'%</div></div>'+
+    '<div class="metric"><div class="lbl">توقع الفترة القادمة</div><div class="val green">'+nxt.toLocaleString()+'</div><div class="chg">نموذج موسمي</div></div>';
+  
+  var labels=periods.map(function(p){return p.parsed.label;});
+  var vals=byPeriod.map(function(r){return r.sold;});
+  if(trendChart) trendChart.destroy();
+  trendChart=new Chart(document.getElementById('trend-chart').getContext('2d'),{
+    type:'bar',
+    data:{labels:labels,datasets:[{label:'مبيعات فعلية',data:vals,backgroundColor:'#1D9E75',borderRadius:4}]},
+    options:{responsive:true,plugins:{legend:{display:false}},scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+  
+  var forecastVals=periods.map(function(p){
+    var pp=p.parsed;
+    var lyKey=null;
+    for(var i=0;i<periods.length;i++){var q=periods[i].parsed; if(q.month===pp.month && q.half===pp.half && q.year===pp.year-1){lyKey=periods[i].key; break;}}
+    if(!lyKey) return null;
+    var sum=0;
+    for(var i=0;i<filteredData.length;i++) if(filteredData[i].periodKey===lyKey) sum+=filteredData[i].sold;
+    return sum;
+  });
+  if(forecastChart) forecastChart.destroy();
+  forecastChart=new Chart(document.getElementById('forecast-chart').getContext('2d'),{
+    type:'line',
+    data:{labels:[...labels,'الفترة القادمة'],datasets:[
+      {label:'فعلي',data:[...vals,null],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.08)',pointRadius:4,tension:0.3,fill:true,borderWidth:2},
+      {label:'توقع',data:[...forecastVals,nxt],borderColor:'#BA7517',backgroundColor:'transparent',borderDash:[6,3],pointRadius:4,tension:0.3,borderWidth:2}
+    ]},
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:12},boxWidth:14,padding:16}}},scales:{y:{ticks:{font:{size:11}},grid:{color:'rgba(0,0,0,0.05)'}}}}
+  });
+  
+  // Group table
+  var groups=document.getElementById('f-group').value?[document.getElementById('f-group').value]:allGroups;
+  var lastPeriod=periods[periods.length-1];
+  var lastKey=lastPeriod?lastPeriod.key:'';
+  var thead=document.querySelector('#grp-table thead');
+  var tbody=document.querySelector('#grp-table tbody');
+  thead.innerHTML='<tr><th>المجموعة الرئيسية</th><th>آخر فترة</th><th>توقع الفترة الجاية</th><th>التغيير</th></tr>';
+  tbody.innerHTML=groups.map(function(g){
+    var gData=filteredData.filter(function(r){return r.group===g;});
+    var lastSold=0;
+    for(var i=0;i<gData.length;i++) if(gData[i].periodKey===lastKey) lastSold+=gData[i].sold;
+    var nxtG=forecastNext(gData,periods);
+    var chg=lastSold?Math.round((nxtG-lastSold)/lastSold*100):0;
+    return'<tr><td>'+g+'</td><td>'+lastSold.toLocaleString()+'</td><td><strong>'+nxtG.toLocaleString()+'</strong></td>'+
+      '<td><span class="badge '+(chg>5?'up':chg<-5?'down':'flat')+'">'+(chg>=0?'+':'')+chg+'%</span></td></tr>';
+  }).join('');
+}
 
-    function renderParetoTab(items, periods, lastPeriod, type) {
-        let rows = [];
-        for (let item of items) {
-            let total = 0;
-            if (type === 'sales') for (let p of periods) { let d = item.periods[p.raw]; if (d) total += d.sold; }
-            else if (type === 'stock') { let d = item.periods[lastPeriod.raw]; total = d?.tot || 0; }
-            else { let fc = forecastValues(item.periods, lastPeriod); total = fc.recoup; }
-            rows.push({ item: item.item, color: item.color, group: item.group, value: total });
-        }
-        rows.sort((a,b)=>b.value - a.value);
-        let grand = rows.reduce((s,r)=>s+r.value,0);
-        let cum = 0, abcRows = [];
-        for (let r of rows) {
-            cum += r.value;
-            let pct = grand ? (cum/grand)*100 : 0;
-            let abc = pct <= 80 ? 'A' : pct <= 95 ? 'B' : 'C';
-            abcRows.push({ ...r, abc, pct: grand ? +(r.value/grand*100).toFixed(1) : 0, cumPct: Math.round(pct) });
-        }
-        let filterABC = () => {
-            let selected = [...document.querySelectorAll('#paretoABC input:checked')].map(cb=>cb.value);
-            return abcRows.filter(r=>selected.includes(r.abc));
-        };
-        let renderChartTable = (selected) => {
-            let top = selected.slice(0,50);
-            let labels = top.map(r=>r.item.length>20?r.item.substring(0,20)+'..':r.item);
-            let values = top.map(r=>r.value);
-            let cumPcts = top.map(r=>r.cumPct);
-            let ctx = document.getElementById('paretoChart')?.getContext('2d');
-            if (paretoChart) paretoChart.destroy();
-            if (ctx) paretoChart = new Chart(ctx, { type: 'bar', data: { labels, datasets: [{ label: 'القيمة', data: values, backgroundColor: values.map((_,i)=>top[i].abc==='A'?'#1D9E75':top[i].abc==='B'?'#BA7517':'#A32D2D'), yAxisID: 'y' }, { label: '% تراكمي', data: cumPcts, type: 'line', borderColor: '#1A5FA8', backgroundColor: 'transparent', pointRadius: 2, yAxisID: 'y2', borderWidth: 2 }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { position: 'right' }, y2: { position: 'left', min: 0, max: 100, ticks: { callback: v=>v+'%' } } } } });
-            let tbl = `<div class="table-wrapper"><table><thead><tr><th>#</th><th>الصنف</th><th>اللون</th><th>القيمة</th><th>%</th><th>% تراكمي</th><th>ABC</th></tr></thead><tbody>${selected.slice(0,300).map((r,i)=>`<tr><td>${i+1}</td><td>${r.item}</td><td>${r.color}</td><td>${r.value.toLocaleString()}</td><td>${r.pct}%</td><td>${r.cumPct}%</td><td class="badge ${r.abc}">${r.abc}</td></table>`).join('')}</tbody><table></div>`;
-            document.getElementById('paretoContainer').innerHTML = `<div class="pareto-filters" id="paretoABC">${['A','B','C'].map(l=>`<label><input type="checkbox" value="${l}" checked onchange="renderParetoTab(items,periods,lastPeriod,'${type}')"> فئة ${l}</label>`).join('')}</div><canvas id="paretoChart" height="200"></canvas>${tbl}`;
-            let newCtx = document.getElementById('paretoChart')?.getContext('2d');
-            if (newCtx && paretoChart) { paretoChart.destroy(); new Chart(newCtx, { type: 'bar', data: { labels, datasets: [{ label: 'القيمة', data: values, backgroundColor: values.map((_,i)=>top[i].abc==='A'?'#1D9E75':top[i].abc==='B'?'#BA7517':'#A32D2D'), yAxisID: 'y' }, { label: '% تراكمي', data: cumPcts, type: 'line', borderColor: '#1A5FA8', backgroundColor: 'transparent', pointRadius: 2, yAxisID: 'y2', borderWidth: 2 }] }, options: { responsive: true, plugins: { legend: { position: 'bottom' } }, scales: { y: { position: 'right' }, y2: { position: 'left', min: 0, max: 100, ticks: { callback: v=>v+'%' } } } } }); }
-        };
-        document.getElementById('tabContent').innerHTML = `<div class="section"><h2>📊 باريتو - ${type==='sales'?'المبيعات':type==='stock'?'الرصيد الحالي':'توقع تعويض الضائع'}</h2><div id="paretoContainer"></div></div>`;
-        renderChartTable(abcRows.filter(r=>['A','B','C'].includes(r.abc)));
-        window.renderParetoTab = renderParetoTab;
-    }
+function switchTab(tab){
+  document.getElementById('tab-trend').style.display=tab==='trend'?'block':'none';
+  document.getElementById('tab-forecast').style.display=tab==='forecast'?'block':'none';
+  document.getElementById('tab-table').style.display=tab==='table'?'block':'none';
+  document.querySelectorAll('.tab').forEach(function(el,i){el.classList.toggle('active',['trend','forecast','table'][i]===tab);});
+}
 
-    function switchTab(tab) {
-        let items = getItemsSummary();
-        let activePeriods = allPeriods.filter(p => getSelectedFilters().periods.length ? getSelectedFilters().periods.includes(p.raw) : true);
-        if (!activePeriods.length) activePeriods = allPeriods;
-        let lastPeriod = activePeriods[activePeriods.length-1];
-        let itemsList = Object.values(items);
-        if (tab === 'trend') renderTrendTab(itemsList, activePeriods, lastPeriod);
-        else if (tab === 'items') renderItemsTab(itemsList, activePeriods, lastPeriod);
-        else if (tab === 'paretosales') renderParetoTab(itemsList, activePeriods, lastPeriod, 'sales');
-        else if (tab === 'paretostock') renderParetoTab(itemsList, activePeriods, lastPeriod, 'stock');
-        else renderParetoTab(itemsList, activePeriods, lastPeriod, 'forecast');
-        document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', ['trend','items','paretosales','paretostock','paretoforecast'][i] === tab));
-    }
-
-    function exportToExcel() {
-        let items = getItemsSummary();
-        let activePeriods = allPeriods.filter(p => getSelectedFilters().periods.length ? getSelectedFilters().periods.includes(p.raw) : true);
-        if (!activePeriods.length) activePeriods = allPeriods;
-        let lastPeriod = activePeriods[activePeriods.length-1];
-        let rows = [];
-        for (let item of Object.values(items)) {
-            let totalSold = 0, lastSold = 0, weakRatio = 0, availRatio = 1;
-            for (let p of activePeriods) {
-                let d = item.periods[p.raw];
-                if (d) { totalSold += d.sold; if (p.raw === lastPeriod.raw) { lastSold = d.sold; weakRatio = d.tot ? d.weak/d.tot : 0; availRatio = d.tot ? d.avail/d.tot : 1; } }
-            }
-            let fc = forecastValues(item.periods, lastPeriod);
-            rows.push({ 'إسم الصنف': item.item, 'اللون': item.color, 'المجموعة': item.group, 'إجمالي المبيعات': totalSold, 'آخر فترة': lastSold,
-                '🟡 أساسي': fc.base, '🔴 متشائم': fc.pessimist, '🟢 متفائل': fc.optimist, '🔵 تغطية كاملة': fc.fullCoverage, '📦 تعويض الضائع': fc.recoup });
-        }
-        let ws = XLSX.utils.json_to_sheet(rows);
-        let wb = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(wb, ws, 'التوقعات');
-        XLSX.writeFile(wb, `توقعات_المبيعات_${new Date().toISOString().slice(0,10)}.xlsx`);
-    }
-
-    window.applyFilters = applyFilters;
-    window.toggleAllInGroup = toggleAllInGroup;
-    window.updateSelectAllState = updateSelectAllState;
-    window.switchTab = switchTab;
-    window.exportToExcel = exportToExcel;
+var dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.background='#e8f7f1';});
+dz.addEventListener('dragleave',function(){dz.style.background='';});
+dz.addEventListener('drop',function(e){
+  e.preventDefault();dz.style.background='';
+  var f=e.dataTransfer.files[0];
+  if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;document.getElementById('fi').dispatchEvent(new Event('change'));}
+});
 </script>
 </body>
 </html>
