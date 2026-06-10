@@ -8,257 +8,254 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
-  --green:#1D9E75;--green-light:#EAF3DE;--green-dark:#3B6D11;
-  --amber:#BA7517;--amber-light:#FAEEDA;--amber-dark:#854F0B;
-  --red:#A32D2D;--red-light:#FCEBEB;
-  --blue:#1A5FA8;--blue-light:#E3EEF9;
-  --bg:#F4F6F9;--card:#fff;--border:#E2E8F0;--text:#1A202C;--muted:#718096;
-  --radius:12px;--shadow:0 1px 3px rgba(0,0,0,0.08),0 1px 2px rgba(0,0,0,0.04);
+  --green:#1D9E75;--green-l:#EAF3DE;--green-d:#3B6D11;
+  --amber:#BA7517;--amber-l:#FAEEDA;--amber-d:#854F0B;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --blue:#1A5FA8;--blue-l:#E3EEF9;
+  --bg:#F0F4F8;--card:#fff;--border:#E2E8F0;--text:#1A202C;--muted:#718096;
+  --radius:12px;--shadow:0 1px 4px rgba(0,0,0,0.07);
 }
 *{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
-/* HEADER */
-.header{background:var(--card);border-bottom:1px solid var(--border);padding:0 24px;height:56px;display:flex;align-items:center;gap:14px;position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
-.logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px}
-.header-title{font-size:15px;font-weight:700;color:var(--text)}
-.header-sub{font-size:11px;color:var(--muted)}
-.header-right{margin-right:auto;display:flex;align-items:center;gap:8px}
-#file-badge{font-size:11px;background:var(--green-light);color:var(--green-dark);padding:3px 10px;border-radius:20px;font-weight:500}
-.btn-upload-small{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit}
-/* LAYOUT */
-.layout{display:flex;min-height:calc(100vh - 56px)}
-.sidebar{width:220px;background:var(--card);border-left:1px solid var(--border);padding:16px 12px;flex-shrink:0;overflow-y:auto;position:sticky;top:56px;height:calc(100vh - 56px)}
-.main{flex:1;padding:16px;overflow:hidden}
-/* SIDEBAR */
-.sidebar-section{margin-bottom:16px}
-.sidebar-label{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px}
-.sidebar select,.sidebar-multi{width:100%;font-size:12px;padding:6px 8px;border-radius:7px;border:1px solid var(--border);background:#fff;color:var(--text);outline:none;font-family:inherit;margin-bottom:4px}
-.sidebar select:focus{border-color:var(--green)}
-.sidebar-multi{max-height:130px;overflow-y:auto;padding:4px;border:1px solid var(--border);border-radius:7px}
-.chk-row{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:5px;cursor:pointer;font-size:11px}
-.chk-row:hover{background:var(--green-light)}
-.chk-row input{accent-color:var(--green);cursor:pointer}
-.btn-all{width:100%;font-size:11px;padding:4px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit;margin-bottom:4px}
-.btn-all:hover{background:var(--green-light);color:var(--green-dark);border-color:var(--green)}
-/* UPLOAD */
-.upload-area{background:var(--card);border:2px dashed #C6D9CE;border-radius:16px;padding:48px;text-align:center;cursor:pointer;transition:all .2s;margin:40px auto;max-width:500px}
-.upload-area:hover{border-color:var(--green);background:#F0FAF6}
-.upload-icon{font-size:40px;margin-bottom:12px}
-.upload-area h2{font-size:16px;font-weight:600;margin-bottom:6px}
-.upload-area p{font-size:12px;color:var(--muted);line-height:1.8}
-/* PROGRESS */
-#progress-wrap{display:none;background:var(--card);border-radius:var(--radius);padding:20px;margin:16px;border:1px solid var(--border);text-align:center;box-shadow:var(--shadow)}
-.pb-outer{background:#E2E8F0;border-radius:20px;height:6px;margin:10px 0}
-.pb-inner{background:var(--green);height:6px;border-radius:20px;width:0%;transition:width .3s}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:300;box-shadow:var(--shadow)}
+.hdr-logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px}
+.hdr-title{font-size:15px;font-weight:700}
+.hdr-sub{font-size:11px;color:var(--muted)}
+.hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px}
+#file-badge{font-size:11px;background:var(--green-l);color:var(--green-d);padding:3px 10px;border-radius:20px;font-weight:500}
+.btn-sm{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600}
+.layout{display:flex;min-height:calc(100vh - 54px)}
+.sidebar{width:210px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
+.sb-sec{margin-bottom:14px}
+.sb-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.multi-wrap{border:1px solid var(--border);border-radius:8px;padding:5px;background:#fff;max-height:110px;overflow-y:auto}
+.multi-wrap label{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:5px;cursor:pointer;font-size:11px;user-select:none}
+.multi-wrap label:hover{background:var(--green-l)}
+.multi-wrap input[type=checkbox]{accent-color:var(--green);cursor:pointer;flex-shrink:0}
+.sb-actions{display:flex;gap:4px;margin-bottom:4px}
+.sb-btn{flex:1;font-size:10px;padding:4px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
+.sb-btn:hover{background:var(--green-l);color:var(--green-d);border-color:var(--green)}
+.main{flex:1;padding:14px;overflow:hidden;min-width:0}
+.upload-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 54px)}
+.upload-card{background:var(--card);border:2px dashed #C6D9CE;border-radius:16px;padding:48px 40px;text-align:center;cursor:pointer;max-width:480px;width:100%}
+.upload-card:hover{border-color:var(--green);background:#F5FBF8}
+.upload-icon{font-size:44px;margin-bottom:14px}
+.upload-card h2{font-size:16px;font-weight:700;margin-bottom:8px}
+.upload-card p{font-size:12px;color:var(--muted);line-height:1.9}
+#prog-wrap{display:none;padding:20px;max-width:400px;margin:40px auto}
+.prog-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);text-align:center}
+.pb-out{background:#E2E8F0;border-radius:20px;height:6px;margin:10px 0}
+.pb-in{background:var(--green);height:6px;border-radius:20px;width:0%;transition:width .3s}
 #pb-msg{font-size:12px;color:var(--muted)}
-/* TABS */
-.tabs{display:flex;gap:2px;margin-bottom:16px;background:var(--card);border-radius:10px;padding:4px;border:1px solid var(--border);width:fit-content;box-shadow:var(--shadow)}
-.tab-btn{padding:6px 16px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;font-weight:500;transition:all .15s}
-.tab-btn.active{background:var(--green);color:#fff;font-weight:600;box-shadow:0 1px 4px rgba(29,158,117,.3)}
-/* METRICS */
-.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px}
-.metric{background:var(--card);border-radius:var(--radius);padding:14px 16px;border:1px solid var(--border);box-shadow:var(--shadow)}
-.metric-lbl{font-size:10px;color:var(--muted);margin-bottom:5px;font-weight:500}
-.metric-val{font-size:22px;font-weight:700;line-height:1}
-.metric-val.g{color:var(--green)}.metric-val.a{color:var(--amber)}.metric-val.r{color:var(--red)}.metric-val.b{color:var(--blue)}
-.metric-sub{font-size:10px;margin-top:3px;color:var(--muted)}
-/* FORECAST CARDS */
-.fc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:16px}
-.fc-card{border-radius:10px;padding:12px 14px;text-align:center;border:1px solid}
-.fc-card .fc-lbl{font-size:10px;font-weight:600;margin-bottom:4px}
-.fc-card .fc-val{font-size:20px;font-weight:800}
-.fc-card .fc-sub{font-size:10px;margin-top:3px;opacity:.7}
+.tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--card);border-radius:10px;padding:4px;border:1px solid var(--border);width:fit-content;box-shadow:var(--shadow)}
+.tab-btn{padding:7px 18px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;font-weight:500;transition:all .15s}
+.tab-btn.active{background:var(--green);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(29,158,117,.25)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.metric{background:var(--card);border-radius:var(--radius);padding:13px 15px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.m-lbl{font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.3px}
+.m-val{font-size:21px;font-weight:800;line-height:1}
+.m-val.g{color:var(--green)}.m-val.a{color:var(--amber)}.m-val.r{color:var(--red)}.m-val.b{color:var(--blue)}
+.m-sub{font-size:10px;margin-top:3px;color:var(--muted)}
+.fc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.fc-card{border-radius:10px;padding:14px;text-align:center;border:1px solid}
+.fc-lbl{font-size:10px;font-weight:700;margin-bottom:5px;opacity:.85}
+.fc-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.fc-sub{font-size:10px;margin-top:4px;opacity:.65}
 .fc-p{background:#FEF2F2;border-color:#FECACA;color:var(--red)}
 .fc-b{background:#F0FAF6;border-color:#9FE1CB;color:var(--green)}
-.fc-o{background:var(--green-light);border-color:#A8D688;color:var(--green-dark)}
-.fc-f{background:var(--blue-light);border-color:#93C5FD;color:var(--blue)}
-/* SECTION */
-.section{background:var(--card);border-radius:var(--radius);padding:16px 18px;margin-bottom:14px;border:1px solid var(--border);box-shadow:var(--shadow)}
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
-.section-title{font-size:13px;font-weight:700;color:var(--text)}
-.btn-export{font-size:11px;background:var(--green-light);color:var(--green-dark);border:1px solid #A8D688;padding:4px 10px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:600}
+.fc-o{background:var(--green-l);border-color:#A8D688;color:var(--green-d)}
+.fc-f{background:var(--blue-l);border-color:#93C5FD;color:var(--blue)}
+.section{background:var(--card);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-size:13px;font-weight:700}
+.btn-export{font-size:11px;background:var(--green-l);color:var(--green-d);border:1px solid #A8D688;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700}
 .btn-export:hover{background:var(--green);color:#fff}
-/* NOTE */
-.note{font-size:11px;color:var(--amber-dark);margin-top:8px;padding:8px 12px;background:var(--amber-light);border-radius:7px;border-right:3px solid var(--amber)}
-/* TABLE */
-.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:420px;overflow-y:auto}
+.note{font-size:11px;color:var(--amber-d);margin-top:10px;padding:8px 12px;background:var(--amber-l);border-radius:7px;border-right:3px solid var(--amber);line-height:1.6}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:500px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th{background:#F7FAFC;padding:9px 12px;text-align:right;font-weight:600;font-size:11px;color:var(--muted);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap}
-td{padding:8px 12px;border-bottom:1px solid #F0F4F8;white-space:nowrap}
+th{background:#F7FAFC;padding:10px 12px;text-align:right;font-weight:700;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #F0F4F8;white-space:nowrap;vertical-align:middle}
 tr:last-child td{border-bottom:none}
 tr:hover td{background:#F7FAFC}
-/* BADGES */
-.badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 8px;border-radius:20px;font-size:10px;font-weight:700;min-width:28px}
-.badge.A{background:var(--green-light);color:var(--green-dark)}
-.badge.B{background:var(--amber-light);color:var(--amber-dark)}
-.badge.C{background:var(--red-light);color:var(--red)}
-.badge.up{background:var(--green-light);color:var(--green-dark)}
-.badge.dn{background:var(--red-light);color:var(--red)}
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.badge.A{background:var(--green-l);color:var(--green-d)}
+.badge.B{background:var(--amber-l);color:var(--amber-d)}
+.badge.C{background:var(--red-l);color:var(--red)}
+.badge.up{background:var(--green-l);color:var(--green-d)}
+.badge.dn{background:var(--red-l);color:var(--red)}
 .badge.fl{background:#EDF2F7;color:var(--muted)}
-.badge.bl{background:var(--blue-light);color:var(--blue)}
-/* STOCK INDICATORS */
-.stock-ok{color:var(--green-dark);font-weight:600}
-.stock-warn{color:var(--amber);font-weight:600}
-.stock-bad{color:var(--red);font-weight:600}
-/* SEARCH */
+.badge.bl{background:var(--blue-l);color:var(--blue)}
+.dot-g{color:var(--green);font-weight:700}
+.dot-a{color:var(--amber);font-weight:700}
+.dot-r{color:var(--red);font-weight:700}
 .search-box{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;margin-bottom:10px;outline:none;font-family:inherit;background:#fff}
 .search-box:focus{border-color:var(--green)}
-/* PARETO SUMMARY */
-.pareto-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
-.ps-card{border-radius:10px;padding:14px;text-align:center;border:1px solid}
-.ps-card.A{background:var(--green-light);border-color:#A8D688}
-.ps-card.B{background:var(--amber-light);border-color:#E8C17A}
-.ps-card.C{background:var(--red-light);border-color:#E8A0A0}
-.ps-val{font-size:24px;font-weight:800;margin:4px 0}
-.ps-lbl{font-size:11px;font-weight:600}
-.ps-sub{font-size:10px;opacity:.7;margin-top:2px}
+.pareto-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.ps-card{border-radius:10px;padding:14px;text-align:center;border:1px solid;cursor:pointer;transition:all .2s}
+.ps-card.active-abc{box-shadow:0 0 0 3px currentColor}
+.ps-card:not(.active-abc){opacity:.7}
+.ps-card:hover{opacity:1;transform:translateY(-1px)}
+.ps-card.A{background:var(--green-l);border-color:#A8D688;color:var(--green-d)}
+.ps-card.B{background:var(--amber-l);border-color:#E8C17A;color:var(--amber-d)}
+.ps-card.C{background:var(--red-l);border-color:#E8A0A0;color:var(--red)}
+.ps-val{font-size:26px;font-weight:800;margin:4px 0}
+.ps-lbl{font-size:11px;font-weight:700}
+.ps-sub{font-size:10px;opacity:.75;margin-top:2px}
 canvas{width:100%!important}
 #dashboard{display:none}
-.hidden{display:none}
-@media(max-width:768px){.sidebar{display:none}.fc-grid{grid-template-columns:repeat(2,1fr)}}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
-<div class="header">
-  <div class="logo">T</div>
+<div class="hdr">
+  <div class="hdr-logo">T</div>
   <div>
-    <div class="header-title">توقع المبيعات — TREE</div>
-    <div class="header-sub" id="period-range">ارفع الملف للبدء</div>
+    <div class="hdr-title">توقع المبيعات — TREE</div>
+    <div class="hdr-sub" id="period-range">ارفع الملف للبدء</div>
   </div>
-  <div class="header-right">
+  <div class="hdr-r">
     <span id="file-badge">لم يتم رفع ملف</span>
-    <button class="btn-upload-small" onclick="document.getElementById('fi').click()">⬆ رفع ملف</button>
+    <button class="btn-sm" onclick="document.getElementById('fi').click()">⬆ رفع ملف</button>
   </div>
 </div>
 <input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
 
-<!-- UPLOAD -->
 <div id="upload-screen">
-  <div class="upload-area" onclick="document.getElementById('fi').click()" id="drop-zone">
-    <div class="upload-icon">📊</div>
-    <h2>ارفع ملف Excel الناتج من Power Query</h2>
-    <p>الأعمدة المطلوبة:<br>تاريخ — إسم الصنف — اللون — المجموعة الرئيسية — المجموعة الفرعية<br>مناسبات — مناسبات رئيسي — يشيو.ريشيو — صافي الكمية المباعه<br>متوسط_رصيد_افتتاحي — إجمالي_الفروع — فروع_متاح — فروع_رصيد_كافي — فروع_رصيد_ضعيف</p>
+  <div class="upload-wrap">
+    <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
+      <div class="upload-icon">📊</div>
+      <h2>ارفع ملف Excel الناتج من Power Query</h2>
+      <p>تاريخ — إسم الصنف — اللون — المجموعة الرئيسية — المجموعة الفرعية<br>
+      مناسبات — مناسبات رئيسي — يشيو.ريشيو — صافي الكمية المباعه<br>
+      متوسط_رصيد_افتتاحي — إجمالي_الفروع — فروع_متاح — فروع_رصيد_كافي — فروع_رصيد_ضعيف</p>
+    </div>
   </div>
 </div>
 
-<!-- PROGRESS -->
-<div id="progress-wrap">
-  <div id="pb-msg">جاري قراءة الملف...</div>
-  <div class="pb-outer"><div class="pb-inner" id="pb"></div></div>
+<div id="prog-wrap">
+  <div class="prog-card">
+    <div id="pb-msg">جاري قراءة الملف...</div>
+    <div class="pb-out"><div class="pb-in" id="pb"></div></div>
+  </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashboard">
   <div class="layout">
-    <!-- SIDEBAR -->
     <div class="sidebar">
-      <div class="sidebar-section">
-        <div class="sidebar-label">الفترات</div>
-        <button class="btn-all" onclick="toggleAll('periods',true)">تحديد الكل</button>
-        <button class="btn-all" onclick="toggleAll('periods',false)">إلغاء الكل</button>
-        <div class="sidebar-multi" id="period-checks"></div>
+      <div class="sb-sec">
+        <div class="sb-lbl">الفترات</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('period-checks',true)">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('period-checks',false)">إلغاء</button>
+        </div>
+        <div class="multi-wrap" id="period-checks"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">المجموعة الرئيسية</div>
-        <select id="f-group" onchange="renderAll()"><option value="">الكل</option></select>
+      <div class="sb-sec">
+        <div class="sb-lbl">المجموعة الرئيسية</div>
+        <div class="multi-wrap" id="f-group"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">المجموعة الفرعية</div>
-        <select id="f-subgroup" onchange="renderAll()"><option value="">الكل</option></select>
+      <div class="sb-sec">
+        <div class="sb-lbl">المجموعة الفرعية</div>
+        <div class="multi-wrap" id="f-subgroup"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">اللون</div>
-        <select id="f-color" onchange="renderAll()"><option value="">الكل</option></select>
+      <div class="sb-sec">
+        <div class="sb-lbl">اللون</div>
+        <div class="multi-wrap" id="f-color"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">المناسبات</div>
-        <select id="f-oc" onchange="renderAll()"><option value="">الكل</option></select>
+      <div class="sb-sec">
+        <div class="sb-lbl">المناسبات</div>
+        <div class="multi-wrap" id="f-oc"></div>
       </div>
-      <div class="sidebar-section">
-        <div class="sidebar-label">مناسبات رئيسي</div>
-        <select id="f-ocm" onchange="renderAll()"><option value="">الكل</option></select>
+      <div class="sb-sec">
+        <div class="sb-lbl">مناسبات رئيسي</div>
+        <div class="multi-wrap" id="f-ocm"></div>
       </div>
     </div>
 
-    <!-- MAIN -->
     <div class="main">
       <div class="tabs">
-        <button class="tab-btn active" onclick="switchTab('trend')">📈 تريند</button>
-        <button class="tab-btn" onclick="switchTab('groups')">📦 المجموعات</button>
+        <button class="tab-btn active" onclick="switchTab('groups')">📦 المجموعات</button>
         <button class="tab-btn" onclick="switchTab('items')">🏷 الأصناف</button>
-        <button class="tab-btn" onclick="switchTab('pareto-sales')">📊 باريتو بيع</button>
-        <button class="tab-btn" onclick="switchTab('pareto-stock')">📦 باريتو رصيد</button>
+        <button class="tab-btn" onclick="switchTab('ps')">📊 باريتو بيع</button>
       </div>
 
-      <!-- TREND TAB -->
-      <div id="tab-trend">
-        <div class="metrics" id="metrics-bar"></div>
-        <div class="fc-grid" id="forecast-cards"></div>
-        <div class="section">
-          <div class="section-header"><span class="section-title">📈 مبيعات الفترات الفعلية</span></div>
-          <canvas id="trend-chart" height="180"></canvas>
-        </div>
-        <div class="section">
-          <div class="section-header"><span class="section-title">🔮 فعلي مقابل توقع السنة القادمة</span></div>
-          <canvas id="forecast-chart" height="180"></canvas>
-          <div class="note">التوقع مبني على نفس المناسبة من الفترات السابقة مع تعديل المبيعات الضائعة بسبب نقص الرصيد</div>
-        </div>
-      </div>
+      <div class="metrics" id="metrics-bar"></div>
+      <div class="fc-grid" id="fc-cards"></div>
 
-      <!-- GROUPS TAB -->
-      <div id="tab-groups" class="hidden">
+      <!-- GROUPS -->
+      <div id="tab-groups">
         <div class="section">
-          <div class="section-header">
-            <span class="section-title">📦 توقع بالمجموعة الرئيسية</span>
-            <button class="btn-export" onclick="exportTable('grp-table','مجموعات')">⬇ Excel</button>
+          <div class="sec-hdr">
+            <span class="sec-title">📦 أداء وتوقع المجموعات الرئيسية</span>
+            <button class="btn-export" onclick="exportTbl('grp-table','مجموعات')">⬇ تصدير Excel</button>
           </div>
-          <div class="tbl-wrap"><table id="grp-table"><thead></thead><tbody></tbody></table></div>
+          <div class="tbl-wrap">
+            <table id="grp-table">
+              <thead><tr>
+                <th>المجموعة الرئيسية</th>
+                <th>إجمالي المبيعات</th>
+                <th>المبيعات المعدلة</th>
+                <th>متوسط الرصيد</th>
+                <th>آخر فترة</th>
+                <th>فروع ضعيفة</th>
+                <th>🔴 متشائم</th>
+                <th>🟡 أساسي</th>
+                <th>🟢 متفائل</th>
+                <th>🔵 تغطية كاملة</th>
+                <th>تغيير متوقع</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
-      <!-- ITEMS TAB -->
+      <!-- ITEMS -->
       <div id="tab-items" class="hidden">
         <div class="section">
-          <div class="section-header">
-            <span class="section-title">🏷 توقع بالصنف واللون</span>
-            <button class="btn-export" onclick="exportTable('item-table','أصناف')">⬇ Excel</button>
+          <div class="sec-hdr">
+            <span class="sec-title">🏷 أداء وتوقع الأصناف</span>
+            <button class="btn-export" onclick="exportTbl('item-table','أصناف')">⬇ تصدير Excel</button>
           </div>
-          <input type="text" class="search-box" id="item-search" placeholder="ابحث باسم الصنف أو اللون أو المجموعة..." oninput="filterItemTable()">
-          <div class="tbl-wrap"><table id="item-table"><thead></thead><tbody></tbody></table></div>
+          <input class="search-box" id="item-search" placeholder="ابحث باسم الصنف أو اللون أو المجموعة..." oninput="filterItems()">
+          <div class="tbl-wrap">
+            <table id="item-table">
+              <thead><tr>
+                <th>#</th><th>إسم الصنف</th><th>اللون</th><th>المجموعة</th>
+                <th>إجمالي المبيعات</th><th>المبيعات المعدلة</th><th>متوسط الرصيد</th>
+                <th>آخر فترة</th><th>فروع ضعيفة</th>
+                <th>🔴 متشائم</th><th>🟡 أساسي</th><th>🟢 متفائل</th><th>🔵 تغطية كاملة</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
         </div>
       </div>
 
       <!-- PARETO SALES -->
-      <div id="tab-pareto-sales" class="hidden">
-        <div class="pareto-sum" id="pareto-sales-sum"></div>
+      <div id="tab-ps" class="hidden">
+        <div class="pareto-sum" id="ps-sum"></div>
         <div class="section">
-          <div class="section-header"><span class="section-title">📊 منحنى باريتو — المبيعات</span></div>
-          <canvas id="pareto-sales-chart" height="200"></canvas>
+          <div class="sec-hdr"><span class="sec-title">📊 منحنى باريتو — المبيعات</span></div>
+          <canvas id="ps-chart" height="200"></canvas>
         </div>
         <div class="section">
-          <div class="section-header">
-            <span class="section-title">تفاصيل ABC بالمبيعات</span>
-            <button class="btn-export" onclick="exportTable('ps-table','باريتو-بيع')">⬇ Excel</button>
+          <div class="sec-hdr">
+            <span class="sec-title">تفاصيل تصنيف ABC — المبيعات</span>
+            <button class="btn-export" onclick="exportTbl('ps-table','باريتو-بيع')">⬇ تصدير Excel</button>
           </div>
-          <input type="text" class="search-box" id="ps-search" placeholder="ابحث..." oninput="filterPSTable()">
-          <div class="tbl-wrap"><table id="ps-table"><thead></thead><tbody></tbody></table></div>
-        </div>
-      </div>
-
-      <!-- PARETO STOCK -->
-      <div id="tab-pareto-stock" class="hidden">
-        <div class="pareto-sum" id="pareto-stock-sum"></div>
-        <div class="section">
-          <div class="section-header"><span class="section-title">📦 منحنى باريتو — الرصيد</span></div>
-          <canvas id="pareto-stock-chart" height="200"></canvas>
-        </div>
-        <div class="section">
-          <div class="section-header">
-            <span class="section-title">تفاصيل ABC بالرصيد</span>
-            <button class="btn-export" onclick="exportTable('pk-table','باريتو-رصيد')">⬇ Excel</button>
+          <input class="search-box" id="ps-search" placeholder="ابحث..." oninput="filterPS()">
+          <div class="tbl-wrap">
+            <table id="ps-table">
+              <thead><tr>
+                <th>#</th><th>إسم الصنف</th><th>اللون</th><th>المجموعة</th>
+                <th>تصنيف ABC</th><th>إجمالي المبيعات</th><th>المبيعات المعدلة</th>
+                <th>% من الإجمالي</th><th>% تراكمي</th>
+                <th>🟡 توقع أساسي</th><th>🔵 تغطية كاملة</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
           </div>
-          <input type="text" class="search-box" id="pk-search" placeholder="ابحث..." oninput="filterPKTable()">
-          <div class="tbl-wrap"><table id="pk-table"><thead></thead><tbody></tbody></table></div>
         </div>
       </div>
     </div>
@@ -266,33 +263,33 @@ canvas{width:100%!important}
 </div>
 
 <script>
-var byItem={},allPeriods=[],allPSRows=[],allPKRows=[],allItemRows=[];
+var byItem={},allPeriods=[];
+var allItemRows=[],allPSRows=[];
+var psFilter=null;
 var charts={};
 
 function normH(h){if(!h)return '';return h.toString().replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim();}
-function findCol(headers,candidates){
-  var nh=headers.map(function(h){return{orig:h,n:normH(h)};});
-  for(var i=0;i<candidates.length;i++){var cn=normH(candidates[i]);for(var j=0;j<nh.length;j++){if(nh[j].n===cn)return nh[j].orig;}}
-  for(var i=0;i<candidates.length;i++){var cn=normH(candidates[i]).substring(0,6);if(!cn)continue;for(var j=0;j<nh.length;j++){if(nh[j].n.indexOf(cn)>=0)return nh[j].orig;}}
+function findCol(H,cands){
+  var nh=H.map(function(h){return{o:h,n:normH(h)};});
+  for(var i=0;i<cands.length;i++){var c=normH(cands[i]);for(var j=0;j<nh.length;j++){if(nh[j].n===c)return nh[j].o;}}
+  for(var i=0;i<cands.length;i++){var c=normH(cands[i]).substring(0,6);if(!c)continue;for(var j=0;j<nh.length;j++){if(nh[j].n.indexOf(c)>=0)return nh[j].o;}}
   return null;
 }
-function parsePeriod(str){
-  if(!str)return null;
-  var s=str.toString().trim();
+function parsePer(s){
+  if(!s)return null;s=s.toString().trim();
   var m=s.match(/(\d{1,2})-(\d{4})/);if(!m)return null;
-  var half=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
-  return{year:parseInt(m[2]),month:parseInt(m[1]),half:half,label:s};
+  var h=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
+  return{yr:parseInt(m[2]),mo:parseInt(m[1]),h:h,lbl:s};
 }
-function pOrder(p){return p.year*1000+p.month*10+(p.half===2?1:0);}
-function pKey(p){return p.year+'_'+p.month+'_'+p.half;}
+function pOrd(p){return p.yr*1000+p.mo*10+p.h;}
+function pK(p){return p.yr+'_'+p.mo+'_'+p.h;}
 function setP(pct,msg){document.getElementById('pb').style.width=pct+'%';document.getElementById('pb-msg').textContent=msg;}
 
-// LOAD FILE
 document.getElementById('fi').addEventListener('change',function(e){
   var f=e.target.files[0];if(!f)return;
   document.getElementById('file-badge').textContent=f.name;
   document.getElementById('upload-screen').style.display='none';
-  document.getElementById('progress-wrap').style.display='block';
+  document.getElementById('prog-wrap').style.display='block';
   setP(10,'جاري قراءة الملف...');
   var reader=new FileReader();
   reader.onload=function(ev){
@@ -310,7 +307,8 @@ document.getElementById('fi').addEventListener('change',function(e){
               clC=findCol(H,['اللون']),gC=findCol(H,['المجموعة الرئيسية']),
               sgC=findCol(H,['المجموعة الفرعية']),
               ocC=findCol(H,['مناسبات']),ocmC=findCol(H,['مناسبات رئيسي']),
-              rC=findCol(H,['يشيو.ريشيو','ريشيو']),sC=findCol(H,['صافي الكمية المباعه','صافي الكمية']),
+              rC=findCol(H,['يشيو.ريشيو','ريشيو']),
+              sC=findCol(H,['صافي الكمية المباعه','صافي الكمية']),
               stC=findCol(H,['متوسط_رصيد_افتتاحي']),
               totC=findCol(H,['إجمالي_الفروع']),avC=findCol(H,['فروع_متاح']),
               okC=findCol(H,['فروع_رصيد_كافي']),wkC=findCol(H,['فروع_رصيد_ضعيف']);
@@ -319,10 +317,10 @@ document.getElementById('fi').addEventListener('change',function(e){
           var pMap={},gSet={},sgSet={},clSet={},ocSet={},ocmSet={};
           for(var i=0;i<raw.length;i++){
             var r=raw[i];
-            var period=r[pC]||'';var pp=parsePeriod(period);if(!pp)continue;
-            var pk=pKey(pp);
-            var item=iC?r[iC]:'?',color=clC?r[clC]:'غير محدد',
-                group=gC?r[gC]:'غير محدد',sg=sgC?r[sgC]:'غير محدد',
+            var per=r[pC]||'';var pp=parsePer(per);if(!pp)continue;
+            var pk=pK(pp);
+            var item=r[iC]||'?',color=clC?r[clC]:'غير محدد',
+                grp=gC?r[gC]:'غير محدد',sg=sgC?r[sgC]:'غير محدد',
                 oc=ocC?r[ocC]:'',ocm=ocmC?r[ocmC]:'',
                 ratio=rC?(parseFloat(r[rC])||3):3,
                 sold=sC?(parseFloat(r[sC])||0):0,
@@ -331,34 +329,25 @@ document.getElementById('fi').addEventListener('change',function(e){
                 avail=avC?(parseFloat(r[avC])||0):0,
                 ok2=okC?(parseFloat(r[okC])||0):0,
                 wk=wkC?(parseFloat(r[wkC])||0):0;
-            pMap[pk]={raw:period,parsed:pp};
-            gSet[group]=true;sgSet[sg]=true;clSet[color]=true;
+            pMap[pk]={raw:per,parsed:pp};
+            gSet[grp]=true;sgSet[sg]=true;clSet[color]=true;
             if(oc)ocSet[oc]=true;if(ocm)ocmSet[ocm]=true;
             var key=item+'|||'+color;
-            if(!byItem[key])byItem[key]={item:item,color:color,group:group,sg:sg,ratio:ratio,periods:{}};
+            if(!byItem[key])byItem[key]={item:item,color:color,grp:grp,sg:sg,ratio:ratio,
+              ocSet:{},ocmSet:{},periods:{}};
+            // تخزين كل المناسبات للصنف
+            if(oc)byItem[key].ocSet[oc]=true;
+            if(ocm)byItem[key].ocmSet[ocm]=true;
             if(!byItem[key].periods[pk])byItem[key].periods[pk]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:oc,ocm:ocm};
             var d=byItem[key].periods[pk];
             d.sold+=sold;d.stock+=stock;d.tot+=tot;d.avail+=avail;d.ok+=ok2;d.wk+=wk;
           }
-          allPeriods=Object.values(pMap).sort(function(a,b){return pOrder(a.parsed)-pOrder(b.parsed);});
-          // populate filters
-          populateSelect('f-group',Object.keys(gSet).sort());
-          populateSelect('f-subgroup',Object.keys(sgSet).sort());
-          populateSelect('f-color',Object.keys(clSet).sort());
-          populateSelect('f-oc',Object.keys(ocSet).sort());
-          populateSelect('f-ocm',Object.keys(ocmSet).sort());
-          // period checkboxes
-          var pc=document.getElementById('period-checks');
-          pc.innerHTML=allPeriods.map(function(p){
-            return'<label class="chk-row"><input type="checkbox" value="'+pKey(p.parsed)+'" checked onchange="renderAll()"><span>'+p.raw+'</span></label>';
-          }).join('');
-          // header period range
-          if(allPeriods.length){
-            document.getElementById('period-range').textContent=allPeriods[0].raw+' — '+allPeriods[allPeriods.length-1].raw;
-          }
+          allPeriods=Object.values(pMap).sort(function(a,b){return pOrd(a.parsed)-pOrd(b.parsed);});
+          buildFilters(gSet,sgSet,clSet,ocSet,ocmSet);
+          if(allPeriods.length)document.getElementById('period-range').textContent=allPeriods[0].raw+' ← '+allPeriods[allPeriods.length-1].raw;
           setP(100,'تم!');
           setTimeout(function(){
-            document.getElementById('progress-wrap').style.display='none';
+            document.getElementById('prog-wrap').style.display='none';
             document.getElementById('dashboard').style.display='block';
             renderAll();
           },300);
@@ -369,307 +358,301 @@ document.getElementById('fi').addEventListener('change',function(e){
   reader.readAsArrayBuffer(f);
 });
 
-function populateSelect(id,opts){
+function makeMulti(id,vals){
   var el=document.getElementById(id);
-  el.innerHTML='<option value="">الكل</option>'+opts.map(function(o){return'<option>'+o+'</option>';}).join('');
-  el.onchange=renderAll;
+  el.innerHTML=vals.map(function(v){
+    return'<label><input type="checkbox" value="'+v+'" checked onchange="renderAll()"> <span>'+v+'</span></label>';
+  }).join('');
 }
 
-function toggleAll(type,val){
-  document.querySelectorAll('#period-checks input[type=checkbox]').forEach(function(cb){cb.checked=val;});
+function buildFilters(gSet,sgSet,clSet,ocSet,ocmSet){
+  var pc=document.getElementById('period-checks');
+  pc.innerHTML=allPeriods.map(function(p){
+    return'<label><input type="checkbox" value="'+pK(p.parsed)+'" checked onchange="renderAll()"> <span>'+p.raw+'</span></label>';
+  }).join('');
+  makeMulti('f-group',Object.keys(gSet).sort());
+  makeMulti('f-subgroup',Object.keys(sgSet).sort());
+  makeMulti('f-color',Object.keys(clSet).sort());
+  makeMulti('f-oc',Object.keys(ocSet).sort());
+  makeMulti('f-ocm',Object.keys(ocmSet).sort());
+}
+
+function toggleAllCb(id,val){
+  document.querySelectorAll('#'+id+' input[type=checkbox]').forEach(function(cb){cb.checked=val;});
   renderAll();
 }
 
+function getChecked(id){
+  var v=[];document.querySelectorAll('#'+id+' input:checked').forEach(function(cb){v.push(cb.value);});return v;
+}
+
 function getF(){
-  var periods=[];
-  document.querySelectorAll('#period-checks input[type=checkbox]').forEach(function(cb){if(cb.checked)periods.push(cb.value);});
   return{
-    periods:periods,
-    fg:document.getElementById('f-group').value,
-    fsg:document.getElementById('f-subgroup').value,
-    fc:document.getElementById('f-color').value,
-    foc:document.getElementById('f-oc').value,
-    focm:document.getElementById('f-ocm').value
+    periods:getChecked('period-checks'),
+    grps:getChecked('f-group'),
+    sgs:getChecked('f-subgroup'),
+    colors:getChecked('f-color'),
+    ocs:getChecked('f-oc'),
+    ocms:getChecked('f-ocm')
   };
 }
 
-function getActivePeriods(f){
-  return allPeriods.filter(function(p){return f.periods.indexOf(pKey(p.parsed))>=0;});
+function getAP(f){
+  return allPeriods.filter(function(p){return f.periods.indexOf(pK(p.parsed))>=0;});
 }
 
+// فلترة مستقلة — كل فلتر يشتغل على الداتا بشكل مستقل
 function getItems(f){
   return Object.values(byItem).filter(function(r){
-    if(f.fg&&r.group!==f.fg)return false;
-    if(f.fsg&&r.sg!==f.fsg)return false;
-    if(f.fc&&r.color!==f.fc)return false;
-    if(f.foc||f.focm){
-      var match=f.periods.length?f.periods:Object.keys(r.periods);
-      return match.some(function(pk){var d=r.periods[pk];return d&&(!f.foc||d.oc===f.foc)&&(!f.focm||d.ocm===f.focm);});
+    // فلتر المجموعة الرئيسية
+    if(f.grps.length&&f.grps.indexOf(r.grp)<0)return false;
+    // فلتر المجموعة الفرعية
+    if(f.sgs.length&&f.sgs.indexOf(r.sg)<0)return false;
+    // فلتر اللون
+    if(f.colors.length&&f.colors.indexOf(r.color)<0)return false;
+    // فلتر المناسبات — مستقل بالكامل (بيشوف كل مناسبات الصنف)
+    if(f.ocs.length){
+      var hasOc=f.ocs.some(function(oc){return r.ocSet[oc];});
+      if(!hasOc)return false;
+    }
+    // فلتر مناسبات رئيسي — مستقل بالكامل
+    if(f.ocms.length){
+      var hasOcm=f.ocms.some(function(ocm){return r.ocmSet[ocm];});
+      if(!hasOcm)return false;
     }
     return true;
   });
 }
 
-// حساب المبيعات المعدلة (مع تعويض الرصيد الضعيف)
-function adjSold(d){
-  if(!d||d.ok<=0)return d?d.sold:0;
-  var avgPerOkBranch=d.sold/d.ok;
-  return d.sold+avgPerOkBranch*d.wk;
+function adjD(d){
+  if(!d)return 0;
+  var s=d.sold||0;
+  if(d.ok>0)s=s+(s/d.ok)*d.wk;
+  return Math.max(s,d.sold||0);
 }
 
-// التوقع بناءً على المناسبة
-function forecastByOcc(itemPeriods,activePeriods){
-  if(!activePeriods.length)return{p:0,b:0,o:0,f:0};
-  var last=activePeriods[activePeriods.length-1];
-  var lastD=itemPeriods[pKey(last.parsed)];
+function fc4(itemPeriods,ap){
+  if(!ap.length)return{p:0,b:0,o:0,f:0};
+  var last=ap[ap.length-1];
+  var lastD=itemPeriods[pK(last.parsed)];
   var lastOcm=lastD?lastD.ocm:'';
 
-  // فروع نفس المناسبة الرئيسية
-  var sameOccPeriods=allPeriods.filter(function(p){
-    var d=itemPeriods[pKey(p.parsed)];
-    return d&&d.ocm===lastOcm&&pKey(p.parsed)!==pKey(last.parsed);
+  var sameOcc=allPeriods.filter(function(p){
+    if(pK(p.parsed)===pK(last.parsed))return false;
+    var d=itemPeriods[pK(p.parsed)];
+    return d&&(!lastOcm||d.ocm===lastOcm);
   });
 
   var base;
-  if(sameOccPeriods.length>0){
-    var adjVals=sameOccPeriods.map(function(p){return adjSold(itemPeriods[pKey(p.parsed)]);});
-    base=adjVals.reduce(function(s,v){return s+v;},0)/adjVals.length;
+  if(sameOcc.length>0){
+    var vals=sameOcc.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
+    base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
   }else{
-    var recent=activePeriods.slice(-4);
-    var adjVals2=recent.map(function(p){return adjSold(itemPeriods[pKey(p.parsed)]);});
-    base=adjVals2.reduce(function(s,v){return s+v;},0)/Math.max(recent.length,1);
+    var allV=ap.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
+    base=allV.reduce(function(s,v){return s+v;},0)/Math.max(allV.length,1);
   }
 
-  var weakRatio=lastD&&lastD.tot?lastD.wk/lastD.tot:0;
-  var availRatio=lastD&&lastD.tot?lastD.avail/lastD.tot:1;
+  var lastActual=lastD?lastD.sold:0;
+  base=Math.max(base,lastActual);
+
+  var weakR=lastD&&lastD.tot?lastD.wk/lastD.tot:0;
+  var availR=lastD&&lastD.tot?lastD.avail/lastD.tot:1;
 
   return{
-    p:Math.max(0,Math.round(base*(1-weakRatio*0.3))),
+    p:Math.max(0,Math.round(base*(1-weakR*0.2))),
     b:Math.round(base),
-    o:Math.round(base*(1+weakRatio*0.25)),
-    f:availRatio>0?Math.round(base/Math.max(availRatio,0.1)):Math.round(base*1.2)
+    o:Math.round(base*(1+weakR*0.3)),
+    f:availR>0?Math.round(base/Math.max(availR,0.1)):Math.round(base*1.3)
   };
 }
 
-function sumByPeriod(items,activePeriods){
+function sumByP(items,ap){
   var res={};
-  activePeriods.forEach(function(p){res[pKey(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0};});
+  ap.forEach(function(p){res[pK(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
   items.forEach(function(item){
-    activePeriods.forEach(function(p){
-      var pk=pKey(p.parsed),d=item.periods[pk];
-      if(d){res[pk].sold+=d.sold;res[pk].stock+=d.stock;res[pk].tot+=d.tot;res[pk].avail+=d.avail;res[pk].ok+=d.ok;res[pk].wk+=d.wk;}
+    ap.forEach(function(p){
+      var pk=pK(p.parsed),d=item.periods[pk];
+      if(d){res[pk].sold+=d.sold;res[pk].stock+=d.stock;res[pk].tot+=d.tot;res[pk].avail+=d.avail;res[pk].ok+=d.ok;res[pk].wk+=d.wk;res[pk].oc=d.oc;res[pk].ocm=d.ocm;}
     });
   });
-  return activePeriods.map(function(p){return res[pKey(p.parsed)]||{sold:0,stock:0,tot:0,avail:0,ok:0,wk:0};});
+  return ap.map(function(p){return res[pK(p.parsed)]||{sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
 }
 
-function destroyChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
+function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function renderAll(){
-  var f=getF(),items=getItems(f),ap=getActivePeriods(f);
-  var byP=sumByPeriod(items,ap);
+  var f=getF(),items=getItems(f),ap=getAP(f);
+  var byP=sumByP(items,ap);
   var totalSold=byP.reduce(function(s,r){return s+r.sold;},0);
-  var totalStock=byP.reduce(function(s,r){return s+r.stock;},0);
+  var totalAdj=Math.round(byP.reduce(function(s,r){return s+adjD(r);},0));
+  var totalStock=Math.round(byP.reduce(function(s,r){return s+r.stock;},0));
   var lastSold=byP.length?byP[byP.length-1].sold:0;
   var prevSold=byP.length>1?byP[byP.length-2].sold:0;
   var trnd=prevSold?Math.round((lastSold-prevSold)/prevSold*100):0;
+  var totP={};ap.forEach(function(p,i){totP[pK(p.parsed)]=byP[i];});
+  var fc=fc4(totP,ap);
 
-  // إجمالي التوقع
-  var totalP={};ap.forEach(function(p,i){totalP[pKey(p.parsed)]=byP[i];});
-  var fc=forecastByOcc(totalP,ap);
-
-  // metrics
   document.getElementById('metrics-bar').innerHTML=
-    '<div class="metric"><div class="metric-lbl">إجمالي المبيعات</div><div class="metric-val">'+totalSold.toLocaleString()+'</div><div class="metric-sub">'+ap.length+' فترة مختارة</div></div>'+
-    '<div class="metric"><div class="metric-lbl">إجمالي الرصيد</div><div class="metric-val b">'+Math.round(totalStock).toLocaleString()+'</div><div class="metric-sub">متوسط افتتاحي</div></div>'+
-    '<div class="metric"><div class="metric-lbl">آخر فترة</div><div class="metric-val '+(trnd>=0?'g':'r')+'">'+lastSold.toLocaleString()+'</div><div class="metric-sub">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'% عن السابق</div></div>'+
-    '<div class="metric"><div class="metric-lbl">🟡 توقع أساسي</div><div class="metric-val g">'+fc.b.toLocaleString()+'</div><div class="metric-sub">بتعديل الرصيد الضعيف</div></div>'+
-    '<div class="metric"><div class="metric-lbl">🔵 تغطية كاملة</div><div class="metric-val b">'+fc.f.toLocaleString()+'</div><div class="metric-sub">لو الصنف في كل الفروع</div></div>'+
-    '<div class="metric"><div class="metric-lbl">عدد الأصناف</div><div class="metric-val a">'+items.length.toLocaleString()+'</div></div>';
+    '<div class="metric"><div class="m-lbl">إجمالي المبيعات الفعلية</div><div class="m-val">'+totalSold.toLocaleString()+'</div><div class="m-sub">'+ap.length+' فترة — '+items.length+' صنف</div></div>'+
+    '<div class="metric"><div class="m-lbl">المبيعات المعدلة</div><div class="m-val a">'+totalAdj.toLocaleString()+'</div><div class="m-sub">بتعويض الرصيد الضعيف</div></div>'+
+    '<div class="metric"><div class="m-lbl">متوسط الرصيد</div><div class="m-val b">'+totalStock.toLocaleString()+'</div></div>'+
+    '<div class="metric"><div class="m-lbl">آخر فترة</div><div class="m-val '+(trnd>=0?'g':'r')+'">'+lastSold.toLocaleString()+'</div><div class="m-sub">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'% عن السابق</div></div>'+
+    '<div class="metric"><div class="m-lbl">🟡 التوقع الأساسي</div><div class="m-val g">'+fc.b.toLocaleString()+'</div><div class="m-sub">للفترة القادمة</div></div>'+
+    '<div class="metric"><div class="m-lbl">🔵 تغطية كاملة</div><div class="m-val b">'+fc.f.toLocaleString()+'</div><div class="m-sub">أقصى إمكانية</div></div>';
 
-  // forecast cards
-  document.getElementById('forecast-cards').innerHTML=
+  document.getElementById('fc-cards').innerHTML=
     '<div class="fc-card fc-p"><div class="fc-lbl">🔴 متشائم</div><div class="fc-val">'+fc.p.toLocaleString()+'</div><div class="fc-sub">أسوأ سيناريو</div></div>'+
     '<div class="fc-card fc-b"><div class="fc-lbl">🟡 أساسي</div><div class="fc-val">'+fc.b.toLocaleString()+'</div><div class="fc-sub">التوقع الواقعي</div></div>'+
     '<div class="fc-card fc-o"><div class="fc-lbl">🟢 متفائل</div><div class="fc-val">'+fc.o.toLocaleString()+'</div><div class="fc-sub">لو الرصيد تحسن</div></div>'+
     '<div class="fc-card fc-f"><div class="fc-lbl">🔵 تغطية كاملة</div><div class="fc-val">'+fc.f.toLocaleString()+'</div><div class="fc-sub">أقصى إمكانية</div></div>';
 
-  // trend chart
-  var labels=ap.map(function(p){return p.raw;});
-  var vals=byP.map(function(r){return r.sold;});
-  var adjVals=byP.map(function(r){return Math.round(adjSold(r));});
-  destroyChart('trend');
-  charts['trend']=new Chart(document.getElementById('trend-chart').getContext('2d'),{
-    type:'bar',
-    data:{labels:labels,datasets:[
-      {label:'مبيعات فعلية',data:vals,backgroundColor:'rgba(29,158,117,0.8)',borderRadius:4},
-      {label:'مبيعات معدلة (بتعويض الرصيد)',data:adjVals,type:'line',borderColor:'#BA7517',backgroundColor:'transparent',pointRadius:3,tension:0.3,borderWidth:2,borderDash:[4,3]}
-    ]},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},scales:{y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}
-  });
-
-  // forecast chart — الفترة x + توقع نفس الفترة السنة الجاية
-  var fcLine=ap.map(function(p){
-    var lp=p.parsed;
-    // نفس المناسبة من الفترات الأخرى
-    var d=totalP[pKey(lp)];
-    if(!d)return null;
-    var ocm=d.ocm;
-    var sameOcc=allPeriods.filter(function(q){
-      var qd=totalP[pKey(q.parsed)];
-      return qd&&qd.ocm===ocm&&pKey(q.parsed)!==pKey(lp);
-    });
-    if(!sameOcc.length)return Math.round(vals[ap.indexOf(p)]*1.05);
-    var avg=sameOcc.reduce(function(s,q){return s+adjSold(totalP[pKey(q.parsed)]);},0)/sameOcc.length;
-    return Math.round(avg);
-  });
-  destroyChart('forecast');
-  charts['forecast']=new Chart(document.getElementById('forecast-chart').getContext('2d'),{
-    type:'line',
-    data:{labels:[...labels,'القادمة'],datasets:[
-      {label:'فعلي',data:[...vals,null],borderColor:'#1D9E75',backgroundColor:'rgba(29,158,117,0.07)',pointRadius:3,tension:0.3,fill:true,borderWidth:2},
-      {label:'توقع السنة القادمة',data:[...fcLine,fc.b],borderColor:'#BA7517',backgroundColor:'transparent',borderDash:[6,3],pointRadius:3,tension:0.3,borderWidth:2},
-      {label:'تغطية كاملة',data:[...fcLine.map(function(v){return v?Math.round(v*1.15):null;}),fc.f],borderColor:'#1A5FA8',backgroundColor:'transparent',borderDash:[3,3],pointRadius:3,tension:0.3,borderWidth:1.5}
-    ]},
-    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},scales:{y:{ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}}}}
-  });
-
   renderGroups(items,ap,f);
   renderItems(items,ap);
-  renderParetoSales(items,ap);
-  renderParetoStock(items,ap);
+  renderPareto(items,ap);
 }
 
 function renderGroups(items,ap,f){
-  var groups=f.fg?[f.fg]:Array.from(new Set(items.map(function(r){return r.group;}))).sort();
-  var lastPk=ap.length?pKey(ap[ap.length-1].parsed):'';
-  var thead=document.querySelector('#grp-table thead');
-  var tbody=document.querySelector('#grp-table tbody');
-  thead.innerHTML='<tr><th>المجموعة</th><th>إجمالي المبيعات</th><th>الرصيد</th><th>آخر فترة</th><th>فروع ضعيفة</th><th>🔴 متشائم</th><th>🟡 أساسي</th><th>🟢 متفائل</th><th>🔵 تغطية كاملة</th><th>تغيير</th></tr>';
-  tbody.innerHTML=groups.map(function(g){
-    var gi=items.filter(function(r){return r.group===g;});if(!gi.length)return'';
-    var gP={};ap.forEach(function(p){gP[pKey(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0};});
-    gi.forEach(function(item){ap.forEach(function(p){var pk=pKey(p.parsed),d=item.periods[pk];if(d){gP[pk].sold+=d.sold;gP[pk].stock+=d.stock;gP[pk].tot+=d.tot;gP[pk].avail+=d.avail;gP[pk].ok+=d.ok;gP[pk].wk+=d.wk;}});});
+  var grps=f.grps.length?f.grps:Array.from(new Set(items.map(function(r){return r.grp;}))).sort();
+  var lastPk=ap.length?pK(ap[ap.length-1].parsed):'';
+  document.querySelector('#grp-table tbody').innerHTML=grps.map(function(g){
+    var gi=items.filter(function(r){return r.grp===g;});if(!gi.length)return'';
+    var gP={};ap.forEach(function(p){gP[pK(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
+    gi.forEach(function(item){ap.forEach(function(p){var pk=pK(p.parsed),d=item.periods[pk];if(d){gP[pk].sold+=d.sold;gP[pk].stock+=d.stock;gP[pk].tot+=d.tot;gP[pk].avail+=d.avail;gP[pk].ok+=d.ok;gP[pk].wk+=d.wk;gP[pk].oc=d.oc;gP[pk].ocm=d.ocm;}});});
     var tot=Object.values(gP).reduce(function(s,d){return s+d.sold;},0);
-    var stk=Object.values(gP).reduce(function(s,d){return s+d.stock;},0);
+    var adj=Math.round(Object.values(gP).reduce(function(s,d){return s+adjD(d);},0));
+    var stk=Math.round(Object.values(gP).reduce(function(s,d){return s+d.stock;},0));
     var last=gP[lastPk]?gP[lastPk].sold:0;
     var wkPct=gP[lastPk]&&gP[lastPk].tot?Math.round(gP[lastPk].wk/gP[lastPk].tot*100):0;
-    var fc=forecastByOcc(gP,ap);
+    var fc=fc4(gP,ap);
     var chg=last?Math.round((fc.b-last)/last*100):0;
-    var wkBadge=wkPct>30?'dn':wkPct>15?'fl':'up';
-    return'<tr><td><strong>'+g+'</strong></td><td>'+tot.toLocaleString()+'</td><td>'+Math.round(stk).toLocaleString()+'</td><td>'+last.toLocaleString()+'</td>'+
-      '<td><span class="badge '+wkBadge+'">'+wkPct+'%</span></td>'+
-      '<td class="stock-bad">'+fc.p.toLocaleString()+'</td><td><strong>'+fc.b.toLocaleString()+'</strong></td><td class="stock-ok">'+fc.o.toLocaleString()+'</td>'+
+    return'<tr>'+
+      '<td><strong>'+g+'</strong></td>'+
+      '<td>'+tot.toLocaleString()+'</td>'+
+      '<td class="dot-a">'+adj.toLocaleString()+'</td>'+
+      '<td>'+stk.toLocaleString()+'</td>'+
+      '<td>'+last.toLocaleString()+'</td>'+
+      '<td><span class="badge '+(wkPct>30?'dn':wkPct>15?'fl':'up')+'">'+wkPct+'%</span></td>'+
+      '<td class="dot-r">'+fc.p.toLocaleString()+'</td>'+
+      '<td><strong>'+fc.b.toLocaleString()+'</strong></td>'+
+      '<td class="dot-g">'+fc.o.toLocaleString()+'</td>'+
       '<td><span class="badge bl">'+fc.f.toLocaleString()+'</span></td>'+
-      '<td><span class="badge '+(chg>5?'up':chg<-5?'dn':'fl')+'">'+(chg>=0?'+':'')+chg+'%</span></td></tr>';
+      '<td><span class="badge '+(chg>5?'up':chg<-5?'dn':'fl')+'">'+(chg>=0?'+':'')+chg+'%</span></td>'+
+      '</tr>';
   }).join('');
 }
 
 function renderItems(items,ap){
-  var lastPk=ap.length?pKey(ap[ap.length-1].parsed):'';
-  document.querySelector('#item-table thead').innerHTML=
-    '<tr><th>الصنف</th><th>اللون</th><th>المجموعة</th><th>إجمالي المبيعات</th><th>الرصيد</th><th>آخر فترة</th><th>فروع ضعيفة</th><th>🔴</th><th>🟡 أساسي</th><th>🟢</th><th>🔵</th></tr>';
+  var lastPk=ap.length?pK(ap[ap.length-1].parsed):'';
   allItemRows=items.map(function(item){
-    var tot=ap.reduce(function(s,p){var d=item.periods[pKey(p.parsed)];return s+(d?d.sold:0);},0);
-    var stk=ap.reduce(function(s,p){var d=item.periods[pKey(p.parsed)];return s+(d?d.stock:0);},0);
+    var tot=ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+(d?d.sold:0);},0);
+    var adj=Math.round(ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+adjD(d);},0));
+    var stk=Math.round(ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+(d?d.stock:0);},0));
     var last=item.periods[lastPk]?item.periods[lastPk].sold:0;
     var wkPct=item.periods[lastPk]&&item.periods[lastPk].tot?Math.round(item.periods[lastPk].wk/item.periods[lastPk].tot*100):0;
-    var fc=forecastByOcc(item.periods,ap);
-    return{item:item.item,color:item.color,group:item.group,tot:tot,stk:stk,last:last,wkPct:wkPct,fc:fc};
+    var fc=fc4(item.periods,ap);
+    return{item:item.item,color:item.color,grp:item.grp,tot:tot,adj:adj,stk:stk,last:last,wkPct:wkPct,fc:fc};
   }).sort(function(a,b){return b.tot-a.tot;});
-  filterItemTable();
+  filterItems();
 }
 
-function filterItemTable(){
+function filterItems(){
   var q=(document.getElementById('item-search').value||'').trim().toLowerCase();
-  var rows=q?allItemRows.filter(function(r){return r.item.toLowerCase().indexOf(q)>=0||r.color.toLowerCase().indexOf(q)>=0||r.group.toLowerCase().indexOf(q)>=0;}):allItemRows;
-  var show=rows.slice(0,300);
-  document.querySelector('#item-table tbody').innerHTML=show.map(function(r){
-    var wBadge=r.wkPct>30?'dn':r.wkPct>15?'fl':'up';
-    return'<tr><td>'+r.item+'</td><td>'+r.color+'</td><td>'+r.group+'</td><td>'+r.tot.toLocaleString()+'</td>'+
-      '<td>'+(r.stk>0?'<span class="stock-ok">':r.stk===0?'<span class="stock-bad">':'<span class="stock-warn">')+Math.round(r.stk).toLocaleString()+'</span></td>'+
-      '<td>'+r.last.toLocaleString()+'</td><td><span class="badge '+wBadge+'">'+r.wkPct+'%</span></td>'+
-      '<td class="stock-bad">'+r.fc.p.toLocaleString()+'</td><td><strong>'+r.fc.b.toLocaleString()+'</strong></td>'+
-      '<td class="stock-ok">'+r.fc.o.toLocaleString()+'</td><td><span class="badge bl">'+r.fc.f.toLocaleString()+'</span></td></tr>';
-  }).join('')+(rows.length>300?'<tr><td colspan="11" style="text-align:center;color:var(--muted);padding:10px">يعرض أول 300 — استخدم البحث</td></tr>':'');
+  var rows=q?allItemRows.filter(function(r){return r.item.toLowerCase().indexOf(q)>=0||r.color.toLowerCase().indexOf(q)>=0||r.grp.toLowerCase().indexOf(q)>=0;}):allItemRows;
+  document.querySelector('#item-table tbody').innerHTML=rows.map(function(r,i){
+    var wB=r.wkPct>30?'dn':r.wkPct>15?'fl':'up';
+    return'<tr>'+
+      '<td>'+(i+1)+'</td><td>'+r.item+'</td><td>'+r.color+'</td><td>'+r.grp+'</td>'+
+      '<td>'+r.tot.toLocaleString()+'</td>'+
+      '<td class="dot-a">'+r.adj.toLocaleString()+'</td>'+
+      '<td>'+r.stk.toLocaleString()+'</td>'+
+      '<td>'+r.last.toLocaleString()+'</td>'+
+      '<td><span class="badge '+wB+'">'+r.wkPct+'%</span></td>'+
+      '<td class="dot-r">'+r.fc.p.toLocaleString()+'</td>'+
+      '<td><strong>'+r.fc.b.toLocaleString()+'</strong></td>'+
+      '<td class="dot-g">'+r.fc.o.toLocaleString()+'</td>'+
+      '<td><span class="badge bl">'+r.fc.f.toLocaleString()+'</span></td>'+
+      '</tr>';
+  }).join('');
 }
 
-function buildPareto(rows,valKey,chartId,sumId,tblId,searchId,allRowsVar){
-  var sorted=rows.slice().sort(function(a,b){return b[valKey]-a[valKey];});
-  var grand=sorted.reduce(function(s,r){return s+r[valKey];},0);
+function renderPareto(items,ap){
+  var rows=items.map(function(item){
+    var tot=ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+(d?d.sold:0);},0);
+    var adj=Math.round(ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+adjD(d);},0));
+    var fc=fc4(item.periods,ap);
+    return{item:item.item,color:item.color,grp:item.grp,val:tot,adj:adj,fc:fc};
+  }).sort(function(a,b){return b.val-a.val;});
+  var grand=rows.reduce(function(s,r){return s+r.val;},0);
   var cum=0;
-  sorted.forEach(function(r){
-    cum+=r[valKey];
+  rows.forEach(function(r){
+    cum+=r.val;
     r.cumPct=grand?Math.round(cum/grand*100):0;
-    r.pct=grand?+(r[valKey]/grand*100).toFixed(1):0;
+    r.pct=grand?+(r.val/grand*100).toFixed(1):0;
     r.abc=r.cumPct<=80?'A':r.cumPct<=95?'B':'C';
   });
-  var aR=sorted.filter(function(r){return r.abc==='A';}),
-      bR=sorted.filter(function(r){return r.abc==='B';}),
-      cR=sorted.filter(function(r){return r.abc==='C';});
-  document.getElementById(sumId).innerHTML=
-    '<div class="ps-card A"><div class="ps-lbl">🟢 A — أعلى 80%</div><div class="ps-val">'+aR.length+'</div><div class="ps-sub">صنف — '+Math.round(aR.length/Math.max(sorted.length,1)*100)+'% من الأصناف</div></div>'+
-    '<div class="ps-card B"><div class="ps-lbl">🟡 B — 80% إلى 95%</div><div class="ps-val">'+bR.length+'</div><div class="ps-sub">صنف — '+Math.round(bR.length/Math.max(sorted.length,1)*100)+'% من الأصناف</div></div>'+
-    '<div class="ps-card C"><div class="ps-lbl">🔴 C — آخر 5%</div><div class="ps-val">'+cR.length+'</div><div class="ps-sub">صنف — '+Math.round(cR.length/Math.max(sorted.length,1)*100)+'% من الأصناف</div></div>';
-  var top=sorted.slice(0,50);
-  destroyChart(chartId);
-  charts[chartId]=new Chart(document.getElementById(chartId).getContext('2d'),{
+  var aR=rows.filter(function(r){return r.abc==='A';}),
+      bR=rows.filter(function(r){return r.abc==='B';}),
+      cR=rows.filter(function(r){return r.abc==='C';});
+
+  document.getElementById('ps-sum').innerHTML=
+    ['A','B','C'].map(function(abc){
+      var rr=abc==='A'?aR:abc==='B'?bR:cR;
+      var lbl=abc==='A'?'🟢 A — أعلى 80%':abc==='B'?'🟡 B — 80% إلى 95%':'🔴 C — آخر 5%';
+      var isActive=psFilter===abc;
+      return'<div class="ps-card '+abc+(isActive?' active-abc':'')+'" onclick="togglePS(\''+abc+'\')">'+
+        '<div class="ps-lbl">'+lbl+'</div>'+
+        '<div class="ps-val">'+rr.length+'</div>'+
+        '<div class="ps-sub">'+Math.round(rr.length/Math.max(rows.length,1)*100)+'% من الأصناف</div>'+
+        '</div>';
+    }).join('');
+
+  var top=(psFilter?rows.filter(function(r){return r.abc===psFilter;}):rows).slice(0,50);
+  killChart('ps');
+  charts['ps']=new Chart(document.getElementById('ps-chart').getContext('2d'),{
     type:'bar',
     data:{
       labels:top.map(function(r){var n=r.item.substring(0,12);return n+(r.item.length>12?'…':'');}),
       datasets:[
-        {label:valKey==='sold'?'مبيعات':'رصيد',data:top.map(function(r){return r[valKey];}),backgroundColor:top.map(function(r){return r.abc==='A'?'rgba(29,158,117,0.8)':r.abc==='B'?'rgba(186,117,23,0.8)':'rgba(163,45,45,0.8)';}),borderRadius:3,yAxisID:'y'},
+        {label:'المبيعات',data:top.map(function(r){return r.val;}),
+          backgroundColor:top.map(function(r){return r.abc==='A'?'rgba(29,158,117,0.8)':r.abc==='B'?'rgba(186,117,23,0.8)':'rgba(163,45,45,0.8)';}),borderRadius:3,yAxisID:'y'},
         {label:'% تراكمي',data:top.map(function(r){return r.cumPct;}),type:'line',borderColor:'#1A5FA8',backgroundColor:'transparent',pointRadius:2,tension:0.3,yAxisID:'y2',borderWidth:2}
       ]
     },
     options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},
-      scales:{y:{position:'right',ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}},
-              y2:{position:'left',min:0,max:100,ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{drawOnChartArea:false}}}}
+      scales:{
+        y:{position:'right',ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y2:{position:'left',min:0,max:100,ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{drawOnChartArea:false}}
+      }}
   });
-  // store for search
-  window[allRowsVar]=sorted;
-  filterParetoTable(tblId,searchId,allRowsVar,valKey);
+
+  allPSRows=rows;
+  filterPS();
 }
 
-function filterParetoTable(tblId,searchId,allRowsVar,valKey){
-  var q=(document.getElementById(searchId).value||'').trim().toLowerCase();
-  var rows=window[allRowsVar]||[];
-  var filtered=q?rows.filter(function(r){return r.item.toLowerCase().indexOf(q)>=0||r.color.toLowerCase().indexOf(q)>=0||r.group.toLowerCase().indexOf(q)>=0;}):rows;
-  var show=filtered.slice(0,300);
-  var lbl=valKey==='sold'?'المبيعات':'الرصيد';
-  document.querySelector('#'+tblId+' thead').innerHTML='<tr><th>#</th><th>الصنف</th><th>اللون</th><th>المجموعة</th><th>ABC</th><th>'+lbl+'</th><th>%</th><th>% تراكمي</th><th>🟡 توقع أساسي</th><th>🔵 تغطية كاملة</th></tr>';
-  document.querySelector('#'+tblId+' tbody').innerHTML=show.map(function(r,i){
-    return'<tr><td>'+filtered.indexOf(r)+1+'</td><td>'+r.item+'</td><td>'+r.color+'</td><td>'+r.group+'</td>'+
+function togglePS(abc){
+  psFilter=psFilter===abc?null:abc;
+  var f=getF(),items=getItems(f),ap=getAP(f);
+  renderPareto(items,ap);
+}
+
+function filterPS(){
+  var q=(document.getElementById('ps-search').value||'').trim().toLowerCase();
+  var rows=psFilter?allPSRows.filter(function(r){return r.abc===psFilter;}):allPSRows;
+  if(q)rows=rows.filter(function(r){return r.item.toLowerCase().indexOf(q)>=0||r.color.toLowerCase().indexOf(q)>=0||r.grp.toLowerCase().indexOf(q)>=0;});
+  document.querySelector('#ps-table tbody').innerHTML=rows.map(function(r,i){
+    return'<tr>'+
+      '<td>'+(i+1)+'</td><td>'+r.item+'</td><td>'+r.color+'</td><td>'+r.grp+'</td>'+
       '<td><span class="badge '+r.abc+'">'+r.abc+'</span></td>'+
-      '<td>'+r[valKey].toLocaleString()+'</td><td>'+r.pct+'%</td><td>'+r.cumPct+'%</td>'+
-      '<td><strong>'+(r.fc?r.fc.b.toLocaleString():'-')+'</strong></td>'+
-      '<td><span class="badge bl">'+(r.fc?r.fc.f.toLocaleString():'-')+'</span></td></tr>';
-  }).join('')+(filtered.length>300?'<tr><td colspan="10" style="text-align:center;color:var(--muted);padding:10px">يعرض أول 300</td></tr>':'');
+      '<td>'+r.val.toLocaleString()+'</td>'+
+      '<td class="dot-a">'+r.adj.toLocaleString()+'</td>'+
+      '<td>'+r.pct+'%</td><td>'+r.cumPct+'%</td>'+
+      '<td><strong>'+r.fc.b.toLocaleString()+'</strong></td>'+
+      '<td><span class="badge bl">'+r.fc.f.toLocaleString()+'</span></td>'+
+      '</tr>';
+  }).join('');
 }
 
-function renderParetoSales(items,ap){
-  var rows=items.map(function(item){
-    var tot=ap.reduce(function(s,p){var d=item.periods[pKey(p.parsed)];return s+(d?d.sold:0);},0);
-    var fc=forecastByOcc(item.periods,ap);
-    return{item:item.item,color:item.color,group:item.group,sold:tot,fc:fc};
-  });
-  buildPareto(rows,'sold','pareto-sales-chart','pareto-sales-sum','ps-table','ps-search','allPSRows');
-}
-
-function renderParetoStock(items,ap){
-  var rows=items.map(function(item){
-    var stk=ap.reduce(function(s,p){var d=item.periods[pKey(p.parsed)];return s+(d?Math.max(0,d.stock):0);},0);
-    var fc=forecastByOcc(item.periods,ap);
-    return{item:item.item,color:item.color,group:item.group,stock:stk,fc:fc};
-  });
-  buildPareto(rows,'stock','pareto-stock-chart','pareto-stock-sum','pk-table','pk-search','allPKRows');
-}
-
-function filterPSTable(){filterParetoTable('ps-table','ps-search','allPSRows','sold');}
-function filterPKTable(){filterParetoTable('pk-table','pk-search','allPKRows','stock');}
-
-// EXPORT
-function exportTable(tableId,name){
+function exportTbl(tableId,name){
   var tbl=document.getElementById(tableId);if(!tbl)return;
   var wb=XLSX.utils.book_new();
   var ws=XLSX.utils.table_to_sheet(tbl);
@@ -677,18 +660,17 @@ function exportTable(tableId,name){
   XLSX.writeFile(wb,'TREE_'+name+'_'+new Date().toISOString().substring(0,10)+'.xlsx');
 }
 
-// TABS
+var tabList=['groups','items','ps'];
 function switchTab(tab){
-  ['trend','groups','items','pareto-sales','pareto-stock'].forEach(function(t){
+  tabList.forEach(function(t){
     var el=document.getElementById('tab-'+t);
     if(el)el.className=t===tab?'':'hidden';
   });
   document.querySelectorAll('.tab-btn').forEach(function(el,i){
-    el.classList.toggle('active',['trend','groups','items','pareto-sales','pareto-stock'][i]===tab);
+    el.classList.toggle('active',tabList[i]===tab);
   });
 }
 
-// DRAG & DROP
 var dz=document.getElementById('drop-zone');
 dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.background='#E6F7F2';});
 dz.addEventListener('dragleave',function(){dz.style.background='';});
