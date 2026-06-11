@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TREE — توقع المبيعات</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
 <style>
 :root{
@@ -24,8 +23,251 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px}
 #file-badge{font-size:11px;background:var(--green-l);color:var(--green-d);padding:3px 10px;border-radius:20px;font-weight:500}
 .btn-sm{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600}
+.btn-sm-outline{background:transparent;border:1px solid var(--green);color:var(--green)}
+.loading{font-size:11px;color:var(--muted);padding:4px 8px}
 .layout{display:flex;min-height:calc(100vh - 54px)}
-.sidebar{width:210px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
+.sidebar{width:220px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
 .sb-sec{margin-bottom:14px}
 .sb-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.multi-wrap{border:1px solid var(--border);border-radius:8px;padding:5px
+.main{flex:1;padding:16px;overflow-x:auto}
+.chart-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
+.chart-title{font-size:14px;font-weight:700;margin-bottom:10px}
+canvas{max-height:300px;width:100%}
+.table-wrap{overflow-x:auto;background:var(--card);border-radius:var(--radius);padding:8px;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--border)}
+th{background:var(--bg);font-weight:700;position:sticky;top:0}
+.summary{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+.stat-card{background:var(--card);border-radius:var(--radius);padding:12px 18px;flex:1;min-width:120px;box-shadow:var(--shadow);border-right:3px solid var(--green)}
+.stat-val{font-size:22px;font-weight:800}
+.stat-lbl{font-size:11px;color:var(--muted)}
+.error{background:var(--red-l);color:var(--red);padding:12px;border-radius:var(--radius);margin:16px}
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <div class="hdr-logo">T</div>
+  <div>
+    <div class="hdr-title">TREE — توقع المبيعات</div>
+    <div class="hdr-sub">نموذج التنبؤ التلقائي</div>
+  </div>
+  <div class="hdr-r">
+    <div id="file-badge">📊 Google Sheets</div>
+    <button class="btn-sm" id="refreshBtn">🔄 تحديث البيانات</button>
+  </div>
+</div>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sb-sec">
+      <div class="sb-lbl">📁 مصدر البيانات</div>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">جوجل شيت</div>
+      <div id="statusMsg" style="font-size:10px;background:var(--green-l);padding:5px;border-radius:6px;color:var(--green-d)">جاري التحميل...</div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">📈 مؤشرات سريعة</div>
+      <div id="quickStats"></div>
+    </div>
+    <div class="sb-sec">
+      <div class="sb-lbl">ℹ️ تعليمات</div>
+      <div style="font-size:10px;color:var(--muted)">البيانات تُجلب مباشرة من Google Sheets.<br>الجدول الأول (Sheet1) يُستخدم للتحليل.</div>
+    </div>
+  </div>
+
+  <div class="main">
+    <div class="summary" id="summaryCards"></div>
+    <div class="chart-card">
+      <div class="chart-title">📊 اتجاه المبيعات (أعلى 10 منتجات/فئات)</div>
+      <canvas id="salesChart" width="800" height="300"></canvas>
+    </div>
+    <div class="table-wrap">
+      <table id="dataTable">
+        <thead><tr><th>#</th><th>تحميل البيانات...</th></tr></thead>
+        <tbody><tr><td colspan="2">جاري الاتصال بـ Google Sheets...</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// رابط Google Sheets المنشور (pubhtml) الذي أرسلته
+// سنستخدم رابط CSV لسهولة الجلب
+// ============================================================
+const SPREADSHEET_ID = "2PACX-1vTXWTUDQrxiAG4i8NR7cm8OykFrkQTK3NyaJAoCv4sq8rCEOYLvxhH6DBmK6n2ee6tj2cJrSZSO5D5V";
+// رابط CSV المباشر لأول شيت (Sheet1)
+const CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SPREADSHEET_ID}/pub?gid=0&single=true&output=csv`;
+
+let rawData = [];      // تخزين البيانات الخام
+let chartInstance = null;
+
+// دالة لجلب البيانات من CSV
+async function fetchSheetData() {
+  const statusDiv = document.getElementById('statusMsg');
+  const tableBody = document.querySelector('#dataTable tbody');
+  const summaryDiv = document.getElementById('summaryCards');
+  const quickStatsDiv = document.getElementById('quickStats');
+  
+  try {
+    statusDiv.innerHTML = '⏳ جاري تحميل البيانات من Google Sheets...';
+    statusDiv.style.background = '#FAEEDA';
+    statusDiv.style.color = '#BA7517';
+    
+    const response = await fetch(CSV_URL);
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    
+    const csvText = await response.text();
+    
+    // تحويل CSV إلى مصفوفة
+    const rows = csvText.split(/\r?\n/).filter(row => row.trim() !== '');
+    if (rows.length < 2) throw new Error('لا توجد بيانات كافية في الجدول');
+    
+    const headers = rows[0].split(',').map(h => h.replace(/["']/g, '').trim());
+    const dataRows = rows.slice(1).map(row => {
+      const values = row.split(',').map(v => v.replace(/["']/g, '').trim());
+      const obj = {};
+      headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
+      return obj;
+    });
+    
+    rawData = dataRows;
+    
+    // عرض في الجدول
+    displayTable(headers, dataRows);
+    
+    // تحليل الأرقام وعرض الرسوم البيانية والإحصائيات
+    analyzeAndDisplay(dataRows, headers);
+    
+    statusDiv.innerHTML = '✅ تم التحميل بنجاح من جوجل شيت';
+    statusDiv.style.background = '#EAF3DE';
+    statusDiv.style.color = '#3B6D11';
+    
+    // تحديث الملخصات السريعة في الـ Sidebar
+    quickStatsDiv.innerHTML = `
+      <div style="font-size:11px">📋 عدد السجلات: ${dataRows.length}</div>
+      <div style="font-size:11px">📊 عدد الأعمدة: ${headers.length}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:6px">آخر تحديث: ${new Date().toLocaleTimeString()}</div>
+    `;
+    
+  } catch (error) {
+    console.error(error);
+    statusDiv.innerHTML = `❌ خطأ: ${error.message}<br><small>تأكد من أن الرابط عام ومنشور للجميع</small>`;
+    statusDiv.style.background = '#FCEBEB';
+    statusDiv.style.color = '#A32D2D';
+    tableBody.innerHTML = '<tr><td colspan="5">⚠️ فشل تحميل البيانات. تأكد من صلاحيات النشر في Google Sheets.</td></tr>';
+  }
+}
+
+// عرض الجدول
+function displayTable(headers, data) {
+  const tableHead = document.querySelector('#dataTable thead');
+  const tableBody = document.querySelector('#dataTable tbody');
+  
+  // عرض أول 10 أعمدة فقط للوضوح (أو كل الأعمدة إذا كانت قليلة)
+  const displayHeaders = headers.slice(0, 8);
+  tableHead.innerHTML = `<tr>${displayHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`;
+  
+  const maxRows = Math.min(data.length, 50);
+  tableBody.innerHTML = data.slice(0, maxRows).map(row => {
+    return `<tr>${displayHeaders.map(h => `<td>${escapeHtml(row[h] || '—')}</td>`).join('')}</tr>`;
+  }).join('');
+  
+  if (data.length > 50) {
+    tableBody.innerHTML += `<tr><td colspan="${displayHeaders.length}" style="text-align:center;color:var(--muted)">... و ${data.length - 50} سجل إضافي</td></tr>`;
+  }
+}
+
+// تحليل البيانات وعرض إحصائيات ورسوم بيانية
+function analyzeAndDisplay(data, headers) {
+  // البحث عن أي أعمدة رقمية (مبيعات، كمية، سعر، إلخ)
+  let numericCols = [];
+  let categoryCols = [];
+  
+  headers.forEach(h => {
+    const sample = data.find(row => row[h] && !isNaN(parseFloat(row[h])));
+    if (sample && !isNaN(parseFloat(sample[h]))) {
+      numericCols.push(h);
+    } else if (data.some(row => row[h] && row[h].trim() !== '')) {
+      categoryCols.push(h);
+    }
+  });
+  
+  // افترض أن أول عمود رقمي هو عمود المبيعات
+  let salesCol = numericCols[0] || (headers.find(h => h.includes('سعر') || h.includes('مبيع') || h.includes('قيمة')) || headers[1]);
+  let categoryCol = categoryCols[0] || headers[0];
+  
+  // حساب إجمالي المبيعات
+  let totalSales = 0;
+  let salesMap = new Map(); // للتجميع حسب الفئة
+  
+  data.forEach(row => {
+    let val = parseFloat(row[salesCol]);
+    if (isNaN(val)) val = 0;
+    totalSales += val;
+    
+    let cat = row[categoryCol] || 'غير محدد';
+    salesMap.set(cat, (salesMap.get(cat) || 0) + val);
+  });
+  
+  // ترتيب أكبر 10 فئات
+  const sorted = Array.from(salesMap.entries()).sort((a,b) => b[1] - a[1]).slice(0, 10);
+  
+  // عرض بطاقات الإحصائيات
+  const summaryDiv = document.getElementById('summaryCards');
+  summaryDiv.innerHTML = `
+    <div class="stat-card"><div class="stat-val">${totalSales.toLocaleString()}</div><div class="stat-lbl">💰 إجمالي المبيعات (${salesCol})</div></div>
+    <div class="stat-card"><div class="stat-val">${data.length}</div><div class="stat-lbl">📦 عدد المعاملات</div></div>
+    <div class="stat-card"><div class="stat-val">${sorted.length}</div><div class="stat-lbl">🏷️ فئات/منتجات</div></div>
+    <div class="stat-card"><div class="stat-val">${(totalSales / data.length).toFixed(2)}</div><div class="stat-lbl">📊 متوسط الصفقة</div></div>
+  `;
+  
+  // رسم الرسم البياني
+  const ctx = document.getElementById('salesChart').getContext('2d');
+  if (chartInstance) chartInstance.destroy();
+  
+  chartInstance = new Chart(ctx, {
+    type: 'bar',
+    data: {
+      labels: sorted.map(item => item[0].length > 20 ? item[0].slice(0,20)+'...' : item[0]),
+      datasets: [{
+        label: `${salesCol}`,
+        data: sorted.map(item => item[1]),
+        backgroundColor: '#1D9E75',
+        borderRadius: 6,
+        barPercentage: 0.65
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { position: 'top', labels: { font: { size: 11 } } },
+        tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toLocaleString()} ${salesCol}` } }
+      },
+      scales: { y: { beginAtZero: true, grid: { color: '#E2E8F0' } } }
+    }
+  });
+}
+
+// دالة لمنع XSS
+function escapeHtml(str) {
+  if (!str) return '—';
+  return String(str).replace(/[&<>]/g, function(m) {
+    if (m === '&') return '&amp;';
+    if (m === '<') return '&lt;';
+    if (m === '>') return '&gt;';
+    return m;
+  });
+}
+
+// تحميل البيانات عند فتح الصفحة
+window.addEventListener('DOMContentLoaded', () => {
+  fetchSheetData();
+  document.getElementById('refreshBtn').addEventListener('click', () => {
+    fetchSheetData();
+  });
+});
+</script>
+</body>
+</html>
