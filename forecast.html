@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TREE — توقع المبيعات</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --green:#1D9E75;--green-l:#EAF3DE;--green-d:#3B6D11;
@@ -23,8 +24,10 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px}
 #file-badge{font-size:11px;background:var(--green-l);color:var(--green-d);padding:3px 10px;border-radius:20px;font-weight:500}
 .btn-sm{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600}
+.btn-sm-outline{background:transparent;border:1px solid var(--green);color:var(--green)}
+.loading{font-size:11px;color:var(--muted);padding:4px 8px}
 .layout{display:flex;min-height:calc(100vh - 54px)}
-.sidebar{width:210px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
+.sidebar{width:220px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
 .sb-sec{margin-bottom:14px}
 .sb-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .multi-wrap{border:1px solid var(--border);border-radius:8px;padding:5px;background:#fff;max-height:110px;overflow-y:auto}
@@ -58,7 +61,6 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sec-title{font-size:13px;font-weight:700}
 .btn-export{font-size:11px;background:var(--green-l);color:var(--green-d);border:1px solid #A8D688;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700}
 .btn-export:hover{background:var(--green);color:#fff}
-.note{font-size:11px;color:var(--amber-d);margin-top:10px;padding:8px 12px;background:var(--amber-l);border-radius:7px;border-right:3px solid var(--amber);line-height:1.6}
 .tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:500px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{background:#F7FAFC;padding:10px 12px;text-align:right;font-weight:700;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap}
@@ -244,7 +246,7 @@ canvas{width:100%!important}
 
 <script>
 // ============================================================
-// رابط Google Sheets (قمت بتعديله لرابطك)
+// رابط Google Sheets
 // ============================================================
 const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXWTUDQrxiAG4i8NR7cm8OykFrkQTK3NyaJAoCv4sq8rCEOYLvxhH6DBmK6n2ee6tj2cJrSZSO5D5V/pub?gid=0&single=true&output=csv";
 
@@ -319,7 +321,6 @@ function fc4(itemPeriods,ap){
   };
 }
 
-// جلب البيانات من Google Sheets
 async function loadFromGoogleSheets() {
   const loader = document.getElementById('loader');
   const loaderMsg = document.getElementById('loaderMsg');
@@ -342,7 +343,6 @@ async function loadFromGoogleSheets() {
     
     loaderMsg.innerHTML = 'جاري معالجة ' + (rows.length-1) + ' سجل...';
     
-    // تحويل CSV إلى مصفوفة objects
     const rawData = rows.slice(1).map(row => {
       const values = row.split(',').map(v => v.replace(/["']/g, '').trim());
       const obj = {};
@@ -350,7 +350,6 @@ async function loadFromGoogleSheets() {
       return obj;
     });
     
-    // البحث عن الأعمدة المطلوبة
     const H = headers;
     const pC = findCol(H, ['تاريخ']);
     const iC = findCol(H, ['إسم الصنف', 'اسم الصنف']);
@@ -368,7 +367,7 @@ async function loadFromGoogleSheets() {
     const wkC = findCol(H, ['فروع_رصيد_ضعيف']);
     
     if (!pC || !iC) {
-      throw new Error('لم يتم العثور على أعمدة "تاريخ" أو "إسم الصنف" في جدول Google Sheets');
+      throw new Error('لم يتم العثور على أعمدة "تاريخ" أو "إسم الصنف"');
     }
     
     byItem = {};
@@ -695,7 +694,7 @@ function renderPareto(items, ap) {
   const bR = rows.filter(function(r) { return r.abc === 'B'; });
   const cR = rows.filter(function(r) { return r.abc === 'C'; });
   
-  document.getElementById('ps-sum').innerHTML = ['A', 'B', 'C'].map(function(abc) {
+  document.getElementById('ps-sum').innerHTML = ['A','B','C'].map(function(abc) {
     const rr = abc === 'A' ? aR : abc === 'B' ? bR : cR;
     const lbl = abc === 'A' ? '🟢 A — أعلى 80%' : abc === 'B' ? '🟡 B — 80% إلى 95%' : '🔴 C — آخر 5%';
     const isActive = psFilter === abc;
@@ -763,15 +762,12 @@ function filterPS() {
 }
 
 function exportTbl(tableId, name) {
-  const tbl = document.getElementById(tableId);
-  if (!tbl) return;
-  let html = tbl.outerHTML;
-  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = 'TREE_' + name + '_' + new Date().toISOString().substring(0, 10) + '.xls';
-  link.click();
-  URL.revokeObjectURL(link.href);
+  const table = document.getElementById(tableId);
+  if (!table) return;
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.table_to_sheet(table);
+  XLSX.utils.book_append_sheet(wb, ws, name);
+  XLSX.writeFile(wb, 'TREE_' + name + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
 const tabList = ['groups', 'items', 'ps'];
