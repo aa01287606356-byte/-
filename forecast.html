@@ -23,25 +23,78 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px}
 #file-badge{font-size:11px;background:var(--green-l);color:var(--green-d);padding:3px 10px;border-radius:20px;font-weight:500}
 .btn-sm{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600}
-.btn-sm-outline{background:transparent;border:1px solid var(--green);color:var(--green)}
-.loading{font-size:11px;color:var(--muted);padding:4px 8px}
 .layout{display:flex;min-height:calc(100vh - 54px)}
-.sidebar{width:220px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
+.sidebar{width:210px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
 .sb-sec{margin-bottom:14px}
 .sb-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
-.main{flex:1;padding:16px;overflow-x:auto}
-.chart-card{background:var(--card);border-radius:var(--radius);padding:16px;margin-bottom:16px;box-shadow:var(--shadow)}
-.chart-title{font-size:14px;font-weight:700;margin-bottom:10px}
-canvas{max-height:300px;width:100%}
-.table-wrap{overflow-x:auto;background:var(--card);border-radius:var(--radius);padding:8px;box-shadow:var(--shadow)}
+.multi-wrap{border:1px solid var(--border);border-radius:8px;padding:5px;background:#fff;max-height:110px;overflow-y:auto}
+.multi-wrap label{display:flex;align-items:center;gap:5px;padding:3px 4px;border-radius:5px;cursor:pointer;font-size:11px;user-select:none}
+.multi-wrap label:hover{background:var(--green-l)}
+.multi-wrap input[type=checkbox]{accent-color:var(--green);cursor:pointer;flex-shrink:0}
+.sb-actions{display:flex;gap:4px;margin-bottom:4px}
+.sb-btn{flex:1;font-size:10px;padding:4px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
+.sb-btn:hover{background:var(--green-l);color:var(--green-d);border-color:var(--green)}
+.main{flex:1;padding:14px;overflow:hidden;min-width:0}
+.tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--card);border-radius:10px;padding:4px;border:1px solid var(--border);width:fit-content;box-shadow:var(--shadow)}
+.tab-btn{padding:7px 18px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;font-weight:500;transition:all .15s}
+.tab-btn.active{background:var(--green);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(29,158,117,.25)}
+.metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-bottom:14px}
+.metric{background:var(--card);border-radius:var(--radius);padding:13px 15px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.m-lbl{font-size:10px;color:var(--muted);margin-bottom:4px;font-weight:600;letter-spacing:.3px}
+.m-val{font-size:21px;font-weight:800;line-height:1}
+.m-val.g{color:var(--green)}.m-val.a{color:var(--amber)}.m-val.r{color:var(--red)}.m-val.b{color:var(--blue)}
+.m-sub{font-size:10px;margin-top:3px;color:var(--muted)}
+.fc-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:14px}
+.fc-card{border-radius:10px;padding:14px;text-align:center;border:1px solid}
+.fc-lbl{font-size:10px;font-weight:700;margin-bottom:5px;opacity:.85}
+.fc-val{font-size:22px;font-weight:800;letter-spacing:-.5px}
+.fc-sub{font-size:10px;margin-top:4px;opacity:.65}
+.fc-p{background:#FEF2F2;border-color:#FECACA;color:var(--red)}
+.fc-b{background:#F0FAF6;border-color:#9FE1CB;color:var(--green)}
+.fc-o{background:var(--green-l);border-color:#A8D688;color:var(--green-d)}
+.fc-f{background:var(--blue-l);border-color:#93C5FD;color:var(--blue)}
+.section{background:var(--card);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.sec-title{font-size:13px;font-weight:700}
+.btn-export{font-size:11px;background:var(--green-l);color:var(--green-d);border:1px solid #A8D688;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700}
+.btn-export:hover{background:var(--green);color:#fff}
+.note{font-size:11px;color:var(--amber-d);margin-top:10px;padding:8px 12px;background:var(--amber-l);border-radius:7px;border-right:3px solid var(--amber);line-height:1.6}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:500px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
-th,td{padding:8px 10px;text-align:right;border-bottom:1px solid var(--border)}
-th{background:var(--bg);font-weight:700;position:sticky;top:0}
-.summary{display:flex;gap:12px;margin-bottom:16px;flex-wrap:wrap}
-.stat-card{background:var(--card);border-radius:var(--radius);padding:12px 18px;flex:1;min-width:120px;box-shadow:var(--shadow);border-right:3px solid var(--green)}
-.stat-val{font-size:22px;font-weight:800}
-.stat-lbl{font-size:11px;color:var(--muted)}
-.error{background:var(--red-l);color:var(--red);padding:12px;border-radius:var(--radius);margin:16px}
+th{background:#F7FAFC;padding:10px 12px;text-align:right;font-weight:700;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid #F0F4F8;white-space:nowrap;vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F7FAFC}
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.badge.A{background:var(--green-l);color:var(--green-d)}
+.badge.B{background:var(--amber-l);color:var(--amber-d)}
+.badge.C{background:var(--red-l);color:var(--red)}
+.badge.up{background:var(--green-l);color:var(--green-d)}
+.badge.dn{background:var(--red-l);color:var(--red)}
+.badge.fl{background:#EDF2F7;color:var(--muted)}
+.badge.bl{background:var(--blue-l);color:var(--blue)}
+.dot-g{color:var(--green);font-weight:700}
+.dot-a{color:var(--amber);font-weight:700}
+.dot-r{color:var(--red);font-weight:700}
+.search-box{width:100%;padding:8px 12px;border-radius:8px;border:1px solid var(--border);font-size:12px;margin-bottom:10px;outline:none;font-family:inherit;background:#fff}
+.search-box:focus{border-color:var(--green)}
+.pareto-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:12px}
+.ps-card{border-radius:10px;padding:14px;text-align:center;border:1px solid;cursor:pointer;transition:all .2s}
+.ps-card.active-abc{box-shadow:0 0 0 3px currentColor}
+.ps-card:not(.active-abc){opacity:.7}
+.ps-card:hover{opacity:1;transform:translateY(-1px)}
+.ps-card.A{background:var(--green-l);border-color:#A8D688;color:var(--green-d)}
+.ps-card.B{background:var(--amber-l);border-color:#E8C17A;color:var(--amber-d)}
+.ps-card.C{background:var(--red-l);border-color:#E8A0A0;color:var(--red)}
+.ps-val{font-size:26px;font-weight:800;margin:4px 0}
+.ps-lbl{font-size:11px;font-weight:700}
+.ps-sub{font-size:10px;opacity:.75;margin-top:2px}
+canvas{width:100%!important}
+.loader-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000}
+.loader-card{background:#fff;border-radius:16px;padding:30px;text-align:center;min-width:280px}
+.loader-spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 15px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.hidden{display:none!important}
 </style>
 </head>
 <body>
@@ -49,224 +102,695 @@ th{background:var(--bg);font-weight:700;position:sticky;top:0}
 <div class="hdr">
   <div class="hdr-logo">T</div>
   <div>
-    <div class="hdr-title">TREE — توقع المبيعات</div>
-    <div class="hdr-sub">نموذج التنبؤ التلقائي</div>
+    <div class="hdr-title">توقع المبيعات — TREE</div>
+    <div class="hdr-sub" id="period-range">جاري التحميل من Google Sheets...</div>
   </div>
   <div class="hdr-r">
-    <div id="file-badge">📊 Google Sheets</div>
-    <button class="btn-sm" id="refreshBtn">🔄 تحديث البيانات</button>
+    <span id="file-badge">📊 Google Sheets</span>
+    <button class="btn-sm" id="refreshBtn">🔄 تحديث</button>
   </div>
 </div>
 
-<div class="layout">
-  <div class="sidebar">
-    <div class="sb-sec">
-      <div class="sb-lbl">📁 مصدر البيانات</div>
-      <div style="font-size:11px;color:var(--muted);margin-bottom:6px">جوجل شيت</div>
-      <div id="statusMsg" style="font-size:10px;background:var(--green-l);padding:5px;border-radius:6px;color:var(--green-d)">جاري التحميل...</div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-lbl">📈 مؤشرات سريعة</div>
-      <div id="quickStats"></div>
-    </div>
-    <div class="sb-sec">
-      <div class="sb-lbl">ℹ️ تعليمات</div>
-      <div style="font-size:10px;color:var(--muted)">البيانات تُجلب مباشرة من Google Sheets.<br>الجدول الأول (Sheet1) يُستخدم للتحليل.</div>
-    </div>
+<div id="loader" class="loader-overlay">
+  <div class="loader-card">
+    <div class="loader-spinner"></div>
+    <div>جاري تحميل البيانات من Google Sheets...</div>
+    <div style="font-size:11px;color:var(--muted);margin-top:8px" id="loaderMsg"></div>
   </div>
+</div>
 
-  <div class="main">
-    <div class="summary" id="summaryCards"></div>
-    <div class="chart-card">
-      <div class="chart-title">📊 اتجاه المبيعات (أعلى 10 منتجات/فئات)</div>
-      <canvas id="salesChart" width="800" height="300"></canvas>
+<div id="dashboard" class="hidden">
+  <div class="layout">
+    <div class="sidebar">
+      <div class="sb-sec">
+        <div class="sb-lbl">الفترات</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('period-checks',true)">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('period-checks',false)">إلغاء</button>
+        </div>
+        <div class="multi-wrap" id="period-checks"></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-lbl">المجموعة الرئيسية</div>
+        <div class="multi-wrap" id="f-group"></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-lbl">المجموعة الفرعية</div>
+        <div class="multi-wrap" id="f-subgroup"></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-lbl">اللون</div>
+        <div class="multi-wrap" id="f-color"></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-lbl">المناسبات</div>
+        <div class="multi-wrap" id="f-oc"></div>
+      </div>
+      <div class="sb-sec">
+        <div class="sb-lbl">مناسبات رئيسي</div>
+        <div class="multi-wrap" id="f-ocm"></div>
+      </div>
     </div>
-    <div class="table-wrap">
-      <table id="dataTable">
-        <thead><tr><th>#</th><th>تحميل البيانات...</th></tr></thead>
-        <tbody><tr><td colspan="2">جاري الاتصال بـ Google Sheets...</td></tr></tbody>
-      </table>
+
+    <div class="main">
+      <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('groups')">📦 المجموعات</button>
+        <button class="tab-btn" onclick="switchTab('items')">🏷 الأصناف</button>
+        <button class="tab-btn" onclick="switchTab('ps')">📊 باريتو بيع</button>
+      </div>
+
+      <div class="metrics" id="metrics-bar"></div>
+      <div class="fc-grid" id="fc-cards"></div>
+
+      <div id="tab-groups">
+        <div class="section">
+          <div class="sec-hdr">
+            <span class="sec-title">📦 أداء وتوقع المجموعات الرئيسية</span>
+            <button class="btn-export" onclick="exportTbl('grp-table','مجموعات')">⬇ تصدير Excel</button>
+          </div>
+          <div class="tbl-wrap">
+            <table id="grp-table">
+              <thead><tr>
+                <th>المجموعة الرئيسية</th>
+                <th>إجمالي المبيعات</th>
+                <th>المبيعات المعدلة</th>
+                <th>متوسط الرصيد</th>
+                <th>فروع ضعيفة</th>
+                <th>🔴 متشائم</th>
+                <th>🟡 أساسي</th>
+                <th>🟢 متفائل</th>
+                <th>🔵 تغطية كاملة</th>
+                <th>% مبيعات ضايعة</th>
+                <th>تغيير متوقع</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-items" class="hidden">
+        <div class="section">
+          <div class="sec-hdr">
+            <span class="sec-title">🏷 أداء وتوقع الأصناف</span>
+            <button class="btn-export" onclick="exportTbl('item-table','أصناف')">⬇ تصدير Excel</button>
+          </div>
+          <input class="search-box" id="item-search" placeholder="ابحث باسم الصنف أو اللون أو المجموعة..." oninput="filterItems()">
+          <div class="tbl-wrap">
+            <table id="item-table">
+              <thead><tr>
+                <th>#</th><th>إسم الصنف</th><th>اللون</th><th>المجموعة</th>
+                <th>إجمالي المبيعات</th><th>المبيعات المعدلة</th><th>متوسط الرصيد</th>
+                <th>فروع ضعيفة</th>
+                <th>🔴 متشائم</th><th>🟡 أساسي</th><th>🟢 متفائل</th><th>🔵 تغطية كاملة</th>
+                <th>% مبيعات ضايعة</th><th>حالة الصنف</th>
+                <th>المجموعة الفرعية</th><th>الريشيو</th><th>مناسبات</th><th>مناسبات رئيسي</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-ps" class="hidden">
+        <div class="pareto-sum" id="ps-sum"></div>
+        <div class="section">
+          <div class="sec-hdr"><span class="sec-title">📊 منحنى باريتو — المبيعات</span></div>
+          <canvas id="ps-chart" height="200"></canvas>
+        </div>
+        <div class="section">
+          <div class="sec-hdr">
+            <span class="sec-title">تفاصيل تصنيف ABC — المبيعات</span>
+            <button class="btn-export" onclick="exportTbl('ps-table','باريتو-بيع')">⬇ تصدير Excel</button>
+          </div>
+          <input class="search-box" id="ps-search" placeholder="ابحث..." oninput="filterPS()">
+          <div class="tbl-wrap">
+            <table id="ps-table">
+              <thead><tr>
+                <th>#</th><th>إسم الصنف</th><th>اللون</th><th>المجموعة</th>
+                <th>تصنيف ABC</th><th>إجمالي المبيعات</th><th>المبيعات المعدلة</th>
+                <th>% من الإجمالي</th><th>% تراكمي</th>
+                <th>🟡 توقع أساسي</th><th>🔵 تغطية كاملة</th>
+                <th>% مبيعات ضايعة</th><th>المجموعة الفرعية</th><th>الريشيو</th><th>مناسبات رئيسي</th>
+              </tr></thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
 
 <script>
 // ============================================================
-// رابط Google Sheets المنشور (pubhtml) الذي أرسلته
-// سنستخدم رابط CSV لسهولة الجلب
+// رابط Google Sheets (قمت بتعديله لرابطك)
 // ============================================================
-const SPREADSHEET_ID = "2PACX-1vTXWTUDQrxiAG4i8NR7cm8OykFrkQTK3NyaJAoCv4sq8rCEOYLvxhH6DBmK6n2ee6tj2cJrSZSO5D5V";
-// رابط CSV المباشر لأول شيت (Sheet1)
-const CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SPREADSHEET_ID}/pub?gid=0&single=true&output=csv`;
+const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXWTUDQrxiAG4i8NR7cm8OykFrkQTK3NyaJAoCv4sq8rCEOYLvxhH6DBmK6n2ee6tj2cJrSZSO5D5V/pub?gid=0&single=true&output=csv";
 
-let rawData = [];      // تخزين البيانات الخام
-let chartInstance = null;
+var byItem={},allPeriods=[];
+var allItemRows=[],allPSRows=[];
+var psFilter=null;
+var charts={};
 
-// دالة لجلب البيانات من CSV
-async function fetchSheetData() {
-  const statusDiv = document.getElementById('statusMsg');
-  const tableBody = document.querySelector('#dataTable tbody');
-  const summaryDiv = document.getElementById('summaryCards');
-  const quickStatsDiv = document.getElementById('quickStats');
+function normH(h){if(!h)return '';return h.toString().replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim();}
+function findCol(H,cands){
+  var nh=H.map(function(h){return{o:h,n:normH(h)};});
+  for(var i=0;i<cands.length;i++){var c=normH(cands[i]);for(var j=0;j<nh.length;j++){if(nh[j].n===c)return nh[j].o;}}
+  for(var i=0;i<cands.length;i++){var c=normH(cands[i]).substring(0,6);if(!c)continue;for(var j=0;j<nh.length;j++){if(nh[j].n.indexOf(c)>=0)return nh[j].o;}}
+  return null;
+}
+function parsePer(s){
+  if(!s)return null;s=s.toString().trim();
+  var m=s.match(/(\d{1,2})-(\d{4})/);if(!m)return null;
+  var h=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
+  return{yr:parseInt(m[2]),mo:parseInt(m[1]),h:h,lbl:s};
+}
+function pOrd(p){return p.yr*1000+p.mo*10+p.h;}
+function pK(p){return p.yr+'_'+p.mo+'_'+p.h;}
+function adjD(d){
+  if(!d)return 0;
+  var s=d.sold||0;
+  if(d.ok>0)s=s+(s/d.ok)*d.wk;
+  return Math.max(s,d.sold||0);
+}
+function fc4(itemPeriods,ap){
+  if(!ap.length)return{p:0,b:0,o:0,f:0};
+  var last=ap[ap.length-1];
+  var lastD=itemPeriods[pK(last.parsed)];
+  var lastOcm=lastD?lastD.ocm:'';
+
+  var sameOcc=allPeriods.filter(function(p){
+    if(pK(p.parsed)===pK(last.parsed))return false;
+    var d=itemPeriods[pK(p.parsed)];
+    return d&&(!lastOcm||d.ocm===lastOcm);
+  });
+
+  var base;
+  if(sameOcc.length>0){
+    var vals=sameOcc.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
+    base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  }else{
+    var allV=ap.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
+    base=allV.reduce(function(s,v){return s+v;},0)/Math.max(allV.length,1);
+  }
+
+  var lastActual=lastD?lastD.sold:0;
+  base=Math.max(base,lastActual);
+
+  var weakR=lastD&&lastD.tot?lastD.wk/lastD.tot:0;
+
+  var adjFull=0;
+  if(lastD&&lastD.ok>0){
+    adjFull=lastD.sold+(lastD.sold/lastD.ok)*lastD.wk;
+  }else if(lastD){
+    adjFull=lastD.sold;
+  }
+  if(adjFull===0){
+    adjFull=ap.reduce(function(s,p){return s+adjD(itemPeriods[pK(p.parsed)]);},0);
+  }
+  adjFull=Math.max(Math.round(adjFull),Math.round(base));
+
+  return{
+    p:Math.max(0,Math.round(base*(1-weakR*0.2))),
+    b:Math.round(base),
+    o:Math.round(base*(1+weakR*0.3)),
+    f:adjFull
+  };
+}
+
+// جلب البيانات من Google Sheets
+async function loadFromGoogleSheets() {
+  const loader = document.getElementById('loader');
+  const loaderMsg = document.getElementById('loaderMsg');
+  const dashboard = document.getElementById('dashboard');
+  const periodRange = document.getElementById('period-range');
+  const fileBadge = document.getElementById('file-badge');
   
   try {
-    statusDiv.innerHTML = '⏳ جاري تحميل البيانات من Google Sheets...';
-    statusDiv.style.background = '#FAEEDA';
-    statusDiv.style.color = '#BA7517';
-    
-    const response = await fetch(CSV_URL);
+    loaderMsg.innerHTML = 'جاري الاتصال بخوادم Google...';
+    const response = await fetch(GOOGLE_SHEETS_CSV_URL);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
+    loaderMsg.innerHTML = 'تم الاتصال، جاري تحليل البيانات...';
     const csvText = await response.text();
     
-    // تحويل CSV إلى مصفوفة
     const rows = csvText.split(/\r?\n/).filter(row => row.trim() !== '');
     if (rows.length < 2) throw new Error('لا توجد بيانات كافية في الجدول');
     
     const headers = rows[0].split(',').map(h => h.replace(/["']/g, '').trim());
-    const dataRows = rows.slice(1).map(row => {
+    
+    loaderMsg.innerHTML = 'جاري معالجة ' + (rows.length-1) + ' سجل...';
+    
+    // تحويل CSV إلى مصفوفة objects
+    const rawData = rows.slice(1).map(row => {
       const values = row.split(',').map(v => v.replace(/["']/g, '').trim());
       const obj = {};
       headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
       return obj;
     });
     
-    rawData = dataRows;
+    // البحث عن الأعمدة المطلوبة
+    const H = headers;
+    const pC = findCol(H, ['تاريخ']);
+    const iC = findCol(H, ['إسم الصنف', 'اسم الصنف']);
+    const clC = findCol(H, ['اللون']);
+    const gC = findCol(H, ['المجموعة الرئيسية']);
+    const sgC = findCol(H, ['المجموعة الفرعية']);
+    const ocC = findCol(H, ['مناسبات']);
+    const ocmC = findCol(H, ['مناسبات رئيسي']);
+    const rC = findCol(H, ['يشيو.ريشيو', 'ريشيو']);
+    const sC = findCol(H, ['صافي الكمية المباعه', 'صافي الكمية']);
+    const stC = findCol(H, ['متوسط_رصيد_افتتاحي']);
+    const totC = findCol(H, ['إجمالي_الفروع']);
+    const avC = findCol(H, ['فروع_متاح']);
+    const okC = findCol(H, ['فروع_رصيد_كافي']);
+    const wkC = findCol(H, ['فروع_رصيد_ضعيف']);
     
-    // عرض في الجدول
-    displayTable(headers, dataRows);
+    if (!pC || !iC) {
+      throw new Error('لم يتم العثور على أعمدة "تاريخ" أو "إسم الصنف" في جدول Google Sheets');
+    }
     
-    // تحليل الأرقام وعرض الرسوم البيانية والإحصائيات
-    analyzeAndDisplay(dataRows, headers);
+    byItem = {};
+    const pMap = {};
+    const gSet = {}, sgSet = {}, clSet = {}, ocSet = {}, ocmSet = {};
     
-    statusDiv.innerHTML = '✅ تم التحميل بنجاح من جوجل شيت';
-    statusDiv.style.background = '#EAF3DE';
-    statusDiv.style.color = '#3B6D11';
+    for (let i = 0; i < rawData.length; i++) {
+      const r = rawData[i];
+      const per = r[pC] || '';
+      const pp = parsePer(per);
+      if (!pp) continue;
+      const pk = pK(pp);
+      const item = r[iC] || '?';
+      const color = clC ? r[clC] : 'غير محدد';
+      const grp = gC ? r[gC] : 'غير محدد';
+      const sg = sgC ? r[sgC] : 'غير محدد';
+      const oc = ocC ? r[ocC] : '';
+      const ocm = ocmC ? r[ocmC] : '';
+      const ratio = rC ? (parseFloat(r[rC]) || 3) : 3;
+      const sold = sC ? (parseFloat(r[sC]) || 0) : 0;
+      const stock = stC ? Math.max(0, parseFloat(r[stC]) || 0) : 0;
+      const tot = totC ? (parseFloat(r[totC]) || 0) : 0;
+      const avail = avC ? (parseFloat(r[avC]) || 0) : 0;
+      const ok2 = okC ? (parseFloat(r[okC]) || 0) : 0;
+      const wk = wkC ? (parseFloat(r[wkC]) || 0) : 0;
+      
+      pMap[pk] = { raw: per, parsed: pp };
+      gSet[grp] = true;
+      sgSet[sg] = true;
+      clSet[color] = true;
+      if (oc) ocSet[oc] = true;
+      if (ocm) ocmSet[ocm] = true;
+      
+      const key = item + '|||' + color;
+      if (!byItem[key]) {
+        byItem[key] = {
+          item: item, color: color, grp: grp, sg: sg, ratio: ratio,
+          ocSet: {}, ocmSet: {}, periods: {}
+        };
+      }
+      if (oc) byItem[key].ocSet[oc] = true;
+      if (ocm) byItem[key].ocmSet[ocm] = true;
+      if (!byItem[key].periods[pk]) {
+        byItem[key].periods[pk] = { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: oc, ocm: ocm };
+      }
+      const d = byItem[key].periods[pk];
+      d.sold += sold;
+      d.stock += stock;
+      d.tot += tot;
+      d.avail += avail;
+      d.ok += ok2;
+      d.wk += wk;
+    }
     
-    // تحديث الملخصات السريعة في الـ Sidebar
-    quickStatsDiv.innerHTML = `
-      <div style="font-size:11px">📋 عدد السجلات: ${dataRows.length}</div>
-      <div style="font-size:11px">📊 عدد الأعمدة: ${headers.length}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:6px">آخر تحديث: ${new Date().toLocaleTimeString()}</div>
-    `;
+    allPeriods = Object.values(pMap).sort(function(a, b) { return pOrd(a.parsed) - pOrd(b.parsed); });
+    
+    buildFilters(gSet, sgSet, clSet, ocSet, ocmSet);
+    
+    if (allPeriods.length) {
+      periodRange.textContent = allPeriods[0].raw + ' ← ' + allPeriods[allPeriods.length-1].raw;
+    }
+    
+    fileBadge.innerHTML = '✅ Google Sheets';
+    fileBadge.style.background = '#EAF3DE';
+    fileBadge.style.color = '#3B6D11';
+    
+    loader.classList.add('hidden');
+    dashboard.classList.remove('hidden');
+    
+    renderAll();
     
   } catch (error) {
     console.error(error);
-    statusDiv.innerHTML = `❌ خطأ: ${error.message}<br><small>تأكد من أن الرابط عام ومنشور للجميع</small>`;
-    statusDiv.style.background = '#FCEBEB';
-    statusDiv.style.color = '#A32D2D';
-    tableBody.innerHTML = '<tr><td colspan="5">⚠️ فشل تحميل البيانات. تأكد من صلاحيات النشر في Google Sheets.</td></tr>';
+    loaderMsg.innerHTML = '❌ خطأ: ' + error.message + '<br><small>تأكد من أن الرابط عام ومنشور للجميع</small>';
+    loaderMsg.style.color = 'var(--red)';
+    document.getElementById('file-badge').innerHTML = '⚠️ خطأ في الاتصال';
+    document.getElementById('file-badge').style.background = '#FCEBEB';
+    document.getElementById('file-badge').style.color = '#A32D2D';
   }
 }
 
-// عرض الجدول
-function displayTable(headers, data) {
-  const tableHead = document.querySelector('#dataTable thead');
-  const tableBody = document.querySelector('#dataTable tbody');
+function makeMulti(id, vals) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML = vals.map(function(v) {
+    return '<label><input type="checkbox" value="' + v.replace(/"/g, '&quot;') + '" checked onchange="renderAll()"> <span>' + v + '</span></label>';
+  }).join('');
+}
+
+function buildFilters(gSet, sgSet, clSet, ocSet, ocmSet) {
+  const pc = document.getElementById('period-checks');
+  pc.innerHTML = allPeriods.map(function(p) {
+    return '<label><input type="checkbox" value="' + pK(p.parsed) + '" checked onchange="renderAll()"> <span>' + p.raw + '</span></label>';
+  }).join('');
+  makeMulti('f-group', Object.keys(gSet).sort());
+  makeMulti('f-subgroup', Object.keys(sgSet).sort());
+  makeMulti('f-color', Object.keys(clSet).sort());
+  makeMulti('f-oc', Object.keys(ocSet).sort());
+  makeMulti('f-ocm', Object.keys(ocmSet).sort());
+}
+
+function toggleAllCb(id, val) {
+  document.querySelectorAll('#' + id + ' input[type=checkbox]').forEach(function(cb) { cb.checked = val; });
+  renderAll();
+}
+
+function getChecked(id) {
+  const v = [];
+  document.querySelectorAll('#' + id + ' input:checked').forEach(function(cb) { v.push(cb.value); });
+  return v;
+}
+
+function getF() {
+  return {
+    periods: getChecked('period-checks'),
+    grps: getChecked('f-group'),
+    sgs: getChecked('f-subgroup'),
+    colors: getChecked('f-color'),
+    ocs: getChecked('f-oc'),
+    ocms: getChecked('f-ocm')
+  };
+}
+
+function getAP(f) {
+  return allPeriods.filter(function(p) { return f.periods.indexOf(pK(p.parsed)) >= 0; });
+}
+
+function getItems(f) {
+  return Object.values(byItem).filter(function(r) {
+    if (f.grps.length && f.grps.indexOf(r.grp) < 0) return false;
+    if (f.sgs.length && f.sgs.indexOf(r.sg) < 0) return false;
+    if (f.colors.length && f.colors.indexOf(r.color) < 0) return false;
+    if (f.ocs.length) {
+      const hasOc = f.ocs.some(function(oc) { return r.ocSet[oc]; });
+      if (!hasOc) return false;
+    }
+    if (f.ocms.length) {
+      const hasOcm = f.ocms.some(function(ocm) { return r.ocmSet[ocm]; });
+      if (!hasOcm) return false;
+    }
+    return true;
+  });
+}
+
+function sumByP(items, ap) {
+  const res = {};
+  ap.forEach(function(p) { res[pK(p.parsed)] = { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: '', ocm: '' }; });
+  items.forEach(function(item) {
+    ap.forEach(function(p) {
+      const pk = pK(p.parsed);
+      const d = item.periods[pk];
+      if (d) {
+        res[pk].sold += d.sold;
+        res[pk].stock += d.stock;
+        res[pk].tot += d.tot;
+        res[pk].avail += d.avail;
+        res[pk].ok += d.ok;
+        res[pk].wk += d.wk;
+        res[pk].oc = d.oc;
+        res[pk].ocm = d.ocm;
+      }
+    });
+  });
+  return ap.map(function(p) { return res[pK(p.parsed)] || { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: '', ocm: '' }; });
+}
+
+function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+
+function renderAll() {
+  const f = getF();
+  const items = getItems(f);
+  const ap = getAP(f);
+  const byP = sumByP(items, ap);
+  const totalSold = byP.reduce(function(s, r) { return s + r.sold; }, 0);
+  const totalAdj = Math.round(byP.reduce(function(s, r) { return s + adjD(r); }, 0));
+  const totalStock = Math.round(byP.reduce(function(s, r) { return s + r.stock; }, 0));
+  const lastSold = byP.length ? byP[byP.length - 1].sold : 0;
+  const prevSold = byP.length > 1 ? byP[byP.length - 2].sold : 0;
+  const trnd = prevSold ? Math.round((lastSold - prevSold) / prevSold * 100) : 0;
+  const totP = {};
+  ap.forEach(function(p, i) { totP[pK(p.parsed)] = byP[i]; });
+  const fc = fc4(totP, ap);
+
+  document.getElementById('metrics-bar').innerHTML =
+    '<div class="metric"><div class="m-lbl">إجمالي المبيعات الفعلية</div><div class="m-val">' + totalSold.toLocaleString() + '</div><div class="m-sub">' + ap.length + ' فترة — ' + items.length + ' صنف</div></div>' +
+    '<div class="metric"><div class="m-lbl">المبيعات المعدلة</div><div class="m-val a">' + totalAdj.toLocaleString() + '</div><div class="m-sub">بتعويض الرصيد الضعيف</div></div>' +
+    '<div class="metric"><div class="m-lbl">متوسط الرصيد</div><div class="m-val b">' + totalStock.toLocaleString() + '</div></div>' +
+    '<div class="metric"><div class="m-lbl">آخر فترة</div><div class="m-val ' + (trnd >= 0 ? 'g' : 'r') + '">' + lastSold.toLocaleString() + '</div><div class="m-sub">' + (trnd >= 0 ? '▲ ' : '▼ ') + Math.abs(trnd) + '% عن السابق</div></div>' +
+    '<div class="metric"><div class="m-lbl">🟡 التوقع الأساسي</div><div class="m-val g">' + fc.b.toLocaleString() + '</div><div class="m-sub">للفترة القادمة</div></div>' +
+    '<div class="metric"><div class="m-lbl">🔵 تغطية كاملة</div><div class="m-val b">' + fc.f.toLocaleString() + '</div><div class="m-sub">أقصى إمكانية</div></div>';
+
+  document.getElementById('fc-cards').innerHTML =
+    '<div class="fc-card fc-p"><div class="fc-lbl">🔴 متشائم</div><div class="fc-val">' + fc.p.toLocaleString() + '</div><div class="fc-sub">أسوأ سيناريو</div></div>' +
+    '<div class="fc-card fc-b"><div class="fc-lbl">🟡 أساسي</div><div class="fc-val">' + fc.b.toLocaleString() + '</div><div class="fc-sub">التوقع الواقعي</div></div>' +
+    '<div class="fc-card fc-o"><div class="fc-lbl">🟢 متفائل</div><div class="fc-val">' + fc.o.toLocaleString() + '</div><div class="fc-sub">لو الرصيد تحسن</div></div>' +
+    '<div class="fc-card fc-f"><div class="fc-lbl">🔵 تغطية كاملة</div><div class="fc-val">' + fc.f.toLocaleString() + '</div><div class="fc-sub">أقصى إمكانية</div></div>';
+
+  renderGroups(items, ap, f);
+  renderItems(items, ap);
+  renderPareto(items, ap);
+}
+
+function renderGroups(items, ap, f) {
+  const grps = f.grps.length ? f.grps : Array.from(new Set(items.map(function(r) { return r.grp; }))).sort();
+  const lastPk = ap.length ? pK(ap[ap.length - 1].parsed) : '';
+  document.querySelector('#grp-table tbody').innerHTML = grps.map(function(g) {
+    const gi = items.filter(function(r) { return r.grp === g; });
+    if (!gi.length) return '';
+    const gP = {};
+    ap.forEach(function(p) { gP[pK(p.parsed)] = { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: '', ocm: '' }; });
+    gi.forEach(function(item) {
+      ap.forEach(function(p) {
+        const pk = pK(p.parsed);
+        const d = item.periods[pk];
+        if (d) {
+          gP[pk].sold += d.sold;
+          gP[pk].stock += d.stock;
+          gP[pk].tot += d.tot;
+          gP[pk].avail += d.avail;
+          gP[pk].ok += d.ok;
+          gP[pk].wk += d.wk;
+        }
+      });
+    });
+    const tot = Object.values(gP).reduce(function(s, d) { return s + d.sold; }, 0);
+    const adj = Math.round(Object.values(gP).reduce(function(s, d) { return s + adjD(d); }, 0));
+    const stk = Math.round(Object.values(gP).reduce(function(s, d) { return s + d.stock; }, 0));
+    const last = gP[lastPk] ? gP[lastPk].sold : 0;
+    const wkPct = gP[lastPk] && gP[lastPk].tot ? Math.round(gP[lastPk].wk / gP[lastPk].tot * 100) : 0;
+    const fc = fc4(gP, ap);
+    const chg = last ? Math.round((fc.b - last) / last * 100) : 0;
+    const lossPct = adj > 0 ? Math.round((adj - tot) / adj * 100) : 0;
+    return '<tr>' +
+      '<td><strong>' + g + '</strong></td>' +
+      '<td>' + tot.toLocaleString() + '</td>' +
+      '<td class="dot-a">' + adj.toLocaleString() + '</td>' +
+      '<td>' + stk.toLocaleString() + '</td>' +
+      '<td><span class="badge ' + (wkPct > 30 ? 'dn' : wkPct > 15 ? 'fl' : 'up') + '">' + wkPct + '%</span></td>' +
+      '<td class="dot-r">' + fc.p.toLocaleString() + '</td>' +
+      '<td><strong>' + fc.b.toLocaleString() + '</strong></td>' +
+      '<td class="dot-g">' + fc.o.toLocaleString() + '</td>' +
+      '<td><span class="badge bl">' + fc.f.toLocaleString() + '</span></td>' +
+      '<td>' + (lossPct > 0 ? '<span class="dot-r">' + lossPct + '%</span>' : '0%') + '</td>' +
+      '<td><span class="badge ' + (chg > 5 ? 'up' : chg < -5 ? 'dn' : 'fl') + '">' + (chg >= 0 ? '+' : '') + chg + '%</span></td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderItems(items, ap) {
+  const lastPk = ap.length ? pK(ap[ap.length - 1].parsed) : '';
+  allItemRows = items.map(function(item) {
+    const tot = ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + (d ? d.sold : 0); }, 0);
+    const adj = Math.round(ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + adjD(d); }, 0));
+    const stk = Math.round(ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + (d ? d.stock : 0); }, 0));
+    const wkPct = item.periods[lastPk] && item.periods[lastPk].tot ? Math.round(item.periods[lastPk].wk / item.periods[lastPk].tot * 100) : 0;
+    const fc = fc4(item.periods, ap);
+    const lossPct = adj > 0 ? Math.round((adj - tot) / adj * 100) : 0;
+    const status = wkPct > 30 ? '🔴 رصيد ضعيف' : wkPct > 15 ? '🟡 تحذير' : '🟢 طبيعي';
+    let lastOc = '', lastOcm = '';
+    if (item.periods[lastPk]) {
+      lastOc = item.periods[lastPk].oc;
+      lastOcm = item.periods[lastPk].ocm;
+    } else {
+      const pks = Object.keys(item.periods);
+      if (pks.length) {
+        lastOc = item.periods[pks[pks.length - 1]].oc;
+        lastOcm = item.periods[pks[pks.length - 1]].ocm;
+      }
+    }
+    return {
+      item: item.item, color: item.color, grp: item.grp, sg: item.sg, ratio: item.ratio,
+      tot: tot, adj: adj, stk: stk, wkPct: wkPct, fc: fc, lossPct: lossPct, status: status, oc: lastOc, ocm: lastOcm
+    };
+  }).sort(function(a, b) { return b.tot - a.tot; });
+  filterItems();
+}
+
+function filterItems() {
+  const q = (document.getElementById('item-search').value || '').trim().toLowerCase();
+  const rows = q ? allItemRows.filter(function(r) { return r.item.toLowerCase().indexOf(q) >= 0 || r.color.toLowerCase().indexOf(q) >= 0 || r.grp.toLowerCase().indexOf(q) >= 0; }) : allItemRows;
+  document.querySelector('#item-table tbody').innerHTML = rows.map(function(r, i) {
+    const wB = r.wkPct > 30 ? 'dn' : r.wkPct > 15 ? 'fl' : 'up';
+    return '<tr>' +
+      '<td>' + (i + 1) + '</td><td>' + r.item + '</td><td>' + r.color + '</td><td>' + r.grp + '</td>' +
+      '<td>' + r.tot.toLocaleString() + '</td>' +
+      '<td class="dot-a">' + r.adj.toLocaleString() + '</td>' +
+      '<td>' + r.stk.toLocaleString() + '</td>' +
+      '<td><span class="badge ' + wB + '">' + r.wkPct + '%</span></td>' +
+      '<td class="dot-r">' + r.fc.p.toLocaleString() + '</td>' +
+      '<td><strong>' + r.fc.b.toLocaleString() + '</strong></td>' +
+      '<td class="dot-g">' + r.fc.o.toLocaleString() + '</td>' +
+      '<td><span class="badge bl">' + r.fc.f.toLocaleString() + '</span></td>' +
+      '<td>' + (r.lossPct > 0 ? '<span class="dot-r">' + r.lossPct + '%</span>' : '0%') + '</td>' +
+      '<td>' + r.status + '</td>' +
+      '<td>' + r.sg + '</td>' +
+      '<td>' + r.ratio + '</td>' +
+      '<td>' + r.oc + '</td>' +
+      '<td>' + r.ocm + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function renderPareto(items, ap) {
+  const rows = items.map(function(item) {
+    const tot = ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + (d ? d.sold : 0); }, 0);
+    const adj = Math.round(ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + adjD(d); }, 0));
+    const fc = fc4(item.periods, ap);
+    let lastOcm = '';
+    const pks = Object.keys(item.periods);
+    if (pks.length) lastOcm = item.periods[pks[pks.length - 1]].ocm;
+    return { item: item.item, color: item.color, grp: item.grp, sg: item.sg, ratio: item.ratio, ocm: lastOcm, val: tot, adj: adj, fc: fc };
+  }).sort(function(a, b) { return b.val - a.val; });
   
-  // عرض أول 10 أعمدة فقط للوضوح (أو كل الأعمدة إذا كانت قليلة)
-  const displayHeaders = headers.slice(0, 8);
-  tableHead.innerHTML = `<tr>${displayHeaders.map(h => `<th>${escapeHtml(h)}</th>`).join('')}</tr>`;
+  const grand = rows.reduce(function(s, r) { return s + r.val; }, 0);
+  let cum = 0;
+  rows.forEach(function(r) {
+    cum += r.val;
+    r.cumPct = grand ? Math.round(cum / grand * 100) : 0;
+    r.pct = grand ? +(r.val / grand * 100).toFixed(1) : 0;
+    r.abc = r.cumPct <= 80 ? 'A' : r.cumPct <= 95 ? 'B' : 'C';
+  });
   
-  const maxRows = Math.min(data.length, 50);
-  tableBody.innerHTML = data.slice(0, maxRows).map(row => {
-    return `<tr>${displayHeaders.map(h => `<td>${escapeHtml(row[h] || '—')}</td>`).join('')}</tr>`;
+  const aR = rows.filter(function(r) { return r.abc === 'A'; });
+  const bR = rows.filter(function(r) { return r.abc === 'B'; });
+  const cR = rows.filter(function(r) { return r.abc === 'C'; });
+  
+  document.getElementById('ps-sum').innerHTML = ['A', 'B', 'C'].map(function(abc) {
+    const rr = abc === 'A' ? aR : abc === 'B' ? bR : cR;
+    const lbl = abc === 'A' ? '🟢 A — أعلى 80%' : abc === 'B' ? '🟡 B — 80% إلى 95%' : '🔴 C — آخر 5%';
+    const isActive = psFilter === abc;
+    return '<div class="ps-card ' + abc + (isActive ? ' active-abc' : '') + '" onclick="togglePS(\'' + abc + '\')">' +
+      '<div class="ps-lbl">' + lbl + '</div>' +
+      '<div class="ps-val">' + rr.length + '</div>' +
+      '<div class="ps-sub">' + Math.round(rr.length / Math.max(rows.length, 1) * 100) + '% من الأصناف</div>' +
+      '</div>';
   }).join('');
   
-  if (data.length > 50) {
-    tableBody.innerHTML += `<tr><td colspan="${displayHeaders.length}" style="text-align:center;color:var(--muted)">... و ${data.length - 50} سجل إضافي</td></tr>`;
-  }
-}
-
-// تحليل البيانات وعرض إحصائيات ورسوم بيانية
-function analyzeAndDisplay(data, headers) {
-  // البحث عن أي أعمدة رقمية (مبيعات، كمية، سعر، إلخ)
-  let numericCols = [];
-  let categoryCols = [];
-  
-  headers.forEach(h => {
-    const sample = data.find(row => row[h] && !isNaN(parseFloat(row[h])));
-    if (sample && !isNaN(parseFloat(sample[h]))) {
-      numericCols.push(h);
-    } else if (data.some(row => row[h] && row[h].trim() !== '')) {
-      categoryCols.push(h);
-    }
-  });
-  
-  // افترض أن أول عمود رقمي هو عمود المبيعات
-  let salesCol = numericCols[0] || (headers.find(h => h.includes('سعر') || h.includes('مبيع') || h.includes('قيمة')) || headers[1]);
-  let categoryCol = categoryCols[0] || headers[0];
-  
-  // حساب إجمالي المبيعات
-  let totalSales = 0;
-  let salesMap = new Map(); // للتجميع حسب الفئة
-  
-  data.forEach(row => {
-    let val = parseFloat(row[salesCol]);
-    if (isNaN(val)) val = 0;
-    totalSales += val;
-    
-    let cat = row[categoryCol] || 'غير محدد';
-    salesMap.set(cat, (salesMap.get(cat) || 0) + val);
-  });
-  
-  // ترتيب أكبر 10 فئات
-  const sorted = Array.from(salesMap.entries()).sort((a,b) => b[1] - a[1]).slice(0, 10);
-  
-  // عرض بطاقات الإحصائيات
-  const summaryDiv = document.getElementById('summaryCards');
-  summaryDiv.innerHTML = `
-    <div class="stat-card"><div class="stat-val">${totalSales.toLocaleString()}</div><div class="stat-lbl">💰 إجمالي المبيعات (${salesCol})</div></div>
-    <div class="stat-card"><div class="stat-val">${data.length}</div><div class="stat-lbl">📦 عدد المعاملات</div></div>
-    <div class="stat-card"><div class="stat-val">${sorted.length}</div><div class="stat-lbl">🏷️ فئات/منتجات</div></div>
-    <div class="stat-card"><div class="stat-val">${(totalSales / data.length).toFixed(2)}</div><div class="stat-lbl">📊 متوسط الصفقة</div></div>
-  `;
-  
-  // رسم الرسم البياني
-  const ctx = document.getElementById('salesChart').getContext('2d');
-  if (chartInstance) chartInstance.destroy();
-  
-  chartInstance = new Chart(ctx, {
+  const top = (psFilter ? rows.filter(function(r) { return r.abc === psFilter; }) : rows).slice(0, 50);
+  killChart('ps');
+  charts['ps'] = new Chart(document.getElementById('ps-chart').getContext('2d'), {
     type: 'bar',
     data: {
-      labels: sorted.map(item => item[0].length > 20 ? item[0].slice(0,20)+'...' : item[0]),
-      datasets: [{
-        label: `${salesCol}`,
-        data: sorted.map(item => item[1]),
-        backgroundColor: '#1D9E75',
-        borderRadius: 6,
-        barPercentage: 0.65
-      }]
+      labels: top.map(function(r) { const n = r.item.substring(0, 12); return n + (r.item.length > 12 ? '…' : ''); }),
+      datasets: [
+        { label: 'المبيعات', data: top.map(function(r) { return r.val; }),
+          backgroundColor: top.map(function(r) { return r.abc === 'A' ? 'rgba(29,158,117,0.8)' : r.abc === 'B' ? 'rgba(186,117,23,0.8)' : 'rgba(163,45,45,0.8)'; }), borderRadius: 3, yAxisID: 'y' },
+        { label: '% تراكمي', data: top.map(function(r) { return r.cumPct; }), type: 'line', borderColor: '#1A5FA8', backgroundColor: 'transparent', pointRadius: 2, tension: 0.3, yAxisID: 'y2', borderWidth: 2 }
+      ]
     },
     options: {
       responsive: true,
-      maintainAspectRatio: true,
-      plugins: {
-        legend: { position: 'top', labels: { font: { size: 11 } } },
-        tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toLocaleString()} ${salesCol}` } }
-      },
-      scales: { y: { beginAtZero: true, grid: { color: '#E2E8F0' } } }
+      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } } },
+      scales: {
+        y: { position: 'right', ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
+        y2: { position: 'left', min: 0, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } }, grid: { drawOnChartArea: false } }
+      }
     }
   });
+  
+  allPSRows = rows;
+  filterPS();
 }
 
-// دالة لمنع XSS
-function escapeHtml(str) {
-  if (!str) return '—';
-  return String(str).replace(/[&<>]/g, function(m) {
-    if (m === '&') return '&amp;';
-    if (m === '<') return '&lt;';
-    if (m === '>') return '&gt;';
-    return m;
+function togglePS(abc) {
+  psFilter = psFilter === abc ? null : abc;
+  const f = getF();
+  const items = getItems(f);
+  const ap = getAP(f);
+  renderPareto(items, ap);
+}
+
+function filterPS() {
+  const q = (document.getElementById('ps-search').value || '').trim().toLowerCase();
+  let rows = psFilter ? allPSRows.filter(function(r) { return r.abc === psFilter; }) : allPSRows;
+  if (q) rows = rows.filter(function(r) { return r.item.toLowerCase().indexOf(q) >= 0 || r.color.toLowerCase().indexOf(q) >= 0 || r.grp.toLowerCase().indexOf(q) >= 0; });
+  document.querySelector('#ps-table tbody').innerHTML = rows.map(function(r, i) {
+    const pLoss = r.adj > 0 ? Math.round((r.adj - r.val) / r.adj * 100) : 0;
+    return '<tr>' +
+      '<td>' + (i + 1) + '</td><td>' + r.item + '</td><td>' + r.color + '</td><td>' + r.grp + '</td>' +
+      '<td><span class="badge ' + r.abc + '">' + r.abc + '</span></td>' +
+      '<td>' + r.val.toLocaleString() + '</td>' +
+      '<td class="dot-a">' + r.adj.toLocaleString() + '</td>' +
+      '<td>' + r.pct + '%</td><td>' + r.cumPct + '%</td>' +
+      '<td><strong>' + r.fc.b.toLocaleString() + '</strong></td>' +
+      '<td><span class="badge bl">' + r.fc.f.toLocaleString() + '</span></td>' +
+      '<td>' + (pLoss > 0 ? '<span class="dot-r">' + pLoss + '%</span>' : '0%') + '</td>' +
+      '<td>' + (r.sg || '') + '</td>' +
+      '<td>' + (r.ratio || '') + '</td>' +
+      '<td>' + (r.ocm || '') + '</td>' +
+      '</tr>';
+  }).join('');
+}
+
+function exportTbl(tableId, name) {
+  const tbl = document.getElementById(tableId);
+  if (!tbl) return;
+  let html = tbl.outerHTML;
+  const blob = new Blob([html], { type: 'application/vnd.ms-excel' });
+  const link = document.createElement('a');
+  link.href = URL.createObjectURL(blob);
+  link.download = 'TREE_' + name + '_' + new Date().toISOString().substring(0, 10) + '.xls';
+  link.click();
+  URL.revokeObjectURL(link.href);
+}
+
+const tabList = ['groups', 'items', 'ps'];
+function switchTab(tab) {
+  tabList.forEach(function(t) {
+    const el = document.getElementById('tab-' + t);
+    if (el) el.className = t === tab ? '' : 'hidden';
+  });
+  document.querySelectorAll('.tab-btn').forEach(function(el, i) {
+    el.classList.toggle('active', tabList[i] === tab);
   });
 }
 
-// تحميل البيانات عند فتح الصفحة
-window.addEventListener('DOMContentLoaded', () => {
-  fetchSheetData();
-  document.getElementById('refreshBtn').addEventListener('click', () => {
-    fetchSheetData();
-  });
+document.getElementById('refreshBtn').addEventListener('click', function() {
+  location.reload();
+});
+
+window.addEventListener('DOMContentLoaded', function() {
+  loadFromGoogleSheets();
 });
 </script>
 </body>
