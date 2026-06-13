@@ -404,6 +404,19 @@ function getAP(f){
   return allPeriods.filter(function(p){return f.periods.indexOf(pK(p.parsed))>=0;});
 }
 
+// الفترات الفعلية اللي تستخدم في حساب صنف معين
+// لو في فلتر مناسبات (oc/ocm)، نقصر الفترات على اللي بتطابق الفلتر فقط لهذا الصنف
+function getItemPeriods(item,ap,f){
+  if(!f.ocs.length&&!f.ocms.length)return ap;
+  return ap.filter(function(p){
+    var d=item.periods[pK(p.parsed)];
+    if(!d)return false;
+    if(f.ocs.length&&f.ocs.indexOf(d.oc)<0)return false;
+    if(f.ocms.length&&f.ocms.indexOf(d.ocm)<0)return false;
+    return true;
+  });
+}
+
 // فلترة مستقلة — كل فلتر يشتغل على الداتا بشكل مستقل
 function getItems(f){
   return Object.values(byItem).filter(function(r){
@@ -486,13 +499,15 @@ function fc4(itemPeriods,ap){
   };
 }
 
-function sumByP(items,ap){
+function sumByP(items,ap,f){
   var res={};
   ap.forEach(function(p){res[pK(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
   items.forEach(function(item){
+    var ip=f?getItemPeriods(item,ap,f):ap;
+    var ipKeys={};ip.forEach(function(p){ipKeys[pK(p.parsed)]=true;});
     ap.forEach(function(p){
       var pk=pK(p.parsed),d=item.periods[pk];
-      if(d){res[pk].sold+=d.sold;res[pk].stock+=d.stock;res[pk].tot+=d.tot;res[pk].avail+=d.avail;res[pk].ok+=d.ok;res[pk].wk+=d.wk;res[pk].oc=d.oc;res[pk].ocm=d.ocm;}
+      if(d&&ipKeys[pk]){res[pk].sold+=d.sold;res[pk].stock+=d.stock;res[pk].tot+=d.tot;res[pk].avail+=d.avail;res[pk].ok+=d.ok;res[pk].wk+=d.wk;res[pk].oc=d.oc;res[pk].ocm=d.ocm;}
     });
   });
   return ap.map(function(p){return res[pK(p.parsed)]||{sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
@@ -502,15 +517,20 @@ function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
 function renderAll(){
   var f=getF(),items=getItems(f),ap=getAP(f);
-  var byP=sumByP(items,ap);
+  var byP=sumByP(items,ap,f);
   var totalSold=byP.reduce(function(s,r){return s+r.sold;},0);
   var totalAdj=Math.round(byP.reduce(function(s,r){return s+adjD(r);},0));
   var totalStock=Math.round(byP.reduce(function(s,r){return s+r.stock;},0));
   var lastSold=byP.length?byP[byP.length-1].sold:0;
   var prevSold=byP.length>1?byP[byP.length-2].sold:0;
   var trnd=prevSold?Math.round((lastSold-prevSold)/prevSold*100):0;
-  var totP={};ap.forEach(function(p,i){totP[pK(p.parsed)]=byP[i];});
-  var fc=fc4(totP,ap);
+  var fcSumAll={p:0,b:0,o:0,f:0};
+  items.forEach(function(item){
+    var ip=getItemPeriods(item,ap,f);
+    var r=fc4(item.periods,ip);
+    fcSumAll.p+=r.p;fcSumAll.b+=r.b;fcSumAll.o+=r.o;fcSumAll.f+=r.f;
+  });
+  var fc=fcSumAll;
 
   document.getElementById('metrics-bar').innerHTML=
     '<div class="metric"><div class="m-lbl">إجمالي المبيعات الفعلية</div><div class="m-val">'+totalSold.toLocaleString()+'</div><div class="m-sub">'+ap.length+' فترة — '+items.length+' صنف</div></div>'+
@@ -527,8 +547,8 @@ function renderAll(){
     '<div class="fc-card fc-f"><div class="fc-lbl">🔵 تغطية كاملة</div><div class="fc-val">'+fc.f.toLocaleString()+'</div><div class="fc-sub">أقصى إمكانية</div></div>';
 
   renderGroups(items,ap,f);
-  renderItems(items,ap);
-  renderPareto(items,ap);
+  renderItems(items,ap,f);
+  renderPareto(items,ap,f);
 }
 
 function renderGroups(items,ap,f){
@@ -665,7 +685,7 @@ function renderPareto(items,ap){
 function togglePS(abc){
   psFilter=psFilter===abc?null:abc;
   var f=getF(),items=getItems(f),ap=getAP(f);
-  renderPareto(items,ap);
+  renderPareto(items,ap,f);
 }
 
 function filterPS(){
