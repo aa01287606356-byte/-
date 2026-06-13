@@ -406,12 +406,14 @@ function buildFilters(gSet,sgSet,clSet,ocSet,ocmSet){
 function onOccasionChange(changedEl){
   var ocAll=allCheckedIn('f-oc');
   var ocmAll=allCheckedIn('f-ocm');
+  var changed=false;
   if(!ocAll||!ocmAll){
-    resetToAll('f-group');
-    resetToAll('f-subgroup');
-    resetToAll('f-color');
-    resetToAll('period-checks');
+    if(!allCheckedIn('f-group')){resetToAll('f-group');changed=true;}
+    if(!allCheckedIn('f-subgroup')){resetToAll('f-subgroup');changed=true;}
+    if(!allCheckedIn('f-color')){resetToAll('f-color');changed=true;}
+    if(!allCheckedIn('period-checks')){resetToAll('period-checks');changed=true;}
   }
+  if(changed)renderAll();
 }
 
 function allCheckedIn(id){
