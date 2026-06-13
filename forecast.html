@@ -152,22 +152,42 @@ canvas{width:100%!important}
       </div>
       <div class="sb-sec">
         <div class="sb-lbl">المجموعة الرئيسية</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('f-group',true)">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('f-group',false)">إلغاء</button>
+        </div>
         <div class="multi-wrap" id="f-group"></div>
       </div>
       <div class="sb-sec">
         <div class="sb-lbl">المجموعة الفرعية</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('f-subgroup',true)">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('f-subgroup',false)">إلغاء</button>
+        </div>
         <div class="multi-wrap" id="f-subgroup"></div>
       </div>
       <div class="sb-sec">
         <div class="sb-lbl">اللون</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('f-color',true)">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('f-color',false)">إلغاء</button>
+        </div>
         <div class="multi-wrap" id="f-color"></div>
       </div>
       <div class="sb-sec">
         <div class="sb-lbl">المناسبات</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('f-oc',true);onOccasionChange()">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('f-oc',false);onOccasionChange()">إلغاء</button>
+        </div>
         <div class="multi-wrap" id="f-oc"></div>
       </div>
       <div class="sb-sec">
         <div class="sb-lbl">مناسبات رئيسي</div>
+        <div class="sb-actions">
+          <button class="sb-btn" onclick="toggleAllCb('f-ocm',true);onOccasionChange()">الكل</button>
+          <button class="sb-btn" onclick="toggleAllCb('f-ocm',false);onOccasionChange()">إلغاء</button>
+        </div>
         <div class="multi-wrap" id="f-ocm"></div>
       </div>
     </div>
@@ -361,10 +381,11 @@ document.getElementById('fi').addEventListener('change',function(e){
   reader.readAsArrayBuffer(f);
 });
 
-function makeMulti(id,vals){
+function makeMulti(id,vals,onChangeExtra){
   var el=document.getElementById(id);
+  var onchange='renderAll()'+(onChangeExtra?';'+onChangeExtra+'(this)':'');
   el.innerHTML=vals.map(function(v){
-    return'<label><input type="checkbox" value="'+v+'" checked onchange="renderAll()"> <span>'+v+'</span></label>';
+    return'<label><input type="checkbox" value="'+v+'" checked onchange="'+onchange+'"> <span>'+v+'</span></label>';
   }).join('');
 }
 
@@ -376,8 +397,31 @@ function buildFilters(gSet,sgSet,clSet,ocSet,ocmSet){
   makeMulti('f-group',Object.keys(gSet).sort());
   makeMulti('f-subgroup',Object.keys(sgSet).sort());
   makeMulti('f-color',Object.keys(clSet).sort());
-  makeMulti('f-oc',Object.keys(ocSet).sort());
-  makeMulti('f-ocm',Object.keys(ocmSet).sort());
+  makeMulti('f-oc',Object.keys(ocSet).sort(),'onOccasionChange');
+  makeMulti('f-ocm',Object.keys(ocmSet).sort(),'onOccasionChange');
+}
+
+// لما يتغير فلتر مناسبات أو مناسبات رئيسي:
+// لو في اختيار جزئي (ليس الكل) في أحدهما، نرجع باقي الفلاتر (مجموعة/فرعية/لون/فترات) لـ "الكل"
+function onOccasionChange(changedEl){
+  var ocAll=allCheckedIn('f-oc');
+  var ocmAll=allCheckedIn('f-ocm');
+  if(!ocAll||!ocmAll){
+    resetToAll('f-group');
+    resetToAll('f-subgroup');
+    resetToAll('f-color');
+    resetToAll('period-checks');
+  }
+}
+
+function allCheckedIn(id){
+  var all=true;
+  document.querySelectorAll('#'+id+' input[type=checkbox]').forEach(function(cb){if(!cb.checked)all=false;});
+  return all;
+}
+
+function resetToAll(id){
+  document.querySelectorAll('#'+id+' input[type=checkbox]').forEach(function(cb){cb.checked=true;});
 }
 
 function toggleAllCb(id,val){
