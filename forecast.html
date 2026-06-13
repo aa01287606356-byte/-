@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>TREE — توقع المبيعات</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
-<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
 <style>
 :root{
   --green:#1D9E75;--green-l:#EAF3DE;--green-d:#3B6D11;
@@ -24,10 +24,8 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px}
 #file-badge{font-size:11px;background:var(--green-l);color:var(--green-d);padding:3px 10px;border-radius:20px;font-weight:500}
 .btn-sm{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600}
-.btn-sm-outline{background:transparent;border:1px solid var(--green);color:var(--green)}
-.loading{font-size:11px;color:var(--muted);padding:4px 8px}
 .layout{display:flex;min-height:calc(100vh - 54px)}
-.sidebar{width:220px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
+.sidebar{width:210px;background:var(--card);border-left:1px solid var(--border);padding:14px 10px;flex-shrink:0;overflow-y:auto;position:sticky;top:54px;height:calc(100vh - 54px)}
 .sb-sec{margin-bottom:14px}
 .sb-lbl{font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
 .multi-wrap{border:1px solid var(--border);border-radius:8px;padding:5px;background:#fff;max-height:110px;overflow-y:auto}
@@ -38,6 +36,17 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sb-btn{flex:1;font-size:10px;padding:4px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
 .sb-btn:hover{background:var(--green-l);color:var(--green-d);border-color:var(--green)}
 .main{flex:1;padding:14px;overflow:hidden;min-width:0}
+.upload-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 54px)}
+.upload-card{background:var(--card);border:2px dashed #C6D9CE;border-radius:16px;padding:48px 40px;text-align:center;cursor:pointer;max-width:480px;width:100%}
+.upload-card:hover{border-color:var(--green);background:#F5FBF8}
+.upload-icon{font-size:44px;margin-bottom:14px}
+.upload-card h2{font-size:16px;font-weight:700;margin-bottom:8px}
+.upload-card p{font-size:12px;color:var(--muted);line-height:1.9}
+#prog-wrap{display:none;padding:20px;max-width:400px;margin:40px auto}
+.prog-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);text-align:center}
+.pb-out{background:#E2E8F0;border-radius:20px;height:6px;margin:10px 0}
+.pb-in{background:var(--green);height:6px;border-radius:20px;width:0%;transition:width .3s}
+#pb-msg{font-size:12px;color:var(--muted)}
 .tabs{display:flex;gap:2px;margin-bottom:14px;background:var(--card);border-radius:10px;padding:4px;border:1px solid var(--border);width:fit-content;box-shadow:var(--shadow)}
 .tab-btn{padding:7px 18px;border-radius:7px;font-size:12px;cursor:pointer;color:var(--muted);border:none;background:transparent;font-family:inherit;font-weight:500;transition:all .15s}
 .tab-btn.active{background:var(--green);color:#fff;font-weight:700;box-shadow:0 2px 6px rgba(29,158,117,.25)}
@@ -61,6 +70,7 @@ body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(
 .sec-title{font-size:13px;font-weight:700}
 .btn-export{font-size:11px;background:var(--green-l);color:var(--green-d);border:1px solid #A8D688;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700}
 .btn-export:hover{background:var(--green);color:#fff}
+.note{font-size:11px;color:var(--amber-d);margin-top:10px;padding:8px 12px;background:var(--amber-l);border-radius:7px;border-right:3px solid var(--amber);line-height:1.6}
 .tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);max-height:500px;overflow-y:auto}
 table{width:100%;border-collapse:collapse;font-size:12px}
 th{background:#F7FAFC;padding:10px 12px;text-align:right;font-weight:700;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:2;white-space:nowrap}
@@ -92,36 +102,44 @@ tr:hover td{background:#F7FAFC}
 .ps-lbl{font-size:11px;font-weight:700}
 .ps-sub{font-size:10px;opacity:.75;margin-top:2px}
 canvas{width:100%!important}
-.loader-overlay{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000}
-.loader-card{background:#fff;border-radius:16px;padding:30px;text-align:center;min-width:280px}
-.loader-spinner{width:40px;height:40px;border:4px solid var(--border);border-top-color:var(--green);border-radius:50%;animation:spin 0.8s linear infinite;margin:0 auto 15px}
-@keyframes spin{to{transform:rotate(360deg)}}
+#dashboard{display:none}
 .hidden{display:none!important}
 </style>
 </head>
 <body>
-
 <div class="hdr">
   <div class="hdr-logo">T</div>
   <div>
     <div class="hdr-title">توقع المبيعات — TREE</div>
-    <div class="hdr-sub" id="period-range">جاري التحميل من Google Sheets...</div>
+    <div class="hdr-sub" id="period-range">ارفع الملف للبدء</div>
   </div>
   <div class="hdr-r">
-    <span id="file-badge">📊 Google Sheets</span>
-    <button class="btn-sm" id="refreshBtn">🔄 تحديث</button>
+    <span id="file-badge">لم يتم رفع ملف</span>
+    <button class="btn-sm" onclick="document.getElementById('fi').click()">⬆ رفع ملف</button>
+  </div>
+</div>
+<input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
+
+<div id="upload-screen">
+  <div class="upload-wrap">
+    <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
+      <div class="upload-icon">📊</div>
+      <h2>ارفع ملف Excel الناتج من Power Query</h2>
+      <p>تاريخ — إسم الصنف — اللون — المجموعة الرئيسية — المجموعة الفرعية<br>
+      مناسبات — مناسبات رئيسي — يشيو.ريشيو — صافي الكمية المباعه<br>
+      متوسط_رصيد_افتتاحي — إجمالي_الفروع — فروع_متاح — فروع_رصيد_كافي — فروع_رصيد_ضعيف</p>
+    </div>
   </div>
 </div>
 
-<div id="loader" class="loader-overlay">
-  <div class="loader-card">
-    <div class="loader-spinner"></div>
-    <div>جاري تحميل البيانات من Google Sheets...</div>
-    <div style="font-size:11px;color:var(--muted);margin-top:8px" id="loaderMsg"></div>
+<div id="prog-wrap">
+  <div class="prog-card">
+    <div id="pb-msg">جاري قراءة الملف...</div>
+    <div class="pb-out"><div class="pb-in" id="pb"></div></div>
   </div>
 </div>
 
-<div id="dashboard" class="hidden">
+<div id="dashboard">
   <div class="layout">
     <div class="sidebar">
       <div class="sb-sec">
@@ -164,6 +182,7 @@ canvas{width:100%!important}
       <div class="metrics" id="metrics-bar"></div>
       <div class="fc-grid" id="fc-cards"></div>
 
+      <!-- GROUPS -->
       <div id="tab-groups">
         <div class="section">
           <div class="sec-hdr">
@@ -191,6 +210,7 @@ canvas{width:100%!important}
         </div>
       </div>
 
+      <!-- ITEMS -->
       <div id="tab-items" class="hidden">
         <div class="section">
           <div class="sec-hdr">
@@ -214,6 +234,7 @@ canvas{width:100%!important}
         </div>
       </div>
 
+      <!-- PARETO SALES -->
       <div id="tab-ps" class="hidden">
         <div class="pareto-sum" id="ps-sum"></div>
         <div class="section">
@@ -245,11 +266,6 @@ canvas{width:100%!important}
 </div>
 
 <script>
-// ============================================================
-// رابط Google Sheets
-// ============================================================
-const GOOGLE_SHEETS_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vTXWTUDQrxiAG4i8NR7cm8OykFrkQTK3NyaJAoCv4sq8rCEOYLvxhH6DBmK6n2ee6tj2cJrSZSO5D5V/pub?gid=0&single=true&output=csv";
-
 var byItem={},allPeriods=[];
 var allItemRows=[],allPSRows=[];
 var psFilter=null;
@@ -270,46 +286,191 @@ function parsePer(s){
 }
 function pOrd(p){return p.yr*1000+p.mo*10+p.h;}
 function pK(p){return p.yr+'_'+p.mo+'_'+p.h;}
+function setP(pct,msg){document.getElementById('pb').style.width=pct+'%';document.getElementById('pb-msg').textContent=msg;}
+
+document.getElementById('fi').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  document.getElementById('file-badge').textContent=f.name;
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('prog-wrap').style.display='block';
+  setP(10,'جاري قراءة الملف...');
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    setP(40,'جاري تحليل البيانات...');
+    setTimeout(function(){
+      try{
+        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        setP(65,'جاري التجميع...');
+        setTimeout(function(){
+          var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+          if(!raw||!raw.length){alert('الملف فاضي');return;}
+          var H=Object.keys(raw[0]);
+          var pC=findCol(H,['تاريخ']),iC=findCol(H,['إسم الصنف','اسم الصنف']),
+              clC=findCol(H,['اللون']),gC=findCol(H,['المجموعة الرئيسية']),
+              sgC=findCol(H,['المجموعة الفرعية']),
+              ocC=findCol(H,['مناسبات']),ocmC=findCol(H,['مناسبات رئيسي']),
+              rC=findCol(H,['يشيو.ريشيو','ريشيو']),
+              sC=findCol(H,['صافي الكمية المباعه','صافي الكمية']),
+              stC=findCol(H,['متوسط_رصيد_افتتاحي']),
+              totC=findCol(H,['إجمالي_الفروع']),avC=findCol(H,['فروع_متاح']),
+              okC=findCol(H,['فروع_رصيد_كافي']),wkC=findCol(H,['فروع_رصيد_ضعيف']);
+          if(!pC||!iC){alert('مش لاقي أعمدة التاريخ أو الصنف');return;}
+          byItem={};
+          var pMap={},gSet={},sgSet={},clSet={},ocSet={},ocmSet={};
+          for(var i=0;i<raw.length;i++){
+            var r=raw[i];
+            var per=r[pC]||'';var pp=parsePer(per);if(!pp)continue;
+            var pk=pK(pp);
+            var item=r[iC]||'?',color=clC?r[clC]:'غير محدد',
+                grp=gC?r[gC]:'غير محدد',sg=sgC?r[sgC]:'غير محدد',
+                oc=ocC?r[ocC]:'',ocm=ocmC?r[ocmC]:'',
+                ratio=rC?(parseFloat(r[rC])||3):3,
+                sold=sC?(parseFloat(r[sC])||0):0,
+                stock=stC?Math.max(0,parseFloat(r[stC])||0):0,
+                tot=totC?(parseFloat(r[totC])||0):0,
+                avail=avC?(parseFloat(r[avC])||0):0,
+                ok2=okC?(parseFloat(r[okC])||0):0,
+                wk=wkC?(parseFloat(r[wkC])||0):0;
+            pMap[pk]={raw:per,parsed:pp};
+            gSet[grp]=true;sgSet[sg]=true;clSet[color]=true;
+            if(oc)ocSet[oc]=true;if(ocm)ocmSet[ocm]=true;
+            var key=item+'|||'+color;
+            if(!byItem[key])byItem[key]={item:item,color:color,grp:grp,sg:sg,ratio:ratio,
+              ocSet:{},ocmSet:{},periods:{}};
+            // تخزين كل المناسبات للصنف
+            if(oc)byItem[key].ocSet[oc]=true;
+            if(ocm)byItem[key].ocmSet[ocm]=true;
+            if(!byItem[key].periods[pk])byItem[key].periods[pk]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:oc,ocm:ocm};
+            var d=byItem[key].periods[pk];
+            d.sold+=sold;d.stock+=stock;d.tot+=tot;d.avail+=avail;d.ok+=ok2;d.wk+=wk;
+          }
+          allPeriods=Object.values(pMap).sort(function(a,b){return pOrd(a.parsed)-pOrd(b.parsed);});
+          buildFilters(gSet,sgSet,clSet,ocSet,ocmSet);
+          if(allPeriods.length)document.getElementById('period-range').textContent=allPeriods[0].raw+' ← '+allPeriods[allPeriods.length-1].raw;
+          setP(100,'تم!');
+          setTimeout(function(){
+            document.getElementById('prog-wrap').style.display='none';
+            document.getElementById('dashboard').style.display='block';
+            renderAll();
+          },300);
+        },50);
+      }catch(err){alert('خطأ: '+err.message);}
+    },50);
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+function makeMulti(id,vals){
+  var el=document.getElementById(id);
+  el.innerHTML=vals.map(function(v){
+    return'<label><input type="checkbox" value="'+v+'" checked onchange="renderAll()"> <span>'+v+'</span></label>';
+  }).join('');
+}
+
+function buildFilters(gSet,sgSet,clSet,ocSet,ocmSet){
+  var pc=document.getElementById('period-checks');
+  pc.innerHTML=allPeriods.map(function(p){
+    return'<label><input type="checkbox" value="'+pK(p.parsed)+'" checked onchange="renderAll()"> <span>'+p.raw+'</span></label>';
+  }).join('');
+  makeMulti('f-group',Object.keys(gSet).sort());
+  makeMulti('f-subgroup',Object.keys(sgSet).sort());
+  makeMulti('f-color',Object.keys(clSet).sort());
+  makeMulti('f-oc',Object.keys(ocSet).sort());
+  makeMulti('f-ocm',Object.keys(ocmSet).sort());
+}
+
+function toggleAllCb(id,val){
+  document.querySelectorAll('#'+id+' input[type=checkbox]').forEach(function(cb){cb.checked=val;});
+  renderAll();
+}
+
+function getChecked(id){
+  var v=[];document.querySelectorAll('#'+id+' input:checked').forEach(function(cb){v.push(cb.value);});return v;
+}
+
+function getF(){
+  return{
+    periods:getChecked('period-checks'),
+    grps:getChecked('f-group'),
+    sgs:getChecked('f-subgroup'),
+    colors:getChecked('f-color'),
+    ocs:getChecked('f-oc'),
+    ocms:getChecked('f-ocm')
+  };
+}
+
+function getAP(f){
+  return allPeriods.filter(function(p){return f.periods.indexOf(pK(p.parsed))>=0;});
+}
+
+// فلترة مستقلة — كل فلتر يشتغل على الداتا بشكل مستقل
+function getItems(f){
+  return Object.values(byItem).filter(function(r){
+    // فلتر المجموعة الرئيسية
+    if(f.grps.length&&f.grps.indexOf(r.grp)<0)return false;
+    // فلتر المجموعة الفرعية
+    if(f.sgs.length&&f.sgs.indexOf(r.sg)<0)return false;
+    // فلتر اللون
+    if(f.colors.length&&f.colors.indexOf(r.color)<0)return false;
+    // فلتر المناسبات — مستقل بالكامل (بيشوف كل مناسبات الصنف)
+    if(f.ocs.length){
+      var hasOc=f.ocs.some(function(oc){return r.ocSet[oc];});
+      if(!hasOc)return false;
+    }
+    // فلتر مناسبات رئيسي — مستقل بالكامل
+    if(f.ocms.length){
+      var hasOcm=f.ocms.some(function(ocm){return r.ocmSet[ocm];});
+      if(!hasOcm)return false;
+    }
+    return true;
+  });
+}
+
 function adjD(d){
   if(!d)return 0;
   var s=d.sold||0;
   if(d.ok>0)s=s+(s/d.ok)*d.wk;
   return Math.max(s,d.sold||0);
 }
+
+// التوقع بيتحسب دايماً على أساس متوسط فترة واحدة (نص شهر)
+// بغض النظر عن عدد الفترات المختارة في الفلتر
 function fc4(itemPeriods,ap){
   if(!ap.length)return{p:0,b:0,o:0,f:0};
   var last=ap[ap.length-1];
   var lastD=itemPeriods[pK(last.parsed)];
   var lastOcm=lastD?lastD.ocm:'';
 
+  // كل الفترات (من allPeriods الكاملة) اللي نفس المناسبة الرئيسية لآخر فترة مختارة
   var sameOcc=allPeriods.filter(function(p){
     if(pK(p.parsed)===pK(last.parsed))return false;
     var d=itemPeriods[pK(p.parsed)];
     return d&&(!lastOcm||d.ocm===lastOcm);
   });
 
-  var base;
+  var base; // متوسط مبيعات فترة واحدة (معدلة)
   if(sameOcc.length>0){
     var vals=sameOcc.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
     base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
   }else{
+    // متوسط كل الفترات المختارة (لا إجمالي)
     var allV=ap.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
     base=allV.reduce(function(s,v){return s+v;},0)/Math.max(allV.length,1);
   }
 
+  // التوقع الأساسي >= متوسط آخر فترة فعلي (لا الإجمالي)
   var lastActual=lastD?lastD.sold:0;
   base=Math.max(base,lastActual);
 
   var weakR=lastD&&lastD.tot?lastD.wk/lastD.tot:0;
 
-  var adjFull=0;
-  if(lastD&&lastD.ok>0){
-    adjFull=lastD.sold+(lastD.sold/lastD.ok)*lastD.wk;
-  }else if(lastD){
-    adjFull=lastD.sold;
-  }
+  // تغطية كاملة = المبيعات المعدلة لفترة واحدة (آخر فترة)
+  var adjFull=adjD(lastD);
   if(adjFull===0){
-    adjFull=ap.reduce(function(s,p){return s+adjD(itemPeriods[pK(p.parsed)]);},0);
+    // لو آخر فترة مفيهاش بيانات، استخدم متوسط المعدل لكل الفترات المختارة
+    var allAdj=ap.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
+    adjFull=allAdj.reduce(function(s,v){return s+v;},0)/Math.max(allAdj.length,1);
   }
   adjFull=Math.max(Math.round(adjFull),Math.round(base));
 
@@ -321,472 +482,236 @@ function fc4(itemPeriods,ap){
   };
 }
 
-async function loadFromGoogleSheets() {
-  const loader = document.getElementById('loader');
-  const loaderMsg = document.getElementById('loaderMsg');
-  const dashboard = document.getElementById('dashboard');
-  const periodRange = document.getElementById('period-range');
-  const fileBadge = document.getElementById('file-badge');
-  
-  try {
-    loaderMsg.innerHTML = 'جاري الاتصال بخوادم Google...';
-    const response = await fetch(GOOGLE_SHEETS_CSV_URL);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    loaderMsg.innerHTML = 'تم الاتصال، جاري تحليل البيانات...';
-    const csvText = await response.text();
-    
-    const rows = csvText.split(/\r?\n/).filter(row => row.trim() !== '');
-    if (rows.length < 2) throw new Error('لا توجد بيانات كافية في الجدول');
-    
-    const headers = rows[0].split(',').map(h => h.replace(/["']/g, '').trim());
-    
-    loaderMsg.innerHTML = 'جاري معالجة ' + (rows.length-1) + ' سجل...';
-    
-    const rawData = rows.slice(1).map(row => {
-      const values = row.split(',').map(v => v.replace(/["']/g, '').trim());
-      const obj = {};
-      headers.forEach((h, idx) => { obj[h] = values[idx] || ''; });
-      return obj;
-    });
-    
-    const H = headers;
-    const pC = findCol(H, ['تاريخ']);
-    const iC = findCol(H, ['إسم الصنف', 'اسم الصنف']);
-    const clC = findCol(H, ['اللون']);
-    const gC = findCol(H, ['المجموعة الرئيسية']);
-    const sgC = findCol(H, ['المجموعة الفرعية']);
-    const ocC = findCol(H, ['مناسبات']);
-    const ocmC = findCol(H, ['مناسبات رئيسي']);
-    const rC = findCol(H, ['يشيو.ريشيو', 'ريشيو']);
-    const sC = findCol(H, ['صافي الكمية المباعه', 'صافي الكمية']);
-    const stC = findCol(H, ['متوسط_رصيد_افتتاحي']);
-    const totC = findCol(H, ['إجمالي_الفروع']);
-    const avC = findCol(H, ['فروع_متاح']);
-    const okC = findCol(H, ['فروع_رصيد_كافي']);
-    const wkC = findCol(H, ['فروع_رصيد_ضعيف']);
-    
-    if (!pC || !iC) {
-      throw new Error('لم يتم العثور على أعمدة "تاريخ" أو "إسم الصنف"');
-    }
-    
-    byItem = {};
-    const pMap = {};
-    const gSet = {}, sgSet = {}, clSet = {}, ocSet = {}, ocmSet = {};
-    
-    for (let i = 0; i < rawData.length; i++) {
-      const r = rawData[i];
-      const per = r[pC] || '';
-      const pp = parsePer(per);
-      if (!pp) continue;
-      const pk = pK(pp);
-      const item = r[iC] || '?';
-      const color = clC ? r[clC] : 'غير محدد';
-      const grp = gC ? r[gC] : 'غير محدد';
-      const sg = sgC ? r[sgC] : 'غير محدد';
-      const oc = ocC ? r[ocC] : '';
-      const ocm = ocmC ? r[ocmC] : '';
-      const ratio = rC ? (parseFloat(r[rC]) || 3) : 3;
-      const sold = sC ? (parseFloat(r[sC]) || 0) : 0;
-      const stock = stC ? Math.max(0, parseFloat(r[stC]) || 0) : 0;
-      const tot = totC ? (parseFloat(r[totC]) || 0) : 0;
-      const avail = avC ? (parseFloat(r[avC]) || 0) : 0;
-      const ok2 = okC ? (parseFloat(r[okC]) || 0) : 0;
-      const wk = wkC ? (parseFloat(r[wkC]) || 0) : 0;
-      
-      pMap[pk] = { raw: per, parsed: pp };
-      gSet[grp] = true;
-      sgSet[sg] = true;
-      clSet[color] = true;
-      if (oc) ocSet[oc] = true;
-      if (ocm) ocmSet[ocm] = true;
-      
-      const key = item + '|||' + color;
-      if (!byItem[key]) {
-        byItem[key] = {
-          item: item, color: color, grp: grp, sg: sg, ratio: ratio,
-          ocSet: {}, ocmSet: {}, periods: {}
-        };
-      }
-      if (oc) byItem[key].ocSet[oc] = true;
-      if (ocm) byItem[key].ocmSet[ocm] = true;
-      if (!byItem[key].periods[pk]) {
-        byItem[key].periods[pk] = { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: oc, ocm: ocm };
-      }
-      const d = byItem[key].periods[pk];
-      d.sold += sold;
-      d.stock += stock;
-      d.tot += tot;
-      d.avail += avail;
-      d.ok += ok2;
-      d.wk += wk;
-    }
-    
-    allPeriods = Object.values(pMap).sort(function(a, b) { return pOrd(a.parsed) - pOrd(b.parsed); });
-    
-    buildFilters(gSet, sgSet, clSet, ocSet, ocmSet);
-    
-    if (allPeriods.length) {
-      periodRange.textContent = allPeriods[0].raw + ' ← ' + allPeriods[allPeriods.length-1].raw;
-    }
-    
-    fileBadge.innerHTML = '✅ Google Sheets';
-    fileBadge.style.background = '#EAF3DE';
-    fileBadge.style.color = '#3B6D11';
-    
-    loader.classList.add('hidden');
-    dashboard.classList.remove('hidden');
-    
-    renderAll();
-    
-  } catch (error) {
-    console.error(error);
-    loaderMsg.innerHTML = '❌ خطأ: ' + error.message + '<br><small>تأكد من أن الرابط عام ومنشور للجميع</small>';
-    loaderMsg.style.color = 'var(--red)';
-    document.getElementById('file-badge').innerHTML = '⚠️ خطأ في الاتصال';
-    document.getElementById('file-badge').style.background = '#FCEBEB';
-    document.getElementById('file-badge').style.color = '#A32D2D';
-  }
-}
-
-function makeMulti(id, vals) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  el.innerHTML = vals.map(function(v) {
-    return '<label><input type="checkbox" value="' + v.replace(/"/g, '&quot;') + '" checked onchange="renderAll()"> <span>' + v + '</span></label>';
-  }).join('');
-}
-
-function buildFilters(gSet, sgSet, clSet, ocSet, ocmSet) {
-  const pc = document.getElementById('period-checks');
-  pc.innerHTML = allPeriods.map(function(p) {
-    return '<label><input type="checkbox" value="' + pK(p.parsed) + '" checked onchange="renderAll()"> <span>' + p.raw + '</span></label>';
-  }).join('');
-  makeMulti('f-group', Object.keys(gSet).sort());
-  makeMulti('f-subgroup', Object.keys(sgSet).sort());
-  makeMulti('f-color', Object.keys(clSet).sort());
-  makeMulti('f-oc', Object.keys(ocSet).sort());
-  makeMulti('f-ocm', Object.keys(ocmSet).sort());
-}
-
-function toggleAllCb(id, val) {
-  document.querySelectorAll('#' + id + ' input[type=checkbox]').forEach(function(cb) { cb.checked = val; });
-  renderAll();
-}
-
-function getChecked(id) {
-  const v = [];
-  document.querySelectorAll('#' + id + ' input:checked').forEach(function(cb) { v.push(cb.value); });
-  return v;
-}
-
-function getF() {
-  return {
-    periods: getChecked('period-checks'),
-    grps: getChecked('f-group'),
-    sgs: getChecked('f-subgroup'),
-    colors: getChecked('f-color'),
-    ocs: getChecked('f-oc'),
-    ocms: getChecked('f-ocm')
-  };
-}
-
-function getAP(f) {
-  return allPeriods.filter(function(p) { return f.periods.indexOf(pK(p.parsed)) >= 0; });
-}
-
-function getItems(f) {
-  return Object.values(byItem).filter(function(r) {
-    if (f.grps.length && f.grps.indexOf(r.grp) < 0) return false;
-    if (f.sgs.length && f.sgs.indexOf(r.sg) < 0) return false;
-    if (f.colors.length && f.colors.indexOf(r.color) < 0) return false;
-    if (f.ocs.length) {
-      const hasOc = f.ocs.some(function(oc) { return r.ocSet[oc]; });
-      if (!hasOc) return false;
-    }
-    if (f.ocms.length) {
-      const hasOcm = f.ocms.some(function(ocm) { return r.ocmSet[ocm]; });
-      if (!hasOcm) return false;
-    }
-    return true;
-  });
-}
-
-function sumByP(items, ap) {
-  const res = {};
-  ap.forEach(function(p) { res[pK(p.parsed)] = { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: '', ocm: '' }; });
-  items.forEach(function(item) {
-    ap.forEach(function(p) {
-      const pk = pK(p.parsed);
-      const d = item.periods[pk];
-      if (d) {
-        res[pk].sold += d.sold;
-        res[pk].stock += d.stock;
-        res[pk].tot += d.tot;
-        res[pk].avail += d.avail;
-        res[pk].ok += d.ok;
-        res[pk].wk += d.wk;
-        res[pk].oc = d.oc;
-        res[pk].ocm = d.ocm;
-      }
+function sumByP(items,ap){
+  var res={};
+  ap.forEach(function(p){res[pK(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
+  items.forEach(function(item){
+    ap.forEach(function(p){
+      var pk=pK(p.parsed),d=item.periods[pk];
+      if(d){res[pk].sold+=d.sold;res[pk].stock+=d.stock;res[pk].tot+=d.tot;res[pk].avail+=d.avail;res[pk].ok+=d.ok;res[pk].wk+=d.wk;res[pk].oc=d.oc;res[pk].ocm=d.ocm;}
     });
   });
-  return ap.map(function(p) { return res[pK(p.parsed)] || { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: '', ocm: '' }; });
+  return ap.map(function(p){return res[pK(p.parsed)]||{sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
 }
 
-function killChart(id) { if (charts[id]) { charts[id].destroy(); delete charts[id]; } }
+function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 
-function renderAll() {
-  const f = getF();
-  const items = getItems(f);
-  const ap = getAP(f);
-  const byP = sumByP(items, ap);
-  const totalSold = byP.reduce(function(s, r) { return s + r.sold; }, 0);
-  const totalAdj = Math.round(byP.reduce(function(s, r) { return s + adjD(r); }, 0));
-  const totalStock = Math.round(byP.reduce(function(s, r) { return s + r.stock; }, 0));
-  const lastSold = byP.length ? byP[byP.length - 1].sold : 0;
-  const prevSold = byP.length > 1 ? byP[byP.length - 2].sold : 0;
-  const trnd = prevSold ? Math.round((lastSold - prevSold) / prevSold * 100) : 0;
-  const totP = {};
-  ap.forEach(function(p, i) { totP[pK(p.parsed)] = byP[i]; });
-  const fc = fc4(totP, ap);
+function renderAll(){
+  var f=getF(),items=getItems(f),ap=getAP(f);
+  var byP=sumByP(items,ap);
+  var totalSold=byP.reduce(function(s,r){return s+r.sold;},0);
+  var totalAdj=Math.round(byP.reduce(function(s,r){return s+adjD(r);},0));
+  var totalStock=Math.round(byP.reduce(function(s,r){return s+r.stock;},0));
+  var lastSold=byP.length?byP[byP.length-1].sold:0;
+  var prevSold=byP.length>1?byP[byP.length-2].sold:0;
+  var trnd=prevSold?Math.round((lastSold-prevSold)/prevSold*100):0;
+  var totP={};ap.forEach(function(p,i){totP[pK(p.parsed)]=byP[i];});
+  var fc=fc4(totP,ap);
 
-  document.getElementById('metrics-bar').innerHTML =
-    '<div class="metric"><div class="m-lbl">إجمالي المبيعات الفعلية</div><div class="m-val">' + totalSold.toLocaleString() + '</div><div class="m-sub">' + ap.length + ' فترة — ' + items.length + ' صنف</div></div>' +
-    '<div class="metric"><div class="m-lbl">المبيعات المعدلة</div><div class="m-val a">' + totalAdj.toLocaleString() + '</div><div class="m-sub">بتعويض الرصيد الضعيف</div></div>' +
-    '<div class="metric"><div class="m-lbl">متوسط الرصيد</div><div class="m-val b">' + totalStock.toLocaleString() + '</div></div>' +
-    '<div class="metric"><div class="m-lbl">آخر فترة</div><div class="m-val ' + (trnd >= 0 ? 'g' : 'r') + '">' + lastSold.toLocaleString() + '</div><div class="m-sub">' + (trnd >= 0 ? '▲ ' : '▼ ') + Math.abs(trnd) + '% عن السابق</div></div>' +
-    '<div class="metric"><div class="m-lbl">🟡 التوقع الأساسي</div><div class="m-val g">' + fc.b.toLocaleString() + '</div><div class="m-sub">للفترة القادمة</div></div>' +
-    '<div class="metric"><div class="m-lbl">🔵 تغطية كاملة</div><div class="m-val b">' + fc.f.toLocaleString() + '</div><div class="m-sub">أقصى إمكانية</div></div>';
+  document.getElementById('metrics-bar').innerHTML=
+    '<div class="metric"><div class="m-lbl">إجمالي المبيعات الفعلية</div><div class="m-val">'+totalSold.toLocaleString()+'</div><div class="m-sub">'+ap.length+' فترة — '+items.length+' صنف</div></div>'+
+    '<div class="metric"><div class="m-lbl">المبيعات المعدلة</div><div class="m-val a">'+totalAdj.toLocaleString()+'</div><div class="m-sub">بتعويض الرصيد الضعيف</div></div>'+
+    '<div class="metric"><div class="m-lbl">متوسط الرصيد</div><div class="m-val b">'+totalStock.toLocaleString()+'</div></div>'+
+    '<div class="metric"><div class="m-lbl">آخر فترة</div><div class="m-val '+(trnd>=0?'g':'r')+'">'+lastSold.toLocaleString()+'</div><div class="m-sub">'+(trnd>=0?'▲ ':'▼ ')+Math.abs(trnd)+'% عن السابق</div></div>'+
+    '<div class="metric"><div class="m-lbl">🟡 التوقع الأساسي</div><div class="m-val g">'+fc.b.toLocaleString()+'</div><div class="m-sub">للفترة القادمة</div></div>'+
+    '<div class="metric"><div class="m-lbl">🔵 تغطية كاملة</div><div class="m-val b">'+fc.f.toLocaleString()+'</div><div class="m-sub">أقصى إمكانية</div></div>';
 
-  document.getElementById('fc-cards').innerHTML =
-    '<div class="fc-card fc-p"><div class="fc-lbl">🔴 متشائم</div><div class="fc-val">' + fc.p.toLocaleString() + '</div><div class="fc-sub">أسوأ سيناريو</div></div>' +
-    '<div class="fc-card fc-b"><div class="fc-lbl">🟡 أساسي</div><div class="fc-val">' + fc.b.toLocaleString() + '</div><div class="fc-sub">التوقع الواقعي</div></div>' +
-    '<div class="fc-card fc-o"><div class="fc-lbl">🟢 متفائل</div><div class="fc-val">' + fc.o.toLocaleString() + '</div><div class="fc-sub">لو الرصيد تحسن</div></div>' +
-    '<div class="fc-card fc-f"><div class="fc-lbl">🔵 تغطية كاملة</div><div class="fc-val">' + fc.f.toLocaleString() + '</div><div class="fc-sub">أقصى إمكانية</div></div>';
+  document.getElementById('fc-cards').innerHTML=
+    '<div class="fc-card fc-p"><div class="fc-lbl">🔴 متشائم</div><div class="fc-val">'+fc.p.toLocaleString()+'</div><div class="fc-sub">أسوأ سيناريو</div></div>'+
+    '<div class="fc-card fc-b"><div class="fc-lbl">🟡 أساسي</div><div class="fc-val">'+fc.b.toLocaleString()+'</div><div class="fc-sub">التوقع الواقعي</div></div>'+
+    '<div class="fc-card fc-o"><div class="fc-lbl">🟢 متفائل</div><div class="fc-val">'+fc.o.toLocaleString()+'</div><div class="fc-sub">لو الرصيد تحسن</div></div>'+
+    '<div class="fc-card fc-f"><div class="fc-lbl">🔵 تغطية كاملة</div><div class="fc-val">'+fc.f.toLocaleString()+'</div><div class="fc-sub">أقصى إمكانية</div></div>';
 
-  renderGroups(items, ap, f);
-  renderItems(items, ap);
-  renderPareto(items, ap);
+  renderGroups(items,ap,f);
+  renderItems(items,ap);
+  renderPareto(items,ap);
 }
 
-function renderGroups(items, ap, f) {
-  const grps = f.grps.length ? f.grps : Array.from(new Set(items.map(function(r) { return r.grp; }))).sort();
-  const lastPk = ap.length ? pK(ap[ap.length - 1].parsed) : '';
-  document.querySelector('#grp-table tbody').innerHTML = grps.map(function(g) {
-    const gi = items.filter(function(r) { return r.grp === g; });
-    if (!gi.length) return '';
-    const gP = {};
-    ap.forEach(function(p) { gP[pK(p.parsed)] = { sold: 0, stock: 0, tot: 0, avail: 0, ok: 0, wk: 0, oc: '', ocm: '' }; });
-    gi.forEach(function(item) {
-      ap.forEach(function(p) {
-        const pk = pK(p.parsed);
-        const d = item.periods[pk];
-        if (d) {
-          gP[pk].sold += d.sold;
-          gP[pk].stock += d.stock;
-          gP[pk].tot += d.tot;
-          gP[pk].avail += d.avail;
-          gP[pk].ok += d.ok;
-          gP[pk].wk += d.wk;
-        }
-      });
-    });
-    const tot = Object.values(gP).reduce(function(s, d) { return s + d.sold; }, 0);
-    const adj = Math.round(Object.values(gP).reduce(function(s, d) { return s + adjD(d); }, 0));
-    const stk = Math.round(Object.values(gP).reduce(function(s, d) { return s + d.stock; }, 0));
-    const last = gP[lastPk] ? gP[lastPk].sold : 0;
-    const wkPct = gP[lastPk] && gP[lastPk].tot ? Math.round(gP[lastPk].wk / gP[lastPk].tot * 100) : 0;
-    const fc = fc4(gP, ap);
-    const chg = last ? Math.round((fc.b - last) / last * 100) : 0;
-    const lossPct = adj > 0 ? Math.round((adj - tot) / adj * 100) : 0;
-    return '<tr>' +
-      '<td><strong>' + g + '</strong></td>' +
-      '<td>' + tot.toLocaleString() + '</td>' +
-      '<td class="dot-a">' + adj.toLocaleString() + '</td>' +
-      '<td>' + stk.toLocaleString() + '</td>' +
-      '<td><span class="badge ' + (wkPct > 30 ? 'dn' : wkPct > 15 ? 'fl' : 'up') + '">' + wkPct + '%</span></td>' +
-      '<td class="dot-r">' + fc.p.toLocaleString() + '</td>' +
-      '<td><strong>' + fc.b.toLocaleString() + '</strong></td>' +
-      '<td class="dot-g">' + fc.o.toLocaleString() + '</td>' +
-      '<td><span class="badge bl">' + fc.f.toLocaleString() + '</span></td>' +
-      '<td>' + (lossPct > 0 ? '<span class="dot-r">' + lossPct + '%</span>' : '0%') + '</td>' +
-      '<td><span class="badge ' + (chg > 5 ? 'up' : chg < -5 ? 'dn' : 'fl') + '">' + (chg >= 0 ? '+' : '') + chg + '%</span></td>' +
+function renderGroups(items,ap,f){
+  var grps=f.grps.length?f.grps:Array.from(new Set(items.map(function(r){return r.grp;}))).sort();
+  var lastPk=ap.length?pK(ap[ap.length-1].parsed):'';
+  document.querySelector('#grp-table tbody').innerHTML=grps.map(function(g){
+    var gi=items.filter(function(r){return r.grp===g;});if(!gi.length)return'';
+    var gP={};ap.forEach(function(p){gP[pK(p.parsed)]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:'',ocm:''};});
+    gi.forEach(function(item){ap.forEach(function(p){var pk=pK(p.parsed),d=item.periods[pk];if(d){gP[pk].sold+=d.sold;gP[pk].stock+=d.stock;gP[pk].tot+=d.tot;gP[pk].avail+=d.avail;gP[pk].ok+=d.ok;gP[pk].wk+=d.wk;gP[pk].oc=d.oc;gP[pk].ocm=d.ocm;}});});
+    var tot=Object.values(gP).reduce(function(s,d){return s+d.sold;},0);
+    var adj=Math.round(Object.values(gP).reduce(function(s,d){return s+adjD(d);},0));
+    var stk=Math.round(Object.values(gP).reduce(function(s,d){return s+d.stock;},0));
+    var last=gP[lastPk]?gP[lastPk].sold:0;
+    var wkPct=gP[lastPk]&&gP[lastPk].tot?Math.round(gP[lastPk].wk/gP[lastPk].tot*100):0;
+    var fc=fc4(gP,ap);
+    var chg=last?Math.round((fc.b-last)/last*100):0;
+    var lossPct=adj>0?Math.round((adj-tot)/adj*100):0;
+    return'<tr>'+
+      '<td><strong>'+g+'</strong></td>'+
+      '<td>'+tot.toLocaleString()+'</td>'+
+      '<td class="dot-a">'+adj.toLocaleString()+'</td>'+
+      '<td>'+stk.toLocaleString()+'</td>'+
+      '<td><span class="badge '+(wkPct>30?'dn':wkPct>15?'fl':'up')+'">'+wkPct+'%</span></td>'+
+      '<td class="dot-r">'+fc.p.toLocaleString()+'</td>'+
+      '<td><strong>'+fc.b.toLocaleString()+'</strong></td>'+
+      '<td class="dot-g">'+fc.o.toLocaleString()+'</td>'+
+      '<td><span class="badge bl">'+fc.f.toLocaleString()+'</span></td>'+
+      '<td>'+(lossPct>0?'<span class="dot-r">'+lossPct+'%</span>':'0%')+'</td>'+
+      '<td><span class="badge '+(chg>5?'up':chg<-5?'dn':'fl')+'">'+(chg>=0?'+':'')+chg+'%</span></td>'+
       '</tr>';
   }).join('');
 }
 
-function renderItems(items, ap) {
-  const lastPk = ap.length ? pK(ap[ap.length - 1].parsed) : '';
-  allItemRows = items.map(function(item) {
-    const tot = ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + (d ? d.sold : 0); }, 0);
-    const adj = Math.round(ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + adjD(d); }, 0));
-    const stk = Math.round(ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + (d ? d.stock : 0); }, 0));
-    const wkPct = item.periods[lastPk] && item.periods[lastPk].tot ? Math.round(item.periods[lastPk].wk / item.periods[lastPk].tot * 100) : 0;
-    const fc = fc4(item.periods, ap);
-    const lossPct = adj > 0 ? Math.round((adj - tot) / adj * 100) : 0;
-    const status = wkPct > 30 ? '🔴 رصيد ضعيف' : wkPct > 15 ? '🟡 تحذير' : '🟢 طبيعي';
-    let lastOc = '', lastOcm = '';
-    if (item.periods[lastPk]) {
-      lastOc = item.periods[lastPk].oc;
-      lastOcm = item.periods[lastPk].ocm;
-    } else {
-      const pks = Object.keys(item.periods);
-      if (pks.length) {
-        lastOc = item.periods[pks[pks.length - 1]].oc;
-        lastOcm = item.periods[pks[pks.length - 1]].ocm;
-      }
-    }
-    return {
-      item: item.item, color: item.color, grp: item.grp, sg: item.sg, ratio: item.ratio,
-      tot: tot, adj: adj, stk: stk, wkPct: wkPct, fc: fc, lossPct: lossPct, status: status, oc: lastOc, ocm: lastOcm
-    };
-  }).sort(function(a, b) { return b.tot - a.tot; });
+function renderItems(items,ap){
+  var lastPk=ap.length?pK(ap[ap.length-1].parsed):'';
+  allItemRows=items.map(function(item){
+    var tot=ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+(d?d.sold:0);},0);
+    var adj=Math.round(ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+adjD(d);},0));
+    var stk=Math.round(ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+(d?d.stock:0);},0));
+    var wkPct=item.periods[lastPk]&&item.periods[lastPk].tot?Math.round(item.periods[lastPk].wk/item.periods[lastPk].tot*100):0;
+    var fc=fc4(item.periods,ap);
+    var lossPct=adj>0?Math.round((adj-tot)/adj*100):0;
+    var status=wkPct>30?'🔴 رصيد ضعيف':wkPct>15?'🟡 تحذير':'🟢 طبيعي';
+    // آخر مناسبة للصنف
+    var lastOc='',lastOcm='';
+    if(item.periods[lastPk]){lastOc=item.periods[lastPk].oc;lastOcm=item.periods[lastPk].ocm;}
+    else{var pks=Object.keys(item.periods);if(pks.length){lastOc=item.periods[pks[pks.length-1]].oc;lastOcm=item.periods[pks[pks.length-1]].ocm;}}
+    return{item:item.item,color:item.color,grp:item.grp,sg:item.sg,ratio:item.ratio,
+      tot:tot,adj:adj,stk:stk,wkPct:wkPct,fc:fc,lossPct:lossPct,status:status,oc:lastOc,ocm:lastOcm};
+  }).sort(function(a,b){return b.tot-a.tot;});
   filterItems();
 }
 
-function filterItems() {
-  const q = (document.getElementById('item-search').value || '').trim().toLowerCase();
-  const rows = q ? allItemRows.filter(function(r) { return r.item.toLowerCase().indexOf(q) >= 0 || r.color.toLowerCase().indexOf(q) >= 0 || r.grp.toLowerCase().indexOf(q) >= 0; }) : allItemRows;
-  document.querySelector('#item-table tbody').innerHTML = rows.map(function(r, i) {
-    const wB = r.wkPct > 30 ? 'dn' : r.wkPct > 15 ? 'fl' : 'up';
-    return '<tr>' +
-      '<td>' + (i + 1) + '</td><td>' + r.item + '</td><td>' + r.color + '</td><td>' + r.grp + '</td>' +
-      '<td>' + r.tot.toLocaleString() + '</td>' +
-      '<td class="dot-a">' + r.adj.toLocaleString() + '</td>' +
-      '<td>' + r.stk.toLocaleString() + '</td>' +
-      '<td><span class="badge ' + wB + '">' + r.wkPct + '%</span></td>' +
-      '<td class="dot-r">' + r.fc.p.toLocaleString() + '</td>' +
-      '<td><strong>' + r.fc.b.toLocaleString() + '</strong></td>' +
-      '<td class="dot-g">' + r.fc.o.toLocaleString() + '</td>' +
-      '<td><span class="badge bl">' + r.fc.f.toLocaleString() + '</span></td>' +
-      '<td>' + (r.lossPct > 0 ? '<span class="dot-r">' + r.lossPct + '%</span>' : '0%') + '</td>' +
-      '<td>' + r.status + '</td>' +
-      '<td>' + r.sg + '</td>' +
-      '<td>' + r.ratio + '</td>' +
-      '<td>' + r.oc + '</td>' +
-      '<td>' + r.ocm + '</td>' +
+function filterItems(){
+  var q=(document.getElementById('item-search').value||'').trim().toLowerCase();
+  var rows=q?allItemRows.filter(function(r){return r.item.toLowerCase().indexOf(q)>=0||r.color.toLowerCase().indexOf(q)>=0||r.grp.toLowerCase().indexOf(q)>=0;}):allItemRows;
+  document.querySelector('#item-table tbody').innerHTML=rows.map(function(r,i){
+    var wB=r.wkPct>30?'dn':r.wkPct>15?'fl':'up';
+    return'<tr>'+
+      '<td>'+(i+1)+'</td><td>'+r.item+'</td><td>'+r.color+'</td><td>'+r.grp+'</td>'+
+      '<td>'+r.tot.toLocaleString()+'</td>'+
+      '<td class="dot-a">'+r.adj.toLocaleString()+'</td>'+
+      '<td>'+r.stk.toLocaleString()+'</td>'+
+      '<td><span class="badge '+wB+'">'+r.wkPct+'%</span></td>'+
+      '<td class="dot-r">'+r.fc.p.toLocaleString()+'</td>'+
+      '<td><strong>'+r.fc.b.toLocaleString()+'</strong></td>'+
+      '<td class="dot-g">'+r.fc.o.toLocaleString()+'</td>'+
+      '<td><span class="badge bl">'+r.fc.f.toLocaleString()+'</span></td>'+
+      '<td>'+(r.lossPct>0?'<span class="dot-r">'+r.lossPct+'%</span>':'0%')+'</td>'+
+      '<td>'+r.status+'</td>'+
+      '<td>'+r.sg+'</td>'+
+      '<td>'+r.ratio+'</td>'+
+      '<td>'+r.oc+'</td>'+
+      '<td>'+r.ocm+'</td>'+
       '</tr>';
   }).join('');
 }
 
-function renderPareto(items, ap) {
-  const rows = items.map(function(item) {
-    const tot = ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + (d ? d.sold : 0); }, 0);
-    const adj = Math.round(ap.reduce(function(s, p) { const d = item.periods[pK(p.parsed)]; return s + adjD(d); }, 0));
-    const fc = fc4(item.periods, ap);
-    let lastOcm = '';
-    const pks = Object.keys(item.periods);
-    if (pks.length) lastOcm = item.periods[pks[pks.length - 1]].ocm;
-    return { item: item.item, color: item.color, grp: item.grp, sg: item.sg, ratio: item.ratio, ocm: lastOcm, val: tot, adj: adj, fc: fc };
-  }).sort(function(a, b) { return b.val - a.val; });
-  
-  const grand = rows.reduce(function(s, r) { return s + r.val; }, 0);
-  let cum = 0;
-  rows.forEach(function(r) {
-    cum += r.val;
-    r.cumPct = grand ? Math.round(cum / grand * 100) : 0;
-    r.pct = grand ? +(r.val / grand * 100).toFixed(1) : 0;
-    r.abc = r.cumPct <= 80 ? 'A' : r.cumPct <= 95 ? 'B' : 'C';
+function renderPareto(items,ap){
+  var rows=items.map(function(item){
+    var tot=ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+(d?d.sold:0);},0);
+    var adj=Math.round(ap.reduce(function(s,p){var d=item.periods[pK(p.parsed)];return s+adjD(d);},0));
+    var fc=fc4(item.periods,ap);
+    var lastOcm='';var pks=Object.keys(item.periods);if(pks.length)lastOcm=item.periods[pks[pks.length-1]].ocm;
+    return{item:item.item,color:item.color,grp:item.grp,sg:item.sg,ratio:item.ratio,ocm:lastOcm,val:tot,adj:adj,fc:fc};
+  }).sort(function(a,b){return b.val-a.val;});
+  var grand=rows.reduce(function(s,r){return s+r.val;},0);
+  var cum=0;
+  rows.forEach(function(r){
+    cum+=r.val;
+    r.cumPct=grand?Math.round(cum/grand*100):0;
+    r.pct=grand?+(r.val/grand*100).toFixed(1):0;
+    r.abc=r.cumPct<=80?'A':r.cumPct<=95?'B':'C';
   });
-  
-  const aR = rows.filter(function(r) { return r.abc === 'A'; });
-  const bR = rows.filter(function(r) { return r.abc === 'B'; });
-  const cR = rows.filter(function(r) { return r.abc === 'C'; });
-  
-  document.getElementById('ps-sum').innerHTML = ['A','B','C'].map(function(abc) {
-    const rr = abc === 'A' ? aR : abc === 'B' ? bR : cR;
-    const lbl = abc === 'A' ? '🟢 A — أعلى 80%' : abc === 'B' ? '🟡 B — 80% إلى 95%' : '🔴 C — آخر 5%';
-    const isActive = psFilter === abc;
-    return '<div class="ps-card ' + abc + (isActive ? ' active-abc' : '') + '" onclick="togglePS(\'' + abc + '\')">' +
-      '<div class="ps-lbl">' + lbl + '</div>' +
-      '<div class="ps-val">' + rr.length + '</div>' +
-      '<div class="ps-sub">' + Math.round(rr.length / Math.max(rows.length, 1) * 100) + '% من الأصناف</div>' +
-      '</div>';
-  }).join('');
-  
-  const top = (psFilter ? rows.filter(function(r) { return r.abc === psFilter; }) : rows).slice(0, 50);
+  var aR=rows.filter(function(r){return r.abc==='A';}),
+      bR=rows.filter(function(r){return r.abc==='B';}),
+      cR=rows.filter(function(r){return r.abc==='C';});
+
+  document.getElementById('ps-sum').innerHTML=
+    ['A','B','C'].map(function(abc){
+      var rr=abc==='A'?aR:abc==='B'?bR:cR;
+      var lbl=abc==='A'?'🟢 A — أعلى 80%':abc==='B'?'🟡 B — 80% إلى 95%':'🔴 C — آخر 5%';
+      var isActive=psFilter===abc;
+      return'<div class="ps-card '+abc+(isActive?' active-abc':'')+'" onclick="togglePS(\''+abc+'\')">'+
+        '<div class="ps-lbl">'+lbl+'</div>'+
+        '<div class="ps-val">'+rr.length+'</div>'+
+        '<div class="ps-sub">'+Math.round(rr.length/Math.max(rows.length,1)*100)+'% من الأصناف</div>'+
+        '</div>';
+    }).join('');
+
+  var top=(psFilter?rows.filter(function(r){return r.abc===psFilter;}):rows).slice(0,50);
   killChart('ps');
-  charts['ps'] = new Chart(document.getElementById('ps-chart').getContext('2d'), {
-    type: 'bar',
-    data: {
-      labels: top.map(function(r) { const n = r.item.substring(0, 12); return n + (r.item.length > 12 ? '…' : ''); }),
-      datasets: [
-        { label: 'المبيعات', data: top.map(function(r) { return r.val; }),
-          backgroundColor: top.map(function(r) { return r.abc === 'A' ? 'rgba(29,158,117,0.8)' : r.abc === 'B' ? 'rgba(186,117,23,0.8)' : 'rgba(163,45,45,0.8)'; }), borderRadius: 3, yAxisID: 'y' },
-        { label: '% تراكمي', data: top.map(function(r) { return r.cumPct; }), type: 'line', borderColor: '#1A5FA8', backgroundColor: 'transparent', pointRadius: 2, tension: 0.3, yAxisID: 'y2', borderWidth: 2 }
+  charts['ps']=new Chart(document.getElementById('ps-chart').getContext('2d'),{
+    type:'bar',
+    data:{
+      labels:top.map(function(r){var n=r.item.substring(0,12);return n+(r.item.length>12?'…':'');}),
+      datasets:[
+        {label:'المبيعات',data:top.map(function(r){return r.val;}),
+          backgroundColor:top.map(function(r){return r.abc==='A'?'rgba(29,158,117,0.8)':r.abc==='B'?'rgba(186,117,23,0.8)':'rgba(163,45,45,0.8)';}),borderRadius:3,yAxisID:'y'},
+        {label:'% تراكمي',data:top.map(function(r){return r.cumPct;}),type:'line',borderColor:'#1A5FA8',backgroundColor:'transparent',pointRadius:2,tension:0.3,yAxisID:'y2',borderWidth:2}
       ]
     },
-    options: {
-      responsive: true,
-      plugins: { legend: { position: 'bottom', labels: { font: { size: 11 }, boxWidth: 12, padding: 12 } } },
-      scales: {
-        y: { position: 'right', ticks: { font: { size: 10 } }, grid: { color: 'rgba(0,0,0,0.05)' } },
-        y2: { position: 'left', min: 0, max: 100, ticks: { font: { size: 10 }, callback: function(v) { return v + '%'; } }, grid: { drawOnChartArea: false } }
-      }
-    }
+    options:{responsive:true,plugins:{legend:{position:'bottom',labels:{font:{size:11},boxWidth:12,padding:12}}},
+      scales:{
+        y:{position:'right',ticks:{font:{size:10}},grid:{color:'rgba(0,0,0,0.05)'}},
+        y2:{position:'left',min:0,max:100,ticks:{font:{size:10},callback:function(v){return v+'%';}},grid:{drawOnChartArea:false}}
+      }}
   });
-  
-  allPSRows = rows;
+
+  allPSRows=rows;
   filterPS();
 }
 
-function togglePS(abc) {
-  psFilter = psFilter === abc ? null : abc;
-  const f = getF();
-  const items = getItems(f);
-  const ap = getAP(f);
-  renderPareto(items, ap);
+function togglePS(abc){
+  psFilter=psFilter===abc?null:abc;
+  var f=getF(),items=getItems(f),ap=getAP(f);
+  renderPareto(items,ap);
 }
 
-function filterPS() {
-  const q = (document.getElementById('ps-search').value || '').trim().toLowerCase();
-  let rows = psFilter ? allPSRows.filter(function(r) { return r.abc === psFilter; }) : allPSRows;
-  if (q) rows = rows.filter(function(r) { return r.item.toLowerCase().indexOf(q) >= 0 || r.color.toLowerCase().indexOf(q) >= 0 || r.grp.toLowerCase().indexOf(q) >= 0; });
-  document.querySelector('#ps-table tbody').innerHTML = rows.map(function(r, i) {
-    const pLoss = r.adj > 0 ? Math.round((r.adj - r.val) / r.adj * 100) : 0;
-    return '<tr>' +
-      '<td>' + (i + 1) + '</td><td>' + r.item + '</td><td>' + r.color + '</td><td>' + r.grp + '</td>' +
-      '<td><span class="badge ' + r.abc + '">' + r.abc + '</span></td>' +
-      '<td>' + r.val.toLocaleString() + '</td>' +
-      '<td class="dot-a">' + r.adj.toLocaleString() + '</td>' +
-      '<td>' + r.pct + '%</td><td>' + r.cumPct + '%</td>' +
-      '<td><strong>' + r.fc.b.toLocaleString() + '</strong></td>' +
-      '<td><span class="badge bl">' + r.fc.f.toLocaleString() + '</span></td>' +
-      '<td>' + (pLoss > 0 ? '<span class="dot-r">' + pLoss + '%</span>' : '0%') + '</td>' +
-      '<td>' + (r.sg || '') + '</td>' +
-      '<td>' + (r.ratio || '') + '</td>' +
-      '<td>' + (r.ocm || '') + '</td>' +
+function filterPS(){
+  var q=(document.getElementById('ps-search').value||'').trim().toLowerCase();
+  var rows=psFilter?allPSRows.filter(function(r){return r.abc===psFilter;}):allPSRows;
+  if(q)rows=rows.filter(function(r){return r.item.toLowerCase().indexOf(q)>=0||r.color.toLowerCase().indexOf(q)>=0||r.grp.toLowerCase().indexOf(q)>=0;});
+  document.querySelector('#ps-table tbody').innerHTML=rows.map(function(r,i){
+    var pLoss=r.adj>0?Math.round((r.adj-r.val)/r.adj*100):0;
+    return'<tr>'+
+      '<td>'+(i+1)+'</td><td>'+r.item+'</td><td>'+r.color+'</td><td>'+r.grp+'</td>'+
+      '<td><span class="badge '+r.abc+'">'+r.abc+'</span></td>'+
+      '<td>'+r.val.toLocaleString()+'</td>'+
+      '<td class="dot-a">'+r.adj.toLocaleString()+'</td>'+
+      '<td>'+r.pct+'%</td><td>'+r.cumPct+'%</td>'+
+      '<td><strong>'+r.fc.b.toLocaleString()+'</strong></td>'+
+      '<td><span class="badge bl">'+r.fc.f.toLocaleString()+'</span></td>'+
+      '<td>'+(pLoss>0?'<span class="dot-r">'+pLoss+'%</span>':'0%')+'</td>'+
+      '<td>'+(r.sg||'')+'</td>'+
+      '<td>'+(r.ratio||'')+'</td>'+
+      '<td>'+(r.ocm||'')+'</td>'+
       '</tr>';
   }).join('');
 }
 
-function exportTbl(tableId, name) {
-  const table = document.getElementById(tableId);
-  if (!table) return;
-  const wb = XLSX.utils.book_new();
-  const ws = XLSX.utils.table_to_sheet(table);
-  XLSX.utils.book_append_sheet(wb, ws, name);
-  XLSX.writeFile(wb, 'TREE_' + name + '_' + new Date().toISOString().slice(0,10) + '.xlsx');
+function exportTbl(tableId,name){
+  var tbl=document.getElementById(tableId);if(!tbl)return;
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.table_to_sheet(tbl);
+  XLSX.utils.book_append_sheet(wb,ws,name);
+  XLSX.writeFile(wb,'TREE_'+name+'_'+new Date().toISOString().substring(0,10)+'.xlsx');
 }
 
-const tabList = ['groups', 'items', 'ps'];
-function switchTab(tab) {
-  tabList.forEach(function(t) {
-    const el = document.getElementById('tab-' + t);
-    if (el) el.className = t === tab ? '' : 'hidden';
+var tabList=['groups','items','ps'];
+function switchTab(tab){
+  tabList.forEach(function(t){
+    var el=document.getElementById('tab-'+t);
+    if(el)el.className=t===tab?'':'hidden';
   });
-  document.querySelectorAll('.tab-btn').forEach(function(el, i) {
-    el.classList.toggle('active', tabList[i] === tab);
+  document.querySelectorAll('.tab-btn').forEach(function(el,i){
+    el.classList.toggle('active',tabList[i]===tab);
   });
 }
 
-document.getElementById('refreshBtn').addEventListener('click', function() {
-  location.reload();
-});
-
-window.addEventListener('DOMContentLoaded', function() {
-  loadFromGoogleSheets();
+var dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.background='#E6F7F2';});
+dz.addEventListener('dragleave',function(){dz.style.background='';});
+dz.addEventListener('drop',function(e){
+  e.preventDefault();dz.style.background='';
+  var f=e.dataTransfer.files[0];
+  if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;document.getElementById('fi').dispatchEvent(new Event('change'));}
 });
 </script>
 </body>
