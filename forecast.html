@@ -434,51 +434,55 @@ function adjD(d){
   return Math.max(s,d.sold||0);
 }
 
-// التوقع بيتحسب دايماً على أساس متوسط فترة واحدة (نص شهر)
-// بغض النظر عن عدد الفترات المختارة في الفلتر
-function fc4(itemPeriods,ap){
-  if(!ap.length)return{p:0,b:0,o:0,f:0};
-  var last=ap[ap.length-1];
-  var lastD=itemPeriods[pK(last.parsed)];
-  var lastOcm=lastD?lastD.ocm:'';
+// توقع فترة واحدة بناءً على نفس المناسبة الرئيسية من كل الفترات السابقة
+function forecastOnePeriod(itemPeriods,periodP){
+  var d=itemPeriods[pK(periodP.parsed)];
+  var ocm=d?d.ocm:'';
 
-  // كل الفترات (من allPeriods الكاملة) اللي نفس المناسبة الرئيسية لآخر فترة مختارة
-  var sameOcc=allPeriods.filter(function(p){
-    if(pK(p.parsed)===pK(last.parsed))return false;
-    var d=itemPeriods[pK(p.parsed)];
-    return d&&(!lastOcm||d.ocm===lastOcm);
+  // كل الفترات (من allPeriods الكاملة) اللي نفس المناسبة الرئيسية، غير الفترة نفسها
+  var sameOcc=allPeriods.filter(function(q){
+    if(pK(q.parsed)===pK(periodP.parsed))return false;
+    var qd=itemPeriods[pK(q.parsed)];
+    return qd&&(!ocm||qd.ocm===ocm);
   });
 
-  var base; // متوسط مبيعات فترة واحدة (معدلة)
+  var base;
   if(sameOcc.length>0){
-    var vals=sameOcc.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
+    var vals=sameOcc.map(function(q){return adjD(itemPeriods[pK(q.parsed)]);});
     base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
   }else{
-    // متوسط كل الفترات المختارة (لا إجمالي)
-    var allV=ap.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
-    base=allV.reduce(function(s,v){return s+v;},0)/Math.max(allV.length,1);
+    base=adjD(d);
   }
 
-  // التوقع الأساسي >= متوسط آخر فترة فعلي (لا الإجمالي)
-  var lastActual=lastD?lastD.sold:0;
+  var lastActual=d?d.sold:0;
   base=Math.max(base,lastActual);
 
-  var weakR=lastD&&lastD.tot?lastD.wk/lastD.tot:0;
-
-  // تغطية كاملة = المبيعات المعدلة لفترة واحدة (آخر فترة)
-  var adjFull=adjD(lastD);
-  if(adjFull===0){
-    // لو آخر فترة مفيهاش بيانات، استخدم متوسط المعدل لكل الفترات المختارة
-    var allAdj=ap.map(function(p){return adjD(itemPeriods[pK(p.parsed)]);});
-    adjFull=allAdj.reduce(function(s,v){return s+v;},0)/Math.max(allAdj.length,1);
-  }
-  adjFull=Math.max(Math.round(adjFull),Math.round(base));
+  var weakR=d&&d.tot?d.wk/d.tot:0;
+  var adjFull=adjD(d);
+  if(adjFull===0)adjFull=base;
+  adjFull=Math.max(adjFull,base);
 
   return{
-    p:Math.max(0,Math.round(base*(1-weakR*0.2))),
-    b:Math.round(base),
-    o:Math.round(base*(1+weakR*0.3)),
+    p:Math.max(0,base*(1-weakR*0.2)),
+    b:base,
+    o:base*(1+weakR*0.3),
     f:adjFull
+  };
+}
+
+// التوقع الإجمالي = مجموع توقعات كل فترة مختارة على حدة (كل واحدة بمناسبتها)
+function fc4(itemPeriods,ap){
+  if(!ap.length)return{p:0,b:0,o:0,f:0};
+  var totals={p:0,b:0,o:0,f:0};
+  ap.forEach(function(p){
+    var r=forecastOnePeriod(itemPeriods,p);
+    totals.p+=r.p;totals.b+=r.b;totals.o+=r.o;totals.f+=r.f;
+  });
+  return{
+    p:Math.max(0,Math.round(totals.p)),
+    b:Math.round(totals.b),
+    o:Math.round(totals.o),
+    f:Math.round(totals.f)
   };
 }
 
