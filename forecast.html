@@ -389,6 +389,25 @@ function makeMulti(id,vals,onChangeExtra){
   }).join('');
 }
 
+// فلتر المناسبات: زي فلتر Excel — اختيار عنصر واحد يلغي باقي العناصر تلقائياً
+// (إلا لو ضغط مع Ctrl/Cmd لاختيار أكتر من عنصر)
+function makeMultiOccasion(id,vals){
+  var el=document.getElementById(id);
+  el.innerHTML=vals.map(function(v){
+    return'<label><input type="checkbox" value="'+v+'" checked onclick="onOccasionClick(event,this,\''+id+'\')" onchange="renderAll();onOccasionChange(this)"> <span>'+v+'</span></label>';
+  }).join('');
+}
+
+// لو ضغط بدون Ctrl/Cmd: يبقى ده العنصر الوحيد المختار
+function onOccasionClick(e,el,containerId){
+  if(!e.ctrlKey&&!e.metaKey){
+    var willBeChecked=el.checked; // بعد الضغط
+    document.querySelectorAll('#'+containerId+' input[type=checkbox]').forEach(function(cb){
+      cb.checked=(cb===el)?willBeChecked:false;
+    });
+  }
+}
+
 function buildFilters(gSet,sgSet,clSet,ocSet,ocmSet){
   var pc=document.getElementById('period-checks');
   pc.innerHTML=allPeriods.map(function(p){
@@ -397,8 +416,8 @@ function buildFilters(gSet,sgSet,clSet,ocSet,ocmSet){
   makeMulti('f-group',Object.keys(gSet).sort());
   makeMulti('f-subgroup',Object.keys(sgSet).sort());
   makeMulti('f-color',Object.keys(clSet).sort());
-  makeMulti('f-oc',Object.keys(ocSet).sort(),'onOccasionChange');
-  makeMulti('f-ocm',Object.keys(ocmSet).sort(),'onOccasionChange');
+  makeMultiOccasion('f-oc',Object.keys(ocSet).sort());
+  makeMultiOccasion('f-ocm',Object.keys(ocmSet).sort());
 }
 
 // لما يتغير فلتر مناسبات أو مناسبات رئيسي:
