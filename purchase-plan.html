@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TREE — خطة المشتريات</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+:root{
+  --green:#1D9E75;--green-l:#EAF3DE;--green-d:#3B6D11;
+  --amber:#BA7517;--amber-l:#FAEEDA;--amber-d:#854F0B;
+  --red:#A32D2D;--red-l:#FCEBEB;
+  --blue:#1A5FA8;--blue-l:#E3EEF9;
+  --bg:#F0F4F8;--card:#fff;--border:#E2E8F0;--text:#1A202C;--muted:#718096;
+  --radius:12px;--shadow:0 1px 4px rgba(0,0,0,0.07);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text);font-size:13px}
+.hdr{background:var(--card);border-bottom:1px solid var(--border);padding:0 20px;height:54px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:300;box-shadow:var(--shadow)}
+.hdr-logo{width:32px;height:32px;background:var(--green);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:14px}
+.hdr-title{font-size:15px;font-weight:700}
+.hdr-sub{font-size:11px;color:var(--muted)}
+.hdr-r{margin-right:auto;display:flex;align-items:center;gap:8px}
+#file-badge{font-size:11px;background:var(--green-l);color:var(--green-d);padding:3px 10px;border-radius:20px;font-weight:500}
+.btn-sm{font-size:11px;background:var(--green);color:#fff;border:none;padding:5px 12px;border-radius:7px;cursor:pointer;font-family:inherit;font-weight:600}
+.main{padding:16px;max-width:1300px;margin:0 auto}
+.upload-wrap{display:flex;align-items:center;justify-content:center;min-height:calc(100vh - 54px)}
+.upload-card{background:var(--card);border:2px dashed #C6D9CE;border-radius:16px;padding:48px 40px;text-align:center;cursor:pointer;max-width:480px;width:100%}
+.upload-card:hover{border-color:var(--green);background:#F5FBF8}
+.upload-icon{font-size:44px;margin-bottom:14px}
+.upload-card h2{font-size:16px;font-weight:700;margin-bottom:8px}
+.upload-card p{font-size:12px;color:var(--muted);line-height:1.9}
+#prog-wrap{display:none;padding:20px;max-width:400px;margin:40px auto}
+.prog-card{background:var(--card);border-radius:var(--radius);padding:20px;border:1px solid var(--border);text-align:center}
+.pb-out{background:#E2E8F0;border-radius:20px;height:6px;margin:10px 0}
+.pb-in{background:var(--green);height:6px;border-radius:20px;width:0%;transition:width .3s}
+#pb-msg{font-size:12px;color:var(--muted)}
+.section{background:var(--card);border-radius:var(--radius);padding:16px 18px;margin-bottom:12px;border:1px solid var(--border);box-shadow:var(--shadow)}
+.sec-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;flex-wrap:wrap;gap:8px}
+.sec-title{font-size:14px;font-weight:700}
+.btn-export{font-size:11px;background:var(--green-l);color:var(--green-d);border:1px solid #A8D688;padding:5px 12px;border-radius:6px;cursor:pointer;font-family:inherit;font-weight:700}
+.btn-export:hover{background:var(--green);color:#fff}
+.note{font-size:11px;color:var(--amber-d);margin-top:10px;padding:8px 12px;background:var(--amber-l);border-radius:7px;border-right:3px solid var(--amber);line-height:1.6}
+.tbl-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border)}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{background:#F7FAFC;padding:10px 12px;text-align:center;font-weight:700;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap}
+td{padding:8px 10px;border-bottom:1px solid #F0F4F8;white-space:nowrap;text-align:center;vertical-align:middle}
+td:first-child,th:first-child{text-align:right;position:sticky;right:0;background:#fff;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.03)}
+th:first-child{background:#F7FAFC}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#F7FAFC}
+tr:hover td:first-child{background:#F7FAFC}
+.badge{display:inline-flex;align-items:center;justify-content:center;padding:2px 9px;border-radius:20px;font-size:10px;font-weight:700}
+.badge.up{background:var(--green-l);color:var(--green-d)}
+.badge.dn{background:var(--red-l);color:var(--red)}
+.need-cell{display:flex;flex-direction:column;gap:1px;font-size:10px;line-height:1.5}
+.need-cell .ok{color:var(--green-d);font-weight:700;font-size:13px}
+.need-cell .dash{color:var(--border);font-size:13px}
+#dashboard{display:none}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--muted);margin-bottom:10px}
+.legend span{display:flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+<div class="hdr">
+  <div class="hdr-logo">T</div>
+  <div>
+    <div class="hdr-title">خطة المشتريات — TREE</div>
+    <div class="hdr-sub" id="period-range">ارفع الملف المدمج (فترات البيع + رصيد الآن) للبدء</div>
+  </div>
+  <div class="hdr-r">
+    <span id="file-badge">لم يتم رفع ملف</span>
+    <button class="btn-sm" onclick="document.getElementById('fi').click()">⬆ رفع ملف</button>
+  </div>
+</div>
+<input type="file" id="fi" accept=".xlsx,.xls,.csv" style="display:none">
+
+<div id="upload-screen">
+  <div class="upload-wrap">
+    <div class="upload-card" id="drop-zone" onclick="document.getElementById('fi').click()">
+      <div class="upload-icon">📋</div>
+      <h2>ارفع ملف Excel الناتج من كويري "الدمج" (فترات البيع + رصيد الآن)</h2>
+      <p>الأعمدة المطلوبة:<br>
+      تاريخ — إسم الصنف — اللون — المجموعة الرئيسية — المجموعة الفرعية<br>
+      مناسبات — مناسبات رئيسي — يشيو.ريشيو — صافي الكمية المباعه<br>
+      متوسط_رصيد_افتتاحي — إجمالي_الفروع — فروع_متاح — فروع_رصيد_كافي — فروع_رصيد_ضعيف<br><br>
+      <strong>صفوف الرصيد الحالي:</strong> مناسبات رئيسي = "رصيد حالي"</p>
+    </div>
+  </div>
+</div>
+
+<div id="prog-wrap">
+  <div class="prog-card">
+    <div id="pb-msg">جاري قراءة الملف...</div>
+    <div class="pb-out"><div class="pb-in" id="pb"></div></div>
+  </div>
+</div>
+
+<div id="dashboard">
+  <div class="main">
+    <div class="section">
+      <div class="sec-hdr">
+        <span class="sec-title">📋 خطة المشتريات — محاكاة تراكمية بدءاً من رصيد كل مجموعة فرعية</span>
+        <button class="btn-export" onclick="exportTbl()">⬇ تصدير Excel</button>
+      </div>
+      <div class="legend">
+        <span>🔴 متشائم</span><span>🟡 أساسي</span><span>🟢 متفائل</span><span>🔵 تغطية كاملة</span>
+        <span style="color:var(--green-d);font-weight:700">✓ = الرصيد كافٍ (أساسي)</span>
+        <span style="color:var(--border)">— = لا يوجد احتياج</span>
+      </div>
+      <div class="note" id="info-note">المحاكاة تستخدم كامل بيانات الملف بدون أي فلاتر. تبدأ من آخر رصيد مُدخل لكل مجموعة فرعية (صف "رصيد حالي")، وتطرح توقع كل فترة قادمة (4 سيناريوهات مبنية على نفس المناسبة من الفترات السابقة). عند نفاد الرصيد يظهر "احتياج شراء" للفترة المقابلة.</div>
+      <div class="tbl-wrap">
+        <table id="purchase-table"><thead></thead><tbody></tbody></table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+var byItem={},allPeriods=[];
+
+function normH(h){if(!h)return '';return h.toString().replace(/[\r\n\t]+/g,' ').replace(/\s+/g,' ').trim();}
+function findCol(H,cands){
+  var nh=H.map(function(h){return{o:h,n:normH(h)};});
+  for(var i=0;i<cands.length;i++){var c=normH(cands[i]);for(var j=0;j<nh.length;j++){if(nh[j].n===c)return nh[j].o;}}
+  for(var i=0;i<cands.length;i++){var c=normH(cands[i]).substring(0,6);if(!c)continue;for(var j=0;j<nh.length;j++){if(nh[j].n.indexOf(c)>=0)return nh[j].o;}}
+  return null;
+}
+function parsePer(s){
+  if(!s)return null;s=s.toString().trim();
+  var m=s.match(/(\d{1,2})-(\d{4})/);if(!m)return null;
+  var h=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
+  return{yr:parseInt(m[2]),mo:parseInt(m[1]),h:h,lbl:s};
+}
+function pOrd(p){return p.yr*1000+p.mo*10+p.h;}
+function pK(p){return p.yr+'_'+p.mo+'_'+p.h;}
+function setP(pct,msg){document.getElementById('pb').style.width=pct+'%';document.getElementById('pb-msg').textContent=msg;}
+
+document.getElementById('fi').addEventListener('change',function(e){
+  var f=e.target.files[0];if(!f)return;
+  document.getElementById('file-badge').textContent=f.name;
+  document.getElementById('upload-screen').style.display='none';
+  document.getElementById('prog-wrap').style.display='block';
+  setP(10,'جاري قراءة الملف...');
+  var reader=new FileReader();
+  reader.onload=function(ev){
+    setP(40,'جاري تحليل البيانات...');
+    setTimeout(function(){
+      try{
+        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var ws=wb.Sheets[wb.SheetNames[0]];
+        setP(65,'جاري التجميع...');
+        setTimeout(function(){
+          var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+          if(!raw||!raw.length){alert('الملف فاضي');return;}
+          var H=Object.keys(raw[0]);
+          var pC=findCol(H,['تاريخ']),iC=findCol(H,['إسم الصنف','اسم الصنف']),
+              clC=findCol(H,['اللون']),gC=findCol(H,['المجموعة الرئيسية']),
+              sgC=findCol(H,['المجموعة الفرعية']),
+              ocC=findCol(H,['مناسبات']),ocmC=findCol(H,['مناسبات رئيسي']),
+              rC=findCol(H,['يشيو.ريشيو','ريشيو']),
+              sC=findCol(H,['صافي الكمية المباعه','صافي الكمية']),
+              stC=findCol(H,['متوسط_رصيد_افتتاحي']),
+              totC=findCol(H,['إجمالي_الفروع']),avC=findCol(H,['فروع_متاح']),
+              okC=findCol(H,['فروع_رصيد_كافي']),wkC=findCol(H,['فروع_رصيد_ضعيف']);
+          if(!pC||!sgC){alert('مش لاقي أعمدة التاريخ أو المجموعة الفرعية');return;}
+          byItem={};
+          var pMap={};
+          for(var i=0;i<raw.length;i++){
+            var r=raw[i];
+            var per=r[pC]||'';var pp=parsePer(per);if(!pp)continue;
+            var pk=pK(pp);
+            var item=iC?(r[iC]||''):'',color=clC?(r[clC]||''):'',
+                grp=gC?r[gC]:'غير محدد',sg=sgC?r[sgC]:'غير محدد',
+                oc=ocC?r[ocC]:'',ocm=ocmC?r[ocmC]:'',
+                ratio=rC?(parseFloat(r[rC])||3):3,
+                sold=sC?(parseFloat(r[sC])||0):0,
+                stock=stC?Math.max(0,parseFloat(r[stC])||0):0,
+                tot=totC?(parseFloat(r[totC])||0):0,
+                avail=avC?(parseFloat(r[avC])||0):0,
+                ok2=okC?(parseFloat(r[okC])||0):0,
+                wk=wkC?(parseFloat(r[wkC])||0):0;
+            pMap[pk]={raw:per,parsed:pp};
+            var isStockRow=(ocm==='رصيد حالي'||oc==='رصيد حالي');
+            var key=isStockRow?('__STOCK__|||'+sg):(item+'|||'+color+'|||'+sg);
+            if(!byItem[key])byItem[key]={item:item,color:color,grp:grp,sg:sg,ratio:ratio,isStock:isStockRow,periods:{}};
+            if(!byItem[key].periods[pk])byItem[key].periods[pk]={sold:0,stock:0,tot:0,avail:0,ok:0,wk:0,oc:oc,ocm:ocm};
+            var d=byItem[key].periods[pk];
+            d.sold+=sold;d.stock+=stock;d.tot+=tot;d.avail+=avail;d.ok+=ok2;d.wk+=wk;
+          }
+          allPeriods=Object.values(pMap).sort(function(a,b){return pOrd(a.parsed)-pOrd(b.parsed);});
+          if(allPeriods.length)document.getElementById('period-range').textContent=allPeriods[0].raw+' ← '+allPeriods[allPeriods.length-1].raw;
+          setP(100,'تم!');
+          setTimeout(function(){
+            document.getElementById('prog-wrap').style.display='none';
+            document.getElementById('dashboard').style.display='block';
+            renderPurchasePlan();
+          },300);
+        },50);
+      }catch(err){alert('خطأ: '+err.message);}
+    },50);
+  };
+  reader.readAsArrayBuffer(f);
+});
+
+function adjD(d){
+  if(!d)return 0;
+  var s=d.sold||0;
+  if(d.ok>0)s=s+(s/d.ok)*d.wk;
+  return Math.max(s,d.sold||0);
+}
+
+// توقع فترة واحدة بناءً على نفس المناسبة الرئيسية من كل الفترات السابقة
+function forecastOnePeriod(itemPeriods,periodP){
+  var d=itemPeriods[pK(periodP.parsed)];
+  var ocm=d?d.ocm:'';
+  var sameOcc=allPeriods.filter(function(q){
+    if(pK(q.parsed)===pK(periodP.parsed))return false;
+    var qd=itemPeriods[pK(q.parsed)];
+    return qd&&(!ocm||qd.ocm===ocm)&&qd.ocm!=='رصيد حالي';
+  });
+  var base;
+  if(sameOcc.length>0){
+    var vals=sameOcc.map(function(q){return adjD(itemPeriods[pK(q.parsed)]);});
+    base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  }else{
+    base=adjD(d);
+  }
+  var lastActual=d?d.sold:0;
+  base=Math.max(base,lastActual);
+  var weakR=d&&d.tot?d.wk/d.tot:0;
+  var adjFull=adjD(d);
+  if(adjFull===0)adjFull=base;
+  adjFull=Math.max(adjFull,base);
+  return{
+    p:Math.max(0,base*(1-weakR*0.2)),
+    b:base,
+    o:base*(1+weakR*0.3),
+    f:adjFull
+  };
+}
+
+// ========== خطة المشتريات ==========
+function renderPurchasePlan(){
+  var stockRows=Object.values(byItem).filter(function(r){return r.isStock;});
+  if(!stockRows.length){
+    document.querySelector('#purchase-table thead').innerHTML='';
+    document.querySelector('#purchase-table tbody').innerHTML='<tr><td style="padding:14px;color:var(--muted);text-align:right">لا يوجد صفوف "رصيد حالي" في الملف — تأكد من إضافة كويري رصيد الآن للدمج (مناسبات رئيسي = "رصيد حالي")</td></tr>';
+    return;
+  }
+
+  var allRealItems=Object.values(byItem).filter(function(r){return !r.isStock;});
+
+  var results=stockRows.map(function(stockRow){
+    var pks=Object.keys(stockRow.periods);
+    if(!pks.length)return null;
+    // آخر فترة فيها بيانات رصيد لهذه المجموعة
+    var startPk=pks.reduce(function(best,pk){
+      var bp=allPeriods.find(function(p){return pK(p.parsed)===best;});
+      var cp=allPeriods.find(function(p){return pK(p.parsed)===pk;});
+      if(!bp)return pk;if(!cp)return best;
+      return pOrd(cp.parsed)>pOrd(bp.parsed)?pk:best;
+    },pks[0]);
+    var startPeriodObj=allPeriods.find(function(p){return pK(p.parsed)===startPk;});
+    if(!startPeriodObj)return null;
+    var startStock=Math.max(0,stockRow.periods[startPk].stock||0);
+
+    var futurePeriods=allPeriods.filter(function(p){return pOrd(p.parsed)>pOrd(startPeriodObj.parsed);});
+    var realItems=allRealItems.filter(function(it){return it.sg===stockRow.sg;});
+
+    var scenarios=['p','b','o','f'];
+    var sim={};
+    scenarios.forEach(function(sc){sim[sc]={stock:startStock,perPeriod:[]};});
+
+    futurePeriods.forEach(function(fp){
+      var fcTotals={p:0,b:0,o:0,f:0};
+      realItems.forEach(function(it){
+        var r=forecastOnePeriod(it.periods,fp);
+        fcTotals.p+=r.p;fcTotals.b+=r.b;fcTotals.o+=r.o;fcTotals.f+=r.f;
+      });
+      scenarios.forEach(function(sc){
+        var s=sim[sc];
+        s.stock-=fcTotals[sc];
+        var need=0;
+        if(s.stock<0){need=-s.stock;s.stock=0;}
+        s.perPeriod.push({period:fp.raw,forecast:Math.round(fcTotals[sc]),need:Math.round(need),remain:Math.round(s.stock)});
+      });
+    });
+
+    var totalNeed={p:0,b:0,o:0,f:0};
+    scenarios.forEach(function(sc){
+      sim[sc].perPeriod.forEach(function(row){totalNeed[sc]+=row.need;});
+    });
+
+    return{sg:stockRow.sg,startStock:Math.round(startStock),startPeriod:startPeriodObj.raw,futurePeriods:futurePeriods,sim:sim,totalNeed:totalNeed};
+  }).filter(function(r){return r!==null;})
+  .sort(function(a,b){return (b.totalNeed.b)-(a.totalNeed.b);});
+
+  if(!results.length){
+    document.querySelector('#purchase-table thead').innerHTML='';
+    document.querySelector('#purchase-table tbody').innerHTML='<tr><td style="padding:14px;color:var(--muted);text-align:right">لا توجد فترات قادمة بعد فترة الرصيد الحالي</td></tr>';
+    return;
+  }
+
+  // أطول قائمة فترات قادمة لبناء رؤوس الأعمدة
+  var maxLen=0,refResult=results[0];
+  results.forEach(function(r){if(r.futurePeriods.length>maxLen){maxLen=r.futurePeriods.length;refResult=r;}});
+  var periodLabels=refResult.futurePeriods.map(function(p){return p.raw;});
+
+  var thead=document.querySelector('#purchase-table thead');
+  var head='<tr><th>المجموعة الفرعية</th><th>الرصيد الافتتاحي</th><th>فترة البداية</th>';
+  periodLabels.forEach(function(lbl){head+='<th>'+lbl+'</th>';});
+  head+='<th>إجمالي احتياج 🟡</th></tr>';
+  thead.innerHTML=head;
+
+  var tbody=document.querySelector('#purchase-table tbody');
+  tbody.innerHTML=results.map(function(r){
+    var row='<tr><td><strong>'+r.sg+'</strong></td><td>'+r.startStock.toLocaleString()+'</td><td>'+r.startPeriod+'</td>';
+    periodLabels.forEach(function(lbl,i){
+      if(i>=r.futurePeriods.length){row+='<td><span class="dash">—</span></td>';return;}
+      var cell='';
+      ['p','b','o','f'].forEach(function(sc){
+        var d=r.sim[sc].perPeriod[i];
+        var icon=sc==='p'?'🔴':sc==='b'?'🟡':sc==='o'?'🟢':'🔵';
+        if(d.need>0){
+          cell+='<div>'+icon+' '+d.need.toLocaleString()+'</div>';
+        }else if(sc==='b'){
+          cell+='<div class="ok">✓</div>';
+        }
+      });
+      row+='<td><div class="need-cell">'+(cell||'<span class="dash">—</span>')+'</div></td>';
+    });
+    row+='<td><span class="badge '+(r.totalNeed.b>0?'dn':'up')+'">'+Math.round(r.totalNeed.b).toLocaleString()+'</span></td>';
+    row+='</tr>';
+    return row;
+  }).join('');
+}
+
+function exportTbl(){
+  var tbl=document.getElementById('purchase-table');if(!tbl)return;
+  var wb=XLSX.utils.book_new();
+  var ws=XLSX.utils.table_to_sheet(tbl);
+  XLSX.utils.book_append_sheet(wb,ws,'خطة المشتريات');
+  XLSX.writeFile(wb,'TREE_خطة_المشتريات_'+new Date().toISOString().substring(0,10)+'.xlsx');
+}
+
+var dz=document.getElementById('drop-zone');
+dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.background='#E6F7F2';});
+dz.addEventListener('dragleave',function(){dz.style.background='';});
+dz.addEventListener('drop',function(e){
+  e.preventDefault();dz.style.background='';
+  var f=e.dataTransfer.files[0];
+  if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;document.getElementById('fi').dispatchEvent(new Event('change'));}
+});
+</script>
+</body>
+</html>
