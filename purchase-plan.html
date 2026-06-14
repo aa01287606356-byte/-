@@ -89,6 +89,34 @@ tr:hover td{background:#F7FAFC}
 .badge.B{background:var(--amber-l);color:var(--amber-d)}
 .badge.C{background:var(--red-l);color:var(--red)}
 canvas{width:100%!important}
+/* MULTI-SELECT DROPDOWN */
+.msel{position:relative;display:inline-block}
+.msel-btn{font-size:12px;padding:7px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:inherit;display:flex;align-items:center;gap:6px;min-width:160px;justify-content:space-between}
+.msel-btn:hover{border-color:var(--green)}
+.msel-count{background:var(--green);color:#fff;font-size:9px;padding:1px 6px;border-radius:10px;font-weight:700}
+.msel-count.empty{display:none}
+.msel-panel{display:none;position:absolute;top:calc(100% + 4px);right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 4px 16px rgba(0,0,0,.12);padding:8px;z-index:100;min-width:220px;max-height:280px;overflow-y:auto}
+.msel-panel.open{display:block}
+.msel-panel label{display:flex;align-items:center;gap:6px;padding:4px 5px;border-radius:5px;cursor:pointer;font-size:12px}
+.msel-panel label:hover{background:var(--green-l)}
+.msel-panel input{accent-color:var(--green);cursor:pointer}
+.msel-actions{display:flex;gap:4px;margin-bottom:6px;position:sticky;top:0;background:#fff;padding-bottom:4px}
+.msel-actions button{flex:1;font-size:10px;padding:4px;border:1px solid var(--border);border-radius:6px;background:#fff;cursor:pointer;color:var(--muted);font-family:inherit}
+.msel-actions button:hover{background:var(--green-l);color:var(--green-d);border-color:var(--green)}
+/* TOOLTIP / EXPLAIN MODAL */
+.fc-pill{display:inline-block;cursor:pointer;padding:1px 4px;border-radius:4px;transition:background .15s}
+.fc-pill:hover{background:rgba(0,0,0,.06)}
+.explain-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:1000;align-items:center;justify-content:center}
+.explain-overlay.open{display:flex}
+.explain-box{background:#fff;border-radius:12px;padding:18px 20px;max-width:480px;width:92%;max-height:80vh;overflow-y:auto;box-shadow:0 8px 30px rgba(0,0,0,.2)}
+.explain-box h3{font-size:14px;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between}
+.explain-box .close-x{cursor:pointer;color:var(--muted);font-size:18px;line-height:1}
+.explain-row{font-size:12px;margin-bottom:6px;display:flex;justify-content:space-between;gap:10px}
+.explain-row .lbl{color:var(--muted)}
+.explain-formula{background:#F7FAFC;border-radius:8px;padding:8px 10px;font-size:11px;margin-top:8px;font-family:monospace;direction:ltr;text-align:left}
+.explain-list{margin-top:8px;border-top:1px solid var(--border);padding-top:8px}
+.explain-list .it{font-size:11px;display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid #F7FAFC}
+.explain-list .it:last-child{border-bottom:none}
 </style>
 </head>
 <body>
@@ -147,8 +175,8 @@ canvas{width:100%!important}
         </div>
         <div class="note" id="info-note"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px">
-          <select id="plf-grp" onchange="filterPlan()" style="font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff"><option value="">كل المجموعات الرئيسية</option></select>
-          <select id="plf-dept" onchange="filterPlan()" style="font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff"><option value="">كل الأقسام</option></select>
+          <div class="msel" id="msel-plf-grp"></div>
+          <div class="msel" id="msel-plf-dept"></div>
         </div>
         <input class="search-box" id="plan-search" placeholder="ابحث بالمجموعة الفرعية / الرئيسية / القسم..." oninput="filterPlan()">
         <div class="tbl-wrap">
@@ -160,8 +188,8 @@ canvas{width:100%!important}
     <!-- PARETO -->
     <div id="tab-pareto" class="hidden">
       <div class="filters" id="pareto-filters" style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px">
-        <select id="pf-grp" onchange="renderPareto()" style="font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff"><option value="">كل المجموعات الرئيسية</option></select>
-        <select id="pf-dept" onchange="renderPareto()" style="font-size:12px;padding:7px 10px;border-radius:8px;border:1px solid var(--border);background:#fff"><option value="">كل الأقسام</option></select>
+        <div class="msel" id="msel-pf-grp"></div>
+        <div class="msel" id="msel-pf-dept"></div>
       </div>
       <div class="pareto-sum" id="ps-sum"></div>
       <div class="section">
@@ -292,33 +320,49 @@ function adjD(d){
 }
 
 // توقع فترة واحدة بناءً على نفس المناسبة الرئيسية من كل الفترات السابقة (تستثني صف الرصيد)
-function forecastOnePeriod(itemPeriods,periodP){
+// نسخة تُرجع التفاصيل الكاملة لطريقة الحساب (للعرض في التلميحات)
+function forecastOnePeriodDetailed(itemPeriods,periodP){
   var d=itemPeriods[pK(periodP.parsed)];
-  var ocm=d?d.ocm:'';
+  // المناسبة الرئيسية للفترة المطلوبة — من خريطة عامة (مش من بيانات الصنف نفسه)
+  var ocm=periodOcmMap[pK(periodP.parsed)]||(d?d.ocm:'');
+
   var sameOcc=allPeriods.filter(function(q){
     if(pK(q.parsed)===pK(periodP.parsed))return false;
     var qd=itemPeriods[pK(q.parsed)];
-    return qd&&(!ocm||qd.ocm===ocm)&&qd.ocm!=='رصيد حالي';
+    if(!qd||qd.ocm==='رصيد حالي')return false;
+    if(!ocm)return true; // لو مفيش معلومة مناسبة، اعتبر كل الفترات (نادر جداً)
+    return qd.ocm===ocm;
   });
-  var base;
+
+  var base,usedPeriods=[];
   if(sameOcc.length>0){
+    usedPeriods=sameOcc.map(function(q){return{label:q.raw,val:Math.round(adjD(itemPeriods[pK(q.parsed)]))};});
     var vals=sameOcc.map(function(q){return adjD(itemPeriods[pK(q.parsed)]);});
     base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
   }else{
-    base=adjD(d);
+    // لا توجد فترات سابقة بنفس المناسبة لهذا الصنف → التوقع = 0 (الصنف غير موسمي لهذه الفترة)
+    base=0;
   }
+
   var lastActual=d?d.sold:0;
   base=Math.max(base,lastActual);
+
   var weakR=d&&d.tot?d.wk/d.tot:0;
   var adjFull=adjD(d);
   if(adjFull===0)adjFull=base;
   adjFull=Math.max(adjFull,base);
+
   return{
     p:Math.max(0,base*(1-weakR*0.2)),
     b:base,
     o:base*(1+weakR*0.3),
-    f:adjFull
+    f:adjFull,
+    meta:{ocm:ocm,usedCount:sameOcc.length,usedPeriods:usedPeriods,base:base,weakR:weakR,lastActual:lastActual}
   };
+}
+
+function forecastOnePeriod(itemPeriods,periodP){
+  return forecastOnePeriodDetailed(itemPeriods,periodP);
 }
 
 function renderAll(){
@@ -328,27 +372,113 @@ function renderAll(){
   renderPareto();
 }
 
+// تخزين الاختيارات الحالية لكل multi-select
+var mselState={'pf-grp':null,'pf-dept':null,'plf-grp':null,'plf-dept':null};
+
 function buildFilterDropdowns(){
   var grps={},depts={};
   planResults.forEach(function(r){grps[r.grp]=true;depts[r.dept]=true;});
   var grpOpts=Object.keys(grps).sort();
   var deptOpts=Object.keys(depts).sort();
-  ['pf-grp','plf-grp'].forEach(function(id){
-    var el=document.getElementById(id);
-    var cur=el.value;
-    el.innerHTML='<option value="">كل المجموعات الرئيسية</option>'+grpOpts.map(function(g){return'<option>'+g+'</option>';}).join('');
-    el.value=cur;
-  });
-  ['pf-dept','plf-dept'].forEach(function(id){
-    var el=document.getElementById(id);
-    var cur=el.value;
-    el.innerHTML='<option value="">كل الأقسام</option>'+deptOpts.map(function(d){return'<option>'+d+'</option>';}).join('');
-    el.value=cur;
-  });
+
+  buildMultiSelect('msel-pf-grp','pf-grp','المجموعة الرئيسية',grpOpts,renderPareto);
+  buildMultiSelect('msel-pf-dept','pf-dept','القسم',deptOpts,renderPareto);
+  buildMultiSelect('msel-plf-grp','plf-grp','المجموعة الرئيسية',grpOpts,filterPlan);
+  buildMultiSelect('msel-plf-dept','plf-dept','القسم',deptOpts,filterPlan);
+}
+
+// يبني dropdown متعدد الاختيار. أول مرة: كل العناصر مختارة (يعني فلتر معطل = الكل)
+function buildMultiSelect(containerId,stateKey,label,options,onChangeCb){
+  var container=document.getElementById(containerId);
+  if(mselState[stateKey]===null){
+    mselState[stateKey]={}; // فاضي = يعتبر "الكل"
+    options.forEach(function(o){mselState[stateKey][o]=true;});
+  }else{
+    // أضف عناصر جديدة ظهرت (افتراضياً مختارة) واحذف القديمة غير الموجودة
+    var newState={};
+    options.forEach(function(o){newState[o]=(mselState[stateKey][o]!==undefined)?mselState[stateKey][o]:true;});
+    mselState[stateKey]=newState;
+  }
+  var selectedCount=Object.values(mselState[stateKey]).filter(Boolean).length;
+  var totalCount=options.length;
+  var isAll=selectedCount===totalCount||selectedCount===0;
+
+  var html='<button class="msel-btn" onclick="toggleMselPanel(\''+containerId+'\')">'+label+
+    '<span class="msel-count'+(isAll?' empty':'')+'">'+selectedCount+'</span></button>'+
+    '<div class="msel-panel" id="panel-'+containerId+'">'+
+    '<div class="msel-actions"><button onclick="mselSetAll(\''+stateKey+'\',\''+containerId+'\',true)">الكل</button><button onclick="mselSetAll(\''+stateKey+'\',\''+containerId+'\',false)">إلغاء</button></div>'+
+    options.map(function(o){
+      var checked=mselState[stateKey][o]?'checked':'';
+      return'<label><input type="checkbox" '+checked+' onchange="mselToggle(\''+stateKey+'\',\''+containerId+'\',\''+o.replace(/'/g,"\\'")+'\',this.checked)"><span>'+o+'</span></label>';
+    }).join('')+
+    '</div>';
+  container.innerHTML=html;
+  container.dataset.onchange=onChangeCb.name;
+}
+
+function toggleMselPanel(containerId){
+  var panel=document.getElementById('panel-'+containerId);
+  var isOpen=panel.classList.contains('open');
+  document.querySelectorAll('.msel-panel').forEach(function(p){p.classList.remove('open');});
+  if(!isOpen)panel.classList.add('open');
+}
+document.addEventListener('click',function(e){
+  if(!e.target.closest('.msel')){
+    document.querySelectorAll('.msel-panel').forEach(function(p){p.classList.remove('open');});
+  }
+});
+
+function mselToggle(stateKey,containerId,opt,val){
+  mselState[stateKey][opt]=val;
+  refreshMselBadge(containerId,stateKey);
+  triggerMselChange(containerId);
+}
+function mselSetAll(stateKey,containerId,val){
+  Object.keys(mselState[stateKey]).forEach(function(k){mselState[stateKey][k]=val;});
+  document.querySelectorAll('#panel-'+containerId+' input[type=checkbox]').forEach(function(cb){cb.checked=val;});
+  refreshMselBadge(containerId,stateKey);
+  triggerMselChange(containerId);
+}
+function refreshMselBadge(containerId,stateKey){
+  var selectedCount=Object.values(mselState[stateKey]).filter(Boolean).length;
+  var totalCount=Object.keys(mselState[stateKey]).length;
+  var isAll=selectedCount===totalCount||selectedCount===0;
+  var badge=document.querySelector('#'+containerId+' .msel-count');
+  if(badge){badge.textContent=selectedCount;badge.classList.toggle('empty',isAll);}
+}
+function triggerMselChange(containerId){
+  if(containerId.indexOf('pf-')>=0)renderPareto();
+  else filterPlan();
+}
+
+// يرجع true لو القيمة v مسموحة بناءً على حالة الفلتر (فاضي/الكل = يسمح بكل شيء)
+function mselAllows(stateKey,v){
+  var st=mselState[stateKey];
+  if(!st)return true;
+  var selectedCount=Object.values(st).filter(Boolean).length;
+  if(selectedCount===0||selectedCount===Object.keys(st).length)return true; // الكل = بدون فلتر
+  return !!st[v];
 }
 
 // ========== المحاكاة التراكمية ==========
+// خريطة عامة: لكل فترة، إيه "مناسبات رئيسي" بتاعتها — مأخوذة من أي صف فعلي عنده بيانات لهذه الفترة
+// (المناسبة خاصية للفترة نفسها بغض النظر عن الصنف)
+var periodOcmMap={};
+function buildPeriodOcmMap(){
+  periodOcmMap={};
+  Object.values(byItem).forEach(function(r){
+    if(r.isStock)return;
+    Object.keys(r.periods).forEach(function(pk){
+      var d=r.periods[pk];
+      if(d.ocm&&d.ocm!=='رصيد حالي'&&!periodOcmMap[pk]){
+        periodOcmMap[pk]=d.ocm;
+      }
+    });
+  });
+}
+
 function computePlan(){
+  buildPeriodOcmMap();
   // كل المجموعات الفرعية الموجودة (من البيع و/أو الرصيد) — بدون استبعاد
   var allSG={};
   var sgMeta={}; // grp/dept لكل مجموعة فرعية
@@ -422,16 +552,29 @@ function computePlan(){
     var sim={};
     scenarios.forEach(function(sc){sim[sc]={stock:startStock,perPeriod:[]};});
 
+    var details=[]; // تفاصيل كل فترة: لكل سيناريو، عناصر مساهمة + meta
     futurePeriods.forEach(function(fp){
       var fcTotals={p:0,b:0,o:0,f:0};
       var hasData=false;
+      var contributions={p:[],b:[],o:[],f:[]};
+      var metaList=[];
       realItems.forEach(function(it){
         if(Object.keys(it.periods).length>0){
           hasData=true;
           var r=forecastOnePeriod(it.periods,fp);
           fcTotals.p+=r.p;fcTotals.b+=r.b;fcTotals.o+=r.o;fcTotals.f+=r.f;
+          scenarios.forEach(function(sc){
+            var val=r[sc];
+            if(val>0.5)contributions[sc].push({item:it.item,color:it.color,val:Math.round(val)});
+          });
+          metaList.push({item:it.item,color:it.color,meta:r.meta,b:Math.round(r.b)});
         }
       });
+      scenarios.forEach(function(sc){
+        contributions[sc].sort(function(a,b){return b.val-a.val;});
+      });
+      details.push({fcTotals:fcTotals,contributions:contributions,metaList:metaList,hasData:hasData,period:fp.raw});
+
       scenarios.forEach(function(sc){
         var s=sim[sc];
         if(hasData){
@@ -456,7 +599,8 @@ function computePlan(){
       startPeriod:globalStockPeriod?globalStockPeriod.raw:'-',
       refPeriod:refPeriod?refPeriod.raw:'-',
       futurePeriods:futurePeriods,sim:sim,totalNeed:totalNeed,
-      hasAnyData:realItems.length>0
+      hasAnyData:realItems.length>0,
+      details:details
     };
   }).sort(function(a,b){return (b.totalNeed.b)-(a.totalNeed.b);});
 
@@ -488,7 +632,7 @@ function renderPlanTable(){
   head+='<th>إجمالي احتياج 🟡</th></tr>';
   thead.innerHTML=head;
 
-  tbody.innerHTML=planResults.map(function(r){
+  tbody.innerHTML=planResults.map(function(r,resultIdx){
     var row='<tr><td><strong>'+r.sg+'</strong></td><td>'+r.grp+'</td><td>'+r.dept+'</td><td>'+r.startStock.toLocaleString()+'</td><td>'+r.refPeriod+'</td>';
     periodLabels.forEach(function(lbl,i){
       if(i>=r.futurePeriods.length||!r.sim.b.perPeriod[i]||!r.sim.b.perPeriod[i].hasData){
@@ -498,10 +642,11 @@ function renderPlanTable(){
       ['p','b','o','f'].forEach(function(sc){
         var d=r.sim[sc].perPeriod[i];
         var icon=sc==='p'?'🔴':sc==='b'?'🟡':sc==='o'?'🟢':'🔵';
+        var fcVal=(r.details&&r.details[i])?Math.round(r.details[i].fcTotals[sc]):0;
         if(d.need>0){
-          cell+='<div>'+icon+' '+d.need.toLocaleString()+'</div>';
+          cell+='<div class="fc-pill" onclick="showExplain('+resultIdx+','+i+',\''+sc+'\')">'+icon+' '+d.need.toLocaleString()+'</div>';
         }else if(sc==='b'){
-          cell+='<div class="ok">✓</div>';
+          cell+='<div class="fc-pill ok" onclick="showExplain('+resultIdx+','+i+',\''+sc+'\')">✓</div>';
         }
       });
       row+='<td><div class="need-cell">'+(cell||'<span class="dash">—</span>')+'</div></td>';
@@ -516,15 +661,13 @@ function renderPlanTable(){
 
 function filterPlan(){
   var q=(document.getElementById('plan-search').value||'').trim().toLowerCase();
-  var fg=document.getElementById('plf-grp')?document.getElementById('plf-grp').value:'';
-  var fd=document.getElementById('plf-dept')?document.getElementById('plf-dept').value:'';
   var rows=document.querySelectorAll('#purchase-table tbody tr');
   rows.forEach(function(tr,idx){
     var r=planResults[idx];
     if(!r){tr.style.display='';return;}
     var show=true;
-    if(fg&&r.grp!==fg)show=false;
-    if(fd&&r.dept!==fd)show=false;
+    if(!mselAllows('plf-grp',r.grp))show=false;
+    if(!mselAllows('plf-dept',r.dept))show=false;
     if(q&&tr.textContent.toLowerCase().indexOf(q)<0)show=false;
     tr.style.display=show?'':'none';
   });
@@ -532,11 +675,9 @@ function filterPlan(){
 
 // ========== باريتو الاحتياج ==========
 function renderPareto(){
-  var fg=document.getElementById('pf-grp')?document.getElementById('pf-grp').value:'';
-  var fd=document.getElementById('pf-dept')?document.getElementById('pf-dept').value:'';
   var rows=planResults.filter(function(r){
-    if(fg&&r.grp!==fg)return false;
-    if(fd&&r.dept!==fd)return false;
+    if(!mselAllows('pf-grp',r.grp))return false;
+    if(!mselAllows('pf-dept',r.dept))return false;
     return true;
   }).map(function(r){
     return{sg:r.sg,grp:r.grp,dept:r.dept,val:Math.round(r.totalNeed.b)};
@@ -618,6 +759,63 @@ function filterPS(){
   }).join('');
 }
 
+// ========== Explain Modal ==========
+var scLabels={p:'🔴 متشائم',b:'🟡 أساسي',o:'🟢 متفائل',f:'🔵 تغطية كاملة'};
+
+function showExplain(resultIdx,periodIdx,sc){
+  var r=planResults[resultIdx];
+  if(!r||!r.details||!r.details[periodIdx])return;
+  var det=r.details[periodIdx];
+  var simRow=r.sim[sc].perPeriod[periodIdx];
+  var fcVal=Math.round(det.fcTotals[sc]);
+  var contributions=det.contributions[sc]||[];
+
+  document.getElementById('explain-title').textContent=scLabels[sc]+' — '+r.sg+' ('+det.period+')';
+
+  var html='';
+  html+='<div class="explain-row"><span class="lbl">إجمالي التوقع لهذه الفترة</span><strong>'+fcVal.toLocaleString()+'</strong></div>';
+  html+='<div class="explain-row"><span class="lbl">احتياج الشراء (بعد طرح الرصيد المتراكم)</span><strong>'+simRow.need.toLocaleString()+'</strong></div>';
+  html+='<div class="explain-row"><span class="lbl">عدد الأصناف المساهمة</span><strong>'+contributions.length+'</strong></div>';
+
+  html+='<div class="explain-formula">'+
+    'إجمالي التوقع = Σ (توقع كل صنف لهذه الفترة)<br>'+
+    'احتياج الشراء = max(0, إجمالي التوقع − الرصيد المتبقي من الفترة السابقة)'+
+    '</div>';
+
+  if(contributions.length){
+    html+='<div class="explain-list"><div style="font-size:11px;font-weight:700;margin-bottom:4px;color:var(--muted)">أكبر الأصناف المساهمة:</div>';
+    contributions.slice(0,8).forEach(function(c){
+      html+='<div class="it"><span>'+c.item+(c.color?' — '+c.color:'')+'</span><span>'+c.val.toLocaleString()+'</span></div>';
+    });
+    if(contributions.length>8){
+      html+='<div class="it" style="color:var(--muted)"><span>+ '+(contributions.length-8)+' صنف آخر</span><span></span></div>';
+    }
+    html+='</div>';
+  }
+
+  // شرح طريقة حساب أول صنف (مثال توضيحي لمنهجية الحساب)
+  if(det.metaList&&det.metaList.length){
+    var sample=det.metaList[0];
+    var m=sample.meta;
+    html+='<div class="explain-list"><div style="font-size:11px;font-weight:700;margin-bottom:4px;color:var(--muted)">مثال على طريقة الحساب (صنف: '+sample.item+(sample.color?' — '+sample.color:'')+'):</div>';
+    html+='<div class="it"><span>مناسبة الفترة المستهدفة</span><span>'+(m.ocm||'-')+'</span></div>';
+    html+='<div class="it"><span>عدد الفترات السابقة المستخدمة (نفس المناسبة)</span><span>'+m.usedCount+'</span></div>';
+    html+='<div class="it"><span>متوسط مبيعات هذه الفترات (معدّلة)</span><span>'+Math.round(m.base).toLocaleString()+'</span></div>';
+    html+='<div class="it"><span>نسبة الفروع ذات الرصيد الضعيف</span><span>'+Math.round(m.weakR*100)+'%</span></div>';
+    if(m.usedPeriods&&m.usedPeriods.length){
+      html+='<div style="font-size:10px;color:var(--muted);margin-top:4px">الفترات المستخدمة: '+m.usedPeriods.map(function(p){return p.label+' ('+p.val.toLocaleString()+')';}).join('، ')+'</div>';
+    }
+    html+='</div>';
+  }
+
+  document.getElementById('explain-body').innerHTML=html;
+  document.getElementById('explain-overlay').classList.add('open');
+}
+
+function closeExplain(){
+  document.getElementById('explain-overlay').classList.remove('open');
+}
+
 function exportTbl(tableId,name){
   var tbl=document.getElementById(tableId);if(!tbl)return;
   var wb=XLSX.utils.book_new();
@@ -646,5 +844,11 @@ dz.addEventListener('drop',function(e){
   if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;document.getElementById('fi').dispatchEvent(new Event('change'));}
 });
 </script>
+<div class="explain-overlay" id="explain-overlay" onclick="if(event.target===this)closeExplain()">
+  <div class="explain-box">
+    <h3><span id="explain-title"></span><span class="close-x" onclick="closeExplain()">✕</span></h3>
+    <div id="explain-body"></div>
+  </div>
+</div>
 </body>
 </html>
