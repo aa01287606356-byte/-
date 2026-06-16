@@ -220,6 +220,24 @@ canvas{width:100%!important}
 .tbl-scroll::-webkit-scrollbar-track{background:#F0F4F8}
 .tbl-scroll::-webkit-scrollbar-thumb{background:#C4CEDD;border-radius:10px}
 .tbl-scroll::-webkit-scrollbar-thumb:hover{background:#94A3B8}
+
+/* PERIOD REF ROW */
+.period-ref {
+  font-size:10px;
+  color:var(--blue-d);
+  background:var(--blue-l);
+  border-radius:4px;
+  padding:2px 6px;
+  margin-bottom:4px;
+  text-align:center;
+  font-weight:700;
+  border:1px solid rgba(26,95,168,0.15);
+}
+.period-ref .ref-label {
+  font-weight:400;
+  color:var(--muted);
+  font-size:9px;
+}
 </style>
 </head>
 <body>
@@ -268,13 +286,13 @@ canvas{width:100%!important}
     <div id="tab-plan">
       <div class="section">
         <div class="sec-hdr">
-          <span class="sec-title">📋 خطة المشتريات — محاكاة تراكمية بـ 3 سيناريوهات</span>
+          <span class="sec-title">📋 خطة المشتريات — 3 سيناريوهات</span>
           <button class="btn-export" onclick="exportFullTable()">⬇ تصدير Excel كامل</button>
         </div>
         <div class="legend">
-          <span>1️⃣ مساوي للبيع</span>
-          <span>2️⃣ البيع + فروع ضعيفة/جديدة</span>
-          <span>3️⃣ متوسط موسمي</span>
+          <span>1️⃣ مبيعات السنة الماضية</span>
+          <span>2️⃣ مبيعات السنة الماضية + فروع</span>
+          <span>3️⃣ متوسط مرجح لآخر 3 سنوات</span>
           <span style="color:var(--green-d);font-weight:700">✓ الرصيد كافٍ</span>
           <span style="color:var(--border)">— لا توجد بيانات</span>
         </div>
@@ -366,9 +384,7 @@ canvas{width:100%!important}
 var byItem={}, allPeriods=[], planResults=[];
 var psFilter=null, allPSRows=[];
 var charts={};
-// Per-row user overrides: key=sg, value={branches:N, growth:P}
 var rowOverrides={};
-// Current explain context (for export)
 var currentExplain=null;
 
 // ============================================================
@@ -391,15 +407,11 @@ function pOrd(p){return p.yr*10000+p.mo*10+p.h;}
 function pK(p){return p.yr+'_'+p.mo+'_'+p.h;}
 function setP(pct,msg){document.getElementById('pb').style.width=pct+'%';document.getElementById('pb-msg').textContent=msg;}
 function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
-
-// Period immediately before a given period key
 function prevPK(pk){
   var idx=allPeriods.findIndex(function(p){return pK(p.parsed)===pk;});
   if(idx>0)return pK(allPeriods[idx-1].parsed);
   return null;
 }
-
-// Lookup period in allPeriods by key
 function periodByKey(pk){return allPeriods.find(function(p){return pK(p.parsed)===pk;})||null;}
 
 // ============================================================
@@ -490,9 +502,6 @@ function buildPeriodOcmMap(){
   });
 }
 
-// ============================================================
-// ADJUSTED DEMAND (accounts for weak-stock branches)
-// ============================================================
 function adjD(d){
   if(!d)return 0;
   var s=d.sold||0;
@@ -500,7 +509,6 @@ function adjD(d){
   return Math.max(s,d.sold||0);
 }
 
-// Average branches across all periods for an item
 function avgBranches(itemPeriods){
   var vals=Object.values(itemPeriods).filter(function(d){return d.tot>0;}).map(function(d){return d.tot;});
   if(!vals.length)return 1;
@@ -509,18 +517,17 @@ function avgBranches(itemPeriods){
 
 // ============================================================
 // FORECAST ONE PERIOD — returns {s1,s2,s3,meta}
-// s1 = same period last year (direct)
-// s2 = s1 + adjustment for weak/new branches
-// s3 = seasonal average
+// s1 = same period last year
+// s2 = s1 + adjustment for weak/new branches  
+// s3 = weighted average of last 3 years (0.5, 0.3, 0.2)
 // ============================================================
 function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
   var pk=pK(periodP.parsed);
-  var d=itemPeriods[pk]; // current year same period (may not exist)
+  var d=itemPeriods[pk];
   var ocm=periodOcmMap[pk]||(d?d.ocm:'');
   var growth=1+(growthPct||0)/100;
 
   // === SCENARIO 1: same period last year ===
-  // Find same period -1 year
   var py=periodP.parsed;
   var lastYearPK=null;
   for(var i=0;i<allPeriods.length;i++){
@@ -535,16 +542,9 @@ function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
     s1Data=itemPeriods[lastYearPK];
     s1Base=s1Data.sold||0;
   } else {
-    // Fallback: walk backwards up to 6 periods
     var targetIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===pk;});
-    // find same-period last year index
-    var lyIdx=allPeriods.findIndex(function(p){return lastYearPK&&pK(p.parsed)===lastYearPK;});
-    // go backwards from target-1 (not including target itself)
-    var searchFrom=targetIdx>=0?targetIdx-1:allPeriods.length-1;
     var found=false;
     for(var step=1;step<=6;step++){
-      var si=searchFrom-step+1; // relative step back
-      // Actually: walk from period right before target backwards
       var checkIdx=targetIdx-step;
       if(checkIdx<0)break;
       var cp=allPeriods[checkIdx];
@@ -564,11 +564,9 @@ function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
   var weakAdj=0,newBranchAdj=0;
   var refData=s1Data||d;
   if(refData&&refData.tot>0){
-    // weak branch uplift: (sold/ok_branches)*weak_branches
     if(refData.ok>0&&refData.wk>0){
       weakAdj=Math.round((s1Base/refData.ok)*refData.wk);
     }
-    // new branches
     var avgBr=refData.tot>0?refData.tot:1;
     newBranchAdj=Math.round(extraBranches*(s1Base/avgBr));
   } else if(s1Base>0){
@@ -576,7 +574,8 @@ function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
   }
   var s2Base=s1Base+weakAdj+newBranchAdj;
 
-  // === SCENARIO 3: seasonal average (same ocm across all years) ===
+  // === SCENARIO 3: weighted average of last 3 years (same season) ===
+  // Find all periods with same ocm
   var sameOcc=allPeriods.filter(function(q){
     var qpk=pK(q.parsed);
     if(qpk===pk)return false;
@@ -585,12 +584,25 @@ function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
     if(!ocm)return true;
     return (qd.ocm===ocm||qd.oc===ocm);
   });
+  
+  // Sort by date descending (most recent first)
+  sameOcc.sort(function(a,b){return pOrd(b.parsed)-pOrd(a.parsed);});
+  var last3=sameOcc.slice(0,3);
+  
   var s3Base=0;
-  if(sameOcc.length>0){
-    var vals=sameOcc.map(function(q){return adjD(itemPeriods[pK(q.parsed)]);});
-    s3Base=vals.reduce(function(s,v){return s+v;},0)/vals.length;
+  if(last3.length>0){
+    var weights=[0.5,0.3,0.2];
+    var totalWeight=0;
+    last3.forEach(function(p,idx){
+      var val=adjD(itemPeriods[pK(p.parsed)]);
+      var w=weights[idx]||0.2;
+      s3Base+=val*w;
+      totalWeight+=w;
+    });
+    if(totalWeight>0)s3Base=s3Base/totalWeight;
+    s3Base=Math.round(s3Base);
   } else {
-    s3Base=s1Base;
+    s3Base=s1Base; // fallback
   }
 
   return{
@@ -608,6 +620,7 @@ function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
       fallbackSteps:fallbackSteps,
       lastYearPK:lastYearPK,
       sameOccCount:sameOcc.length,
+      last3Count:last3.length,
       growth:growthPct||0,
       extraBranches:extraBranches||0,
       refData:refData
@@ -621,7 +634,6 @@ function forecastOnePeriodFull(itemPeriods, periodP, extraBranches, growthPct){
 function computePlan(){
   buildPeriodOcmMap();
 
-  // Stock rows
   var stockBySG={};
   var allStockPks=[];
   Object.values(byItem).filter(function(r){return r.isStock;}).forEach(function(r){
@@ -633,21 +645,18 @@ function computePlan(){
     });
   });
 
-  // Global stock period (latest)
   var globalStockPeriod=null;
   allStockPks.forEach(function(pk){
     var po=periodByKey(pk);
     if(po&&(!globalStockPeriod||pOrd(po.parsed)>pOrd(globalStockPeriod.parsed)))globalStockPeriod=po;
   });
 
-  // Reference period (same period last year)
   var refPeriod=null;
   if(globalStockPeriod){
     var gp=globalStockPeriod.parsed;
     refPeriod=allPeriods.find(function(p){return p.parsed.mo===gp.mo&&p.parsed.h===gp.h&&p.parsed.yr===gp.yr-1;})||null;
   }
 
-  // Simulation periods: from refPeriod onwards, excluding stock-only periods
   var stockOnlyPks={};
   allStockPks.forEach(function(pk){stockOnlyPks[pk]=true;});
 
@@ -664,7 +673,6 @@ function computePlan(){
     futurePeriods=futurePeriods.filter(function(p){return pK(p.parsed)!==pK(globalStockPeriod.parsed);});
   }
 
-  // All real items by subgroup
   var allSG={};
   var sgMeta={};
   Object.values(byItem).forEach(function(r){
@@ -683,13 +691,9 @@ function computePlan(){
     var realItems=allRealItems.filter(function(it){return it.sg===sg;});
     var ovr=rowOverrides[sg]||{branches:0,growth:0};
 
-    // Independent stock for each scenario
     var stocks={s1:startStock,s2:startStock,s3:startStock};
     var perPeriod=[];
     var totNeed={s1:0,s2:0,s3:0};
-
-    // Sales ref by period (from actual data): sum of sold for same period prev year per sg
-    var salesRefBySGPeriod={};
 
     futurePeriods.forEach(function(fp){
       var fpk=pK(fp.parsed);
@@ -706,7 +710,6 @@ function computePlan(){
       });
       fcTot.s1=Math.round(fcTot.s1);fcTot.s2=Math.round(fcTot.s2);fcTot.s3=Math.round(fcTot.s3);
 
-      // Compute sales ref for this sg this period (same period last year)
       var py=fp.parsed;
       var lyPK=null;
       for(var i=0;i<allPeriods.length;i++){
@@ -732,7 +735,6 @@ function computePlan(){
         totNeed[sc]+=need;
       });
 
-      // Check if any item used fallback
       periodResult.usedFallback=itemDetails.some(function(it){return it.meta&&it.meta.usedFallback;});
       perPeriod.push(periodResult);
     });
@@ -746,7 +748,7 @@ function computePlan(){
 
   var noteEl=document.getElementById('info-note');
   if(globalStockPeriod){
-    noteEl.textContent='رصيد الشركة الحالي مأخوذ من "'+globalStockPeriod.raw+'" — المحاكاة تبدأ من نفس الفترة بالعام السابق "'+(refPeriod?refPeriod.raw:'-')+'" وتطرح التوقعات تراكمياً بشكل مستقل لكل سيناريو.';
+    noteEl.textContent='رصيد الشركة الحالي مأخوذ من "'+globalStockPeriod.raw+'" — المحاكاة تبدأ من نفس الفترة بالعام السابق "'+(refPeriod?refPeriod.raw:'-')+'" وتطرح التوقعات تراكمياً بشكل مستقل لكل سيناريو. السيناريو 3 = متوسط مرجح لآخر 3 سنوات (0.5 + 0.3 + 0.2).';
   }else{
     noteEl.textContent='لم يتم العثور على صف "رصيد حالي" — تأكد من إضافة كويري رصيد الآن للدمج.';
   }
@@ -765,11 +767,7 @@ function renderPlanTable(){
   var periodLabels=refResult.futurePeriods.map(function(p){return p.raw;});
   var periodOcms=refResult.futurePeriods.map(function(p){return periodOcmMap[pK(p.parsed)]||'';});
 
-  // Frozen cols widths for right offset
-  // col-sg:160, col-grp:130, col-dept:110, col-stock:85, col-ref:95, col-br:75, col-growth:75
-  // total frozen right width: 160+130+110+85+95+75+75 = 730px
   var head='<tr>';
-  // Frozen right cols
   head+='<th class="frozen th-cell col-sg"><div class="th-inner">المجموعة الفرعية</div></th>';
   head+='<th class="frozen th-cell col-grp"><div class="th-inner">المجموعة الرئيسية</div></th>';
   head+='<th class="frozen th-cell col-dept"><div class="th-inner">القسم</div></th>';
@@ -777,15 +775,15 @@ function renderPlanTable(){
   head+='<th class="frozen th-cell col-ref"><div class="th-inner">فترة المرجع</div></th>';
   head+='<th class="frozen th-cell col-br"><div class="th-inner">🏪+<br>فروع</div></th>';
   head+='<th class="frozen th-cell col-growth"><div class="th-inner">📈<br>نمو%</div></th>';
-  // Period cols
+  
   periodLabels.forEach(function(lbl,i){
     var ocm=periodOcms[i];
     head+='<th class="period-th"><div class="th-inner">'+lbl;
     if(ocm)head+='<span class="season-badge">'+ocm+'</span>';
-    head+='<div class="sales-ref">📊 مبيعات السنة السابقة</div>';
+    head+='<div class="sales-ref">📊 مبيعات المرجع</div>';
     head+='</div></th>';
   });
-  // Total frozen left
+  
   head+='<th class="col-total th-cell" style="left:0;position:sticky;z-index:6;background:#F7FAFC"><div class="th-inner">إجمالي احتياج</div></th>';
   head+='</tr>';
   thead.innerHTML=head;
@@ -799,28 +797,28 @@ function renderPlanTable(){
     row+='<td class="frozen col-dept">'+r.dept+'</td>';
     row+='<td class="frozen col-stock"><span class="badge '+(r.startStock>0?'ok':'zero')+'">'+r.startStock.toLocaleString()+'</span></td>';
     row+='<td class="frozen col-ref" style="font-size:10px;color:var(--muted)">'+r.refPeriod+'</td>';
-    // Branches input
     row+='<td class="frozen col-br"><input class="mini-inp'+(hasBr?' has-val':'')+'" type="number" min="0" value="'+(ovr.branches||'')+'" placeholder="0" onchange="setOverride(\''+r.sg.replace(/'/g,"\\'")+'\',' +rIdx+',\'branches\',this.value)" title="فروع جديدة"></td>';
-    // Growth input
     row+='<td class="frozen col-growth"><input class="mini-inp'+(hasGr?' has-val':'')+'" type="number" min="0" max="200" value="'+(ovr.growth||'')+'" placeholder="0%" onchange="setOverride(\''+r.sg.replace(/'/g,"\\'")+'\',' +rIdx+',\'growth\',this.value)" title="نسبة نمو %"></td>';
 
-    // Period cells
     periodLabels.forEach(function(lbl,i){
       var pp=r.perPeriod[i];
       if(!pp||!pp.hasData){row+='<td><span style="color:var(--border);font-size:16px">—</span></td>';return;}
       var cell='<div class="period-cell">';
-      // Sales ref
-      cell+='<div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:2px">📊 '+pp.salesRef.toLocaleString()+'</div>';
-      if(pp.usedFallback)cell+='<div style="font-size:9px;color:var(--amber-d);text-align:center">⚠ مرجع تقريبي</div>';
-      // Scenario rows
+      
+      // Sales ref row - with blue background
+      cell+='<div class="period-ref">📊 '+pp.salesRef.toLocaleString()+'</div>';
+      
+      if(pp.usedFallback)cell+='<div style="font-size:9px;color:var(--amber-d);text-align:center;margin-bottom:2px">⚠ مرجع تقريبي</div>';
+      
       ['s1','s2','s3'].forEach(function(sc,si){
         var need=pp.needs[sc];
         var icon=si===0?'1️⃣':si===1?'2️⃣':'3️⃣';
         var cls='fc-row sc-'+(si+1);
+        var color=si===0?'var(--red-d)':si===1?'var(--amber-d)':'var(--green-d)';
         if(need>0){
           cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
             '<span class="fc-icon">'+icon+'</span>'+
-            '<span class="fc-need" style="color:'+(si===0?'var(--red-d)':si===1?'var(--amber-d)':'var(--green-d)')+'">'+need.toLocaleString()+'</span>'+
+            '<span class="fc-need" style="color:'+color+'">'+need.toLocaleString()+'</span>'+
             '</div>';
         }else{
           cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
@@ -833,7 +831,6 @@ function renderPlanTable(){
       row+='<td>'+cell+'</td>';
     });
 
-    // Total
     row+='<td class="col-total" style="left:0;position:sticky;background:#fff">';
     row+='<div class="total-cell">';
     row+='<div class="total-row s1">1️⃣ '+Math.round(r.totNeed.s1).toLocaleString()+'</div>';
@@ -854,7 +851,6 @@ function renderPlanTable(){
 function setOverride(sg,rIdx,field,val){
   if(!rowOverrides[sg])rowOverrides[sg]={branches:0,growth:0};
   rowOverrides[sg][field]=parseFloat(val)||0;
-  // Recompute this row only
   recomputeRow(rIdx);
   refreshRowDOM(rIdx);
 }
@@ -899,7 +895,6 @@ function refreshRowDOM(rIdx){
   var ovr=rowOverrides[r.sg]||{branches:0,growth:0};
   var trs=document.querySelectorAll('#purchase-table tbody tr');
   var tr=trs[rIdx];if(!tr)return;
-  // Update period cells (skip frozen cols: 7 frozen + N periods + 1 total = offset 7)
   var tds=tr.querySelectorAll('td');
   var frozenCount=7;
   var periodLabels=r.futurePeriods.map(function(p){return p.raw;});
@@ -907,18 +902,18 @@ function refreshRowDOM(rIdx){
     var td=tds[frozenCount+i];if(!td)return;
     if(!pp||!pp.hasData){td.innerHTML='<span style="color:var(--border);font-size:16px">—</span>';return;}
     var cell='<div class="period-cell">';
-    cell+='<div style="font-size:10px;color:var(--muted);text-align:center;margin-bottom:2px">📊 '+pp.salesRef.toLocaleString()+'</div>';
-    if(pp.usedFallback)cell+='<div style="font-size:9px;color:var(--amber-d);text-align:center">⚠ مرجع تقريبي</div>';
+    cell+='<div class="period-ref">📊 '+pp.salesRef.toLocaleString()+'</div>';
+    if(pp.usedFallback)cell+='<div style="font-size:9px;color:var(--amber-d);text-align:center;margin-bottom:2px">⚠ مرجع تقريبي</div>';
     ['s1','s2','s3'].forEach(function(sc,si){
       var need=pp.needs[sc],icon=si===0?'1️⃣':si===1?'2️⃣':'3️⃣';
       var cls='fc-row sc-'+(si+1);
-      if(need>0){cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-need" style="color:'+(si===0?'var(--red-d)':si===1?'var(--amber-d)':'var(--green-d)')+'">'+need.toLocaleString()+'</span></div>';}
+      var color=si===0?'var(--red-d)':si===1?'var(--amber-d)':'var(--green-d)';
+      if(need>0){cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-need" style="color:'+color+'">'+need.toLocaleString()+'</span></div>';}
       else{cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-ok">✓</span></div>';}
     });
     cell+='</div>';
     td.innerHTML=cell;
   });
-  // Update total cell
   var totalTd=tds[frozenCount+r.perPeriod.length];
   if(totalTd){
     totalTd.innerHTML='<div class="total-cell">'+
@@ -927,7 +922,6 @@ function refreshRowDOM(rIdx){
       '<div class="total-row s3">3️⃣ '+Math.round(r.totNeed.s3).toLocaleString()+'</div>'+
       '</div>';
   }
-  // Update input styling
   var brInp=tds[5].querySelector('input');
   var grInp=tds[6].querySelector('input');
   if(brInp)brInp.classList.toggle('has-val',ovr.branches>0);
@@ -944,7 +938,6 @@ function applyGlobal(){
     recomputeRow(rIdx);
     refreshRowDOM(rIdx);
   });
-  // Also update input fields in rows
   document.querySelectorAll('#purchase-table tbody tr').forEach(function(tr,rIdx){
     var r=planResults[rIdx];if(!r)return;
     var ovr=rowOverrides[r.sg]||{};
@@ -988,7 +981,9 @@ function filterPlan(){
 function showExplain(rIdx,pIdx,sc){
   var r=planResults[rIdx];if(!r)return;
   var pp=r.perPeriod[pIdx];if(!pp)return;
-  var scName=sc==='s1'?'1️⃣ مساوي للبيع':sc==='s2'?'2️⃣ البيع + فروع':'3️⃣ متوسط موسمي';
+  
+  var scNames={'s1':'1️⃣ مساوي للبيع (سنة واحدة)','s2':'2️⃣ البيع + فروع (سنة واحدة + تعويض)','s3':'3️⃣ متوسط مرجح لآخر 3 سنوات'};
+  var scName=scNames[sc]||sc;
 
   currentExplain={r:r,pp:pp,sc:sc,rIdx:rIdx,pIdx:pIdx};
 
@@ -996,14 +991,12 @@ function showExplain(rIdx,pIdx,sc){
 
   var html='';
 
-  // Warning if fallback
   if(pp.usedFallback){
     html+='<div class="warn-badge">⚠ بعض الأصناف استخدمت مرجع تقريبي (لا توجد بيانات للفترة المقابلة)</div>';
   }
 
-  // Scenario summary
   html+='<div class="sc-summary">';
-  [{sc:'s1',cls:'s1',name:'1️⃣ مساوي للبيع'},{sc:'s2',cls:'s2',name:'2️⃣ +فروع'},{sc:'s3',cls:'s3',name:'3️⃣ متوسط'}].forEach(function(s){
+  [{sc:'s1',cls:'s1',name:'1️⃣ مساوي للبيع'},{sc:'s2',cls:'s2',name:'2️⃣ +فروع'},{sc:'s3',cls:'s3',name:'3️⃣ مرجح 3 سنوات'}].forEach(function(s){
     html+='<div class="sc-card '+s.cls+'">'+
       '<div class="sc-lbl">'+s.name+'</div>'+
       '<div class="sc-fc">'+pp.fcTot[s.sc].toLocaleString()+'</div>'+
@@ -1012,12 +1005,11 @@ function showExplain(rIdx,pIdx,sc){
   });
   html+='</div>';
 
-  // Period info
   html+='<div class="explain-section">';
   html+='<div class="explain-section-title">معلومات الفترة</div>';
   html+='<div class="explain-row"><span class="lbl">الفترة</span><strong>'+pp.period+'</strong></div>';
   html+='<div class="explain-row"><span class="lbl">الموسم</span><strong>'+(pp.ocm||'—')+'</strong></div>';
-  html+='<div class="explain-row"><span class="lbl">مبيعات السنة السابقة (مرجع)</span><strong>'+pp.salesRef.toLocaleString()+'</strong></div>';
+  html+='<div class="explain-row"><span class="lbl">مبيعات المرجع (السنة الماضية)</span><strong style="color:var(--blue-d)">'+pp.salesRef.toLocaleString()+'</strong></div>';
   html+='<div class="explain-row"><span class="lbl">الرصيد قبل الخصم ('+scName+')</span><strong>'+pp.stockBefore[sc].toLocaleString()+'</strong></div>';
   html+='<div class="explain-row"><span class="lbl">إجمالي التوقع</span><strong>'+pp.fcTot[sc].toLocaleString()+'</strong></div>';
   html+='<div class="explain-row"><span class="lbl">الرصيد بعد الخصم</span><strong>'+pp.stockAfter[sc].toLocaleString()+'</strong></div>';
@@ -1025,16 +1017,18 @@ function showExplain(rIdx,pIdx,sc){
     (pp.needs[sc]>0?pp.needs[sc].toLocaleString():'✓ لا احتياج')+'</strong></div>';
   html+='</div>';
 
-  // Formula
   html+='<div class="explain-section">';
   html+='<div class="explain-section-title">طريقة الحساب</div>';
   html+='<div class="explain-formula">';
-  if(sc==='s1')html+='التوقع 1️⃣ = مبيعات نفس الفترة من السنة السابقة × (1 + نسبة النمو)\nاحتياج = max(0, التوقع − الرصيد المتبقي)';
-  else if(sc==='s2')html+='التوقع 2️⃣ = (مبيعات السنة السابقة + تعويض فروع ضعيفة + فروع جديدة) × (1 + نمو)\nتعويض فروع ضعيفة = (مبيعات / فروع كافية) × فروع ضعيفة\nفروع جديدة = عدد الفروع الجديدة × متوسط مبيعات الفرع';
-  else html+='التوقع 3️⃣ = متوسط مبيعات نفس الموسم عبر السنوات المتاحة\nاحتياج = max(0, التوقع − الرصيد المتبقي)';
+  if(sc==='s1'){
+    html+='التوقع 1️⃣ = مبيعات نفس الفترة من السنة السابقة × (1 + نسبة النمو)\nاحتياج = max(0, التوقع − الرصيد المتبقي)';
+  }else if(sc==='s2'){
+    html+='التوقع 2️⃣ = (مبيعات السنة السابقة + تعويض فروع ضعيفة + فروع جديدة) × (1 + نمو)\nتعويض فروع ضعيفة = (مبيعات / فروع كافية) × فروع ضعيفة\nفروع جديدة = عدد الفروع الجديدة × متوسط مبيعات الفرع';
+  }else{
+    html+='التوقع 3️⃣ = (0.5 × مبيعات السنة الماضية) + (0.3 × مبيعات السنة قبل الماضية) + (0.2 × مبيعات السنة الأقدم)\nلنفس الموسم (نفس "مناسبات")\nاحتياج = max(0, التوقع − الرصيد المتبقي)';
+  }
   html+='</div></div>';
 
-  // Items detail
   if(pp.itemDetails&&pp.itemDetails.length){
     html+='<div class="explain-section">';
     html+='<div class="explain-section-title">تفاصيل الأصناف والألوان ('+pp.itemDetails.length+' صنف)</div>';
@@ -1043,8 +1037,12 @@ function showExplain(rIdx,pIdx,sc){
     sorted.forEach(function(it){
       if((it[sc]||0)<0.5)return;
       var warn=it.meta&&it.meta.usedFallback?' <span style="color:var(--amber-d);font-size:9px">⚠ تقريبي</span>':'';
+      var s3Info='';
+      if(sc==='s3'&&it.meta&&it.meta.last3Count){
+        s3Info=' <span style="font-size:9px;color:var(--muted)">('+it.meta.last3Count+' سنوات)</span>';
+      }
       html+='<div class="item-row">'+
-        '<div><span class="item-name">'+it.item+'</span>'+(it.color?'<br><span class="item-color">🎨 '+it.color+'</span>':'')+warn+'</div>'+
+        '<div><span class="item-name">'+it.item+'</span>'+(it.color?'<br><span class="item-color">🎨 '+it.color+'</span>':'')+warn+s3Info+'</div>'+
         '<div class="item-val">'+Math.round(it[sc]).toLocaleString()+'</div>'+
         '</div>';
     });
@@ -1060,28 +1058,28 @@ function closeExplain(){document.getElementById('explain-overlay').classList.rem
 function exportExplain(){
   if(!currentExplain)return;
   var r=currentExplain.r,pp=currentExplain.pp,sc=currentExplain.sc;
-  var scName=sc==='s1'?'مساوي للبيع':sc==='s2'?'البيع+فروع':'متوسط موسمي';
+  var scNames={'s1':'مساوي للبيع (سنة واحدة)','s2':'البيع+فروع (سنة واحدة+تعويض)','s3':'مرجح 3 سنوات'};
+  var scName=scNames[sc]||sc;
 
   var wb=XLSX.utils.book_new();
 
-  // Summary sheet
   var sumData=[
     ['المجموعة الفرعية',r.sg],['المجموعة الرئيسية',r.grp],['القسم',r.dept],
     ['الفترة',pp.period],['الموسم',pp.ocm||'—'],['السيناريو',scName],
+    ['مبيعات المرجع (السنة الماضية)',pp.salesRef],
     [''],
     ['السيناريو','التوقع','الرصيد قبل','الرصيد بعد','احتياج الشراء'],
     ['1️⃣ مساوي للبيع',pp.fcTot.s1,pp.stockBefore.s1,pp.stockAfter.s1,pp.needs.s1],
     ['2️⃣ البيع+فروع',pp.fcTot.s2,pp.stockBefore.s2,pp.stockAfter.s2,pp.needs.s2],
-    ['3️⃣ متوسط موسمي',pp.fcTot.s3,pp.stockBefore.s3,pp.stockAfter.s3,pp.needs.s3],
+    ['3️⃣ مرجح 3 سنوات',pp.fcTot.s3,pp.stockBefore.s3,pp.stockAfter.s3,pp.needs.s3],
   ];
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(sumData),'ملخص');
 
-  // Items sheet
   if(pp.itemDetails&&pp.itemDetails.length){
     var sorted=pp.itemDetails.slice().sort(function(a,b){return (b[sc]||0)-(a[sc]||0);});
-    var itemData=[['الصنف','اللون','توقع 1️⃣','توقع 2️⃣','توقع 3️⃣','مرجع تقريبي']];
+    var itemData=[['الصنف','اللون','توقع 1️⃣','توقع 2️⃣','توقع 3️⃣','مرجع تقريبي','عدد سنوات س3']];
     sorted.forEach(function(it){
-      itemData.push([it.item,it.color,it.s1,it.s2,it.s3,(it.meta&&it.meta.usedFallback?'نعم':'')]);
+      itemData.push([it.item,it.color,it.s1,it.s2,it.s3,(it.meta&&it.meta.usedFallback?'نعم':''),it.meta?it.meta.last3Count||'':0]);
     });
     XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(itemData),'الأصناف');
   }
@@ -1096,12 +1094,10 @@ function exportFullTable(){
   if(!planResults.length)return;
   var wb=XLSX.utils.book_new();
 
-  // All periods labels
   var maxLen=0,refResult=planResults[0];
   planResults.forEach(function(r){if(r.futurePeriods.length>maxLen){maxLen=r.futurePeriods.length;refResult=r;}});
   var periodLabels=refResult.futurePeriods.map(function(p){return p.raw;});
 
-  // Build header
   var headerRow=['المجموعة الفرعية','المجموعة الرئيسية','القسم','الرصيد الحالي','فترة المرجع','فروع جديدة','نسبة نمو%'];
   periodLabels.forEach(function(lbl){
     headerRow.push(lbl+' - مبيعات مرجع');
@@ -1129,13 +1125,12 @@ function exportFullTable(){
 
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'خطة المشتريات');
 
-  // Items detail sheet
-  var itemRows=[['المجموعة الفرعية','الصنف','اللون','الفترة','الموسم','توقع 1️⃣','توقع 2️⃣','توقع 3️⃣','مرجع تقريبي']];
+  var itemRows=[['المجموعة الفرعية','الصنف','اللون','الفترة','الموسم','توقع 1️⃣','توقع 2️⃣','توقع 3️⃣','مرجع تقريبي','عدد سنوات س3']];
   planResults.forEach(function(r){
     r.perPeriod.forEach(function(pp){
       if(!pp||!pp.hasData)return;
       (pp.itemDetails||[]).forEach(function(it){
-        itemRows.push([r.sg,it.item,it.color,pp.period,pp.ocm||'',it.s1,it.s2,it.s3,(it.meta&&it.meta.usedFallback?'نعم':'')]);
+        itemRows.push([r.sg,it.item,it.color,pp.period,pp.ocm||'',it.s1,it.s2,it.s3,(it.meta&&it.meta.usedFallback?'نعم':''),it.meta?it.meta.last3Count||'':0]);
       });
     });
   });
