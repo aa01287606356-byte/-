@@ -178,6 +178,13 @@ canvas{width:100%!important}
   </div>
 </div>
 
+<div id="debug-panel" style="display:none;position:fixed;bottom:0;right:0;left:0;background:#1A202C;color:#68D391;font-family:monospace;font-size:11px;padding:10px 14px;z-index:9999;max-height:200px;overflow-y:auto;border-top:2px solid #276749">
+  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+    <strong>🔍 تشخيص الملف</strong>
+    <span onclick="document.getElementById('debug-panel').style.display='none'" style="cursor:pointer;color:#FC8181">✕ إغلاق</span>
+  </div>
+  <div id="debug-content"></div>
+</div>
 <div id="prog-wrap">
   <div class="prog-card">
     <div id="pb-msg">جاري قراءة الملف...</div>
@@ -280,14 +287,58 @@ function toW(s){
   return s.replace(/[\u0660-\u0669]/g,function(c){return c.charCodeAt(0)-0x0660;})
           .replace(/[\u06F0-\u06F9]/g,function(c){return c.charCodeAt(0)-0x06F0;});
 }
+// Excel serial date → JS Date
+function excelSerialToDate(serial){
+  // Excel epoch: Jan 1 1900 (serial=1), with leap-year bug (serial 60 = Feb 29 1900 doesn't exist)
+  var d=new Date(Math.round((serial - 25569)*86400*1000));
+  return d;
+}
+// تحليل قيمة الفترة بصرف النظر عن نوعها (نص / تاريخ / رقم)
 function parsePer(s){
-  if(!s)return null;
+  if(s===null||s===undefined||s==='')return null;
+  var lbl='';
+  var yr=0,mo=0,h=2;
+
+  // لو Date object (من cellDates:true)
+  if(s instanceof Date){
+    yr=s.getFullYear();mo=s.getMonth()+1;
+    lbl=mo+'-'+yr;h=2;
+    return{yr:yr,mo:mo,h:h,lbl:lbl};
+  }
+  // لو رقم (serial Excel)
+  if(typeof s==='number'){
+    if(s>40000&&s<60000){
+      var d=excelSerialToDate(s);
+      yr=d.getFullYear();mo=d.getMonth()+1;
+      lbl=mo+'-'+yr;h=2;
+      return{yr:yr,mo:mo,h:h,lbl:lbl};
+    }
+    return null;
+  }
+
   s=s.toString().trim();
+  lbl=s;
   var sw=toW(s);
+
+  // Pattern: D-YYYY مثلاً "5-2026" أو "نص الاول 5-2026"
   var m=sw.match(/(\d{1,2})-(\d{4})/);
-  if(!m)return null;
-  var h=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
-  return{yr:parseInt(m[2]),mo:parseInt(m[1]),h:h,lbl:s};
+  if(m){mo=parseInt(m[1]);yr=parseInt(m[2]);h=(s.indexOf('اول')>=0||s.indexOf('أول')>=0||s.indexOf('ول')>=0)?1:2;return{yr:yr,mo:mo,h:h,lbl:lbl};}
+
+  // Pattern: YYYY-MM-DD مثلاً "2026-05-01"
+  m=sw.match(/(\d{4})-(\d{1,2})-(\d{1,2})/);
+  if(m){yr=parseInt(m[1]);mo=parseInt(m[2]);h=2;return{yr:yr,mo:mo,h:h,lbl:lbl};}
+
+  // Pattern: D/M/YYYY أو M/D/YYYY مثلاً "5/1/2026"
+  m=sw.match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+  if(m){
+    // لو الرقم الأول > 12 → هو اليوم، الثاني الشهر
+    var p1=parseInt(m[1]),p2=parseInt(m[2]);
+    yr=parseInt(m[3]);
+    if(p1>12){mo=p2;}else{mo=p1;}
+    h=2;return{yr:yr,mo:mo,h:h,lbl:lbl};
+  }
+
+  return null;
 }
 function pOrd(p){return p.yr*1000+p.mo*10+p.h;}
 function pK(p){return p.yr+'_'+p.mo+'_'+p.h;}
@@ -306,11 +357,11 @@ document.getElementById('fi').addEventListener('change',function(e){
     setP(40,'جاري تحليل البيانات...');
     setTimeout(function(){
       try{
-        var wb=XLSX.read(ev.target.result,{type:'array'});
+        var wb=XLSX.read(ev.target.result,{type:'array',cellDates:true,cellNF:false,cellText:false});
         var ws=wb.Sheets[wb.SheetNames[0]];
         setP(65,'جاري التجميع...');
         setTimeout(function(){
-          var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:false});
+          var raw=XLSX.utils.sheet_to_json(ws,{defval:'',raw:true});
           if(!raw||!raw.length){alert('الملف فاضي');return;}
           processData(raw);
         },50);
@@ -319,6 +370,12 @@ document.getElementById('fi').addEventListener('change',function(e){
   };
   reader.readAsArrayBuffer(f);
 });
+
+function debugLog(msg){
+  var p=document.getElementById('debug-panel'),c=document.getElementById('debug-content');
+  if(p&&c){p.style.display='block';c.innerHTML+=msg+'<br>';}
+  console.log(msg);
+}
 
 function processData(raw){
   var H=Object.keys(raw[0]);
@@ -331,7 +388,19 @@ function processData(raw){
       stC=findCol(H,['متوسط_رصيد_افتتاحي']),
       totC=findCol(H,['إجمالي_الفروع']),avC=findCol(H,['فروع_متاح']),
       okC=findCol(H,['فروع_رصيد_كافي']),wkC=findCol(H,['فروع_رصيد_ضعيف']);
-  if(!pC||!sgC){alert('مش لاقي أعمدة التاريخ أو المجموعة الفرعية');return;}
+  // === DEBUG ===
+  debugLog('📋 عدد الصفوف: '+raw.length);
+  debugLog('📌 أعمدة الملف: '+Object.keys(raw[0]).slice(0,8).join(' | '));
+  debugLog('📅 عمود التاريخ: '+(pC||'❌ مش لاقيه'));
+  debugLog('📦 عمود المجموعة الفرعية: '+(sgC||'❌ مش لاقيه'));
+  if(raw.length>0){
+    var sampleDate=raw[0][pC];
+    debugLog('🔢 نوع قيمة التاريخ: '+(typeof sampleDate)+' | القيمة: '+JSON.stringify(sampleDate));
+    var pp=parsePer(sampleDate);
+    debugLog('🧪 parsePer نتيجة: '+(pp?JSON.stringify(pp):'null — مش اتعرف عليه!'));
+  }
+  // === END DEBUG ===
+  if(!pC||!sgC){alert('مش لاقي أعمدة التاريخ أو المجموعة الفرعية\nالأعمدة الموجودة: '+Object.keys(raw[0]).join(', '));return;}
 
   byItem={};
   var pMap={};
@@ -363,6 +432,8 @@ function processData(raw){
   }
 
   allPeriods=Object.values(pMap).sort(function(a,b){return pOrd(a.parsed)-pOrd(b.parsed);});
+  debugLog('📆 فترات اتعرفت: '+allPeriods.length+' | '+allPeriods.map(function(p){return p.raw;}).slice(0,5).join(', ')+(allPeriods.length>5?'...':''));
+  debugLog('🏷️ أصناف اتعرفت: '+Object.keys(byItem).length);
   if(allPeriods.length)
     document.getElementById('period-range').textContent=allPeriods[0].raw+' ← '+allPeriods[allPeriods.length-1].raw;
 
