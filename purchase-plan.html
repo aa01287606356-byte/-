@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
@@ -1266,4 +1267,9 @@ dz.addEventListener('dragleave',function(){dz.style.background='';});
 dz.addEventListener('drop',function(e){
   e.preventDefault();dz.style.background='';
   var f=e.dataTransfer.files[0];
-  if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;document.getElementById('fi').dispatchEvent(new Event('change'))
+  if(f){var dt=new DataTransfer();dt.items.add(f);document.getElementById('fi').files=dt.files;document.getElementById('fi').dispatchEvent(new Event('change'));}
+});
+</script>
+</body>
+</html> 
+
