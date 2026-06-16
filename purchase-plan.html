@@ -200,6 +200,11 @@ canvas{width:100%!important}
 .calendar-table .cal-scenario-selector label:hover{background:var(--green-l);border-color:var(--green)}
 .calendar-table .cal-scenario-selector input[type="radio"]{accent-color:var(--green);cursor:pointer}
 .calendar-table .cal-scenario-selector .active-sc{background:var(--green-l);border-color:var(--green)}
+.calendar-table .month-filter{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.calendar-table .month-filter label{font-size:11px;font-weight:600;color:var(--muted);cursor:pointer;padding:4px 10px;border-radius:15px;border:1px solid var(--border);transition:all .2s}
+.calendar-table .month-filter label:hover{background:var(--green-l);border-color:var(--green)}
+.calendar-table .month-filter input[type="radio"]{display:none}
+.calendar-table .month-filter .active-month{background:var(--green-l);border-color:var(--green);color:var(--green-d)}
 </style>
 </head>
 <body>
@@ -335,15 +340,28 @@ canvas{width:100%!important}
           <span style="background:#FFE0B2;padding:2px 8px;border-radius:4px">🟠 متوسط (501-1000)</span>
           <span style="background:#FFCDD2;padding:2px 8px;border-radius:4px">🔴 كثير (1000+)</span>
         </div>
+        
+        <!-- Scenario selector -->
         <div class="calendar-table cal-scenario-selector">
           <label class="active-sc"><input type="radio" name="cal-scenario" value="s1" checked onchange="setCalendarScenario('s1')"> 1️⃣ مساوي للبيع</label>
           <label><input type="radio" name="cal-scenario" value="s2" onchange="setCalendarScenario('s2')"> 2️⃣ البيع + تعويض فروع</label>
         </div>
+        
+        <!-- Month filter -->
+        <div class="month-filter" id="month-filter-container">
+          <label class="active-month"><input type="radio" name="cal-month" value="all" checked onchange="setCalendarMonth('all')">📅 الكل</label>
+        </div>
+        
+        <!-- Filters row -->
         <div class="filters-row">
           <div class="msel" id="msel-cal-grp"></div>
           <div class="msel" id="msel-cal-dept"></div>
         </div>
+        
+        <!-- Search -->
         <input class="search-box" id="cal-search" placeholder="ابحث بالمجموعة الفرعية..." oninput="filterCalendar()">
+        
+        <!-- Table -->
         <div class="tbl-container">
           <div class="tbl-scroll" style="max-height:600px">
             <table class="calendar-table" id="calendar-table">
@@ -385,6 +403,7 @@ var sgSoldCache={};
 
 // Calendar state
 var calScenario='s1';
+var calMonth='all';
 
 // ============================================================
 // UTILS
@@ -423,6 +442,17 @@ function getSeason(season){
   if(season.indexOf('صيفي')>=0)return 'صيفي';
   if(season.indexOf('شتوي')>=0)return 'شتوي';
   return season;
+}
+
+function getMonthFromPeriod(periodLabel){
+  var p=parsePer(periodLabel);
+  if(!p)return null;
+  return p.mo;
+}
+
+function getMonthName(mo){
+  var names=['يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+  return names[mo-1]||mo;
 }
 
 // ============================================================
@@ -1002,8 +1032,7 @@ function renderCalendar(){
   var tbody=document.getElementById('cal-body');
   if(!planResults.length){thead.innerHTML='';tbody.innerHTML='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="10">لا توجد بيانات</td></tr>';return;}
   
-  // Build period labels: 24 periods (first half + second half of each month)
-  // Use available periods from data
+  // Build period labels sorted
   var allPeriodLabels = [];
   var periodSet = {};
   planResults.forEach(function(r){
@@ -1021,7 +1050,6 @@ function renderCalendar(){
     });
   });
   
-  // Sort periods
   allPeriodLabels.sort(function(a,b){
     var pa=parsePer(a), pb=parsePer(b);
     if(!pa && !pb)return 0;
@@ -1030,15 +1058,55 @@ function renderCalendar(){
     return pOrd(pa)-pOrd(pb);
   });
   
+  // Month filter
+  var monthFilterContainer=document.getElementById('month-filter-container');
+  var months={};
+  allPeriodLabels.forEach(function(lbl){
+    var p=parsePer(lbl);
+    if(p) months[p.mo]=true;
+  });
+  var monthKeys=Object.keys(months).map(Number).sort(function(a,b){return a-b;});
+  
+  // Build month filter buttons if not already built
+  var existingLabels=monthFilterContainer.querySelectorAll('label');
+  if(existingLabels.length<2){
+    var html='<label class="active-month"><input type="radio" name="cal-month" value="all" checked onchange="setCalendarMonth(\'all\')">📅 الكل</label>';
+    monthKeys.forEach(function(mo){
+      var name=getMonthName(mo);
+      html+='<label><input type="radio" name="cal-month" value="'+mo+'" onchange="setCalendarMonth(\''+mo+'\')">'+name+'</label>';
+    });
+    monthFilterContainer.innerHTML=html;
+  } else {
+    // Just update visibility
+    document.querySelectorAll('#month-filter-container label').forEach(function(lb){
+      var inp=lb.querySelector('input');
+      if(inp && inp.value!=='all'){
+        var mo=parseInt(inp.value);
+        lb.style.display=months[mo]?'inline-block':'none';
+      }
+    });
+  }
+  
   if(!allPeriodLabels.length){
     thead.innerHTML='';tbody.innerHTML='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="10">لا توجد فترات</td></tr>';
     return;
   }
   
+  // Filter periods by selected month
+  var filteredPeriods=allPeriodLabels;
+  if(calMonth!=='all'){
+    var moNum=parseInt(calMonth);
+    filteredPeriods=allPeriodLabels.filter(function(lbl){
+      var p=parsePer(lbl);
+      return p && p.mo===moNum;
+    });
+  }
+  
   // Build header
   var headerHtml='<th style="min-width:180px;text-align:right">المجموعة الفرعية</th>';
   headerHtml+='<th style="min-width:70px">الرصيد</th>';
-  allPeriodLabels.forEach(function(lbl){
+  headerHtml+='<th style="min-width:80px">القسم</th>';
+  filteredPeriods.forEach(function(lbl){
     var short=lbl.replace(/نص (اول|اخر) /,'');
     headerHtml+='<th style="min-width:60px;max-width:70px;font-size:9px">'+short+'</th>';
   });
@@ -1048,9 +1116,9 @@ function renderCalendar(){
   // Build rows
   var rows=[];
   planResults.forEach(function(r){
-    var row={sg:r.sg, stock:r.startStock, needs:{}, total:0};
+    var row={sg:r.sg, dept:r.dept, stock:r.startStock, needs:{}, total:0};
     var hasData=false;
-    allPeriodLabels.forEach(function(lbl){
+    filteredPeriods.forEach(function(lbl){
       var found=false;
       r.perPeriod.forEach(function(pp){
         if(pp && pp.period===lbl){
@@ -1067,8 +1135,8 @@ function renderCalendar(){
   });
   
   // Filter by group/dept
-  rows = rows.filter(function(r){
-    var sgData=planResults.find(function(p){return p.sg===r.sg;});
+  rows = rows.filter(function(row){
+    var sgData=planResults.find(function(p){return p.sg===row.sg;});
     if(!sgData)return true;
     if(!mselAllows('cal-grp',sgData.grp))return false;
     if(!mselAllows('cal-dept',sgData.dept))return false;
@@ -1077,7 +1145,7 @@ function renderCalendar(){
   
   // Search
   var q=(document.getElementById('cal-search').value||'').trim().toLowerCase();
-  if(q) rows=rows.filter(function(r){return r.sg.toLowerCase().indexOf(q)>=0;});
+  if(q) rows=rows.filter(function(row){return row.sg.toLowerCase().indexOf(q)>=0;});
   
   // Sort by total descending
   rows.sort(function(a,b){return b.total-a.total;});
@@ -1088,7 +1156,8 @@ function renderCalendar(){
     bodyHtml+='<tr>';
     bodyHtml+='<td style="text-align:right;font-weight:700;word-wrap:break-word;white-space:normal">'+row.sg+'</td>';
     bodyHtml+='<td class="cal-stock">'+row.stock.toLocaleString()+'</td>';
-    allPeriodLabels.forEach(function(lbl){
+    bodyHtml+='<td style="font-size:10px;color:var(--muted);word-wrap:break-word;white-space:normal">'+row.dept+'</td>';
+    filteredPeriods.forEach(function(lbl){
       var need=row.needs[lbl]||0;
       var cls='';
       if(need===0) cls='need-0';
@@ -1102,7 +1171,7 @@ function renderCalendar(){
   });
   
   if(!rows.length){
-    bodyHtml='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="'+(allPeriodLabels.length+3)+'">لا توجد نتائج مطابقة</td></tr>';
+    bodyHtml='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="'+(filteredPeriods.length+4)+'">لا توجد نتائج مطابقة</td></tr>';
   }
   tbody.innerHTML=bodyHtml;
 }
@@ -1115,6 +1184,19 @@ function setCalendarScenario(sc){
       el.classList.add('active-sc');
     } else {
       el.classList.remove('active-sc');
+    }
+  });
+  renderCalendar();
+}
+
+function setCalendarMonth(mo){
+  calMonth=mo;
+  document.querySelectorAll('#month-filter-container label').forEach(function(el){
+    var inp=el.querySelector('input');
+    if(inp && inp.value===mo){
+      el.classList.add('active-month');
+    } else {
+      el.classList.remove('active-month');
     }
   });
   renderCalendar();
@@ -1153,13 +1235,13 @@ function exportCalendar(){
     return pOrd(pa)-pOrd(pb);
   });
   
-  var header=['المجموعة الفرعية','الرصيد الحالي'];
+  var header=['المجموعة الفرعية','الرصيد الحالي','القسم'];
   allPeriodLabels.forEach(function(lbl){header.push(lbl.replace(/نص (اول|اخر) /,''));});
   header.push('الإجمالي');
   
   var data=[header];
   planResults.forEach(function(r){
-    var row=[r.sg, r.startStock];
+    var row=[r.sg, r.startStock, r.dept];
     var total=0;
     allPeriodLabels.forEach(function(lbl){
       var need=0;
