@@ -55,6 +55,12 @@ body{font-family:var(--font);background:var(--bg);color:var(--text);font-size:13
 .search-box{width:100%;padding:9px 14px;border-radius:9px;border:1.5px solid var(--border);font-size:12px;margin-bottom:12px;outline:none;font-family:var(--font);background:#fff;transition:border-color .2s}
 .search-box:focus{border-color:var(--green);box-shadow:0 0 0 3px rgba(26,138,100,.1)}
 .filters-row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.global-bar{background:linear-gradient(135deg,var(--green-l),#fff);border:1.5px solid #B8D4C8;border-radius:12px;padding:12px 16px;margin-bottom:14px;display:flex;align-items:center;gap:16px;flex-wrap:wrap}
+.global-bar label{font-size:11px;font-weight:700;color:var(--green-d)}
+.global-input{width:80px;padding:5px 9px;border-radius:7px;border:1.5px solid var(--border);font-size:12px;font-family:var(--font);outline:none;text-align:center}
+.global-input:focus{border-color:var(--green)}
+.apply-all-btn{font-size:11px;background:var(--green);color:#fff;border:none;padding:6px 12px;border-radius:7px;cursor:pointer;font-family:var(--font);font-weight:700}
+.apply-all-btn:hover{background:var(--green-d)}
 .tbl-container{position:relative;overflow:hidden;border-radius:10px;border:1px solid var(--border)}
 .tbl-scroll{overflow-x:auto;overflow-y:auto;max-height:calc(100vh - 280px)}
 table{width:max-content;min-width:100%;border-collapse:collapse;font-size:12px}
@@ -71,31 +77,38 @@ tr:hover td.frozen{background:#F8FAFB}
 .col-grp{right:200px;min-width:150px;text-align:right!important;word-wrap:break-word;white-space:normal}
 .col-dept{right:350px;min-width:120px;text-align:right!important;word-wrap:break-word;white-space:normal}
 .col-stock{right:470px;min-width:90px}
-.col-sold{right:560px;min-width:90px}
 .col-total{left:0;min-width:95px;position:sticky;z-index:2;background:#fff}
 th.col-total{z-index:6;background:#F7FAFC}
-.period-th{min-width:175px}
-.season-badge{font-size:9px;font-weight:700;padding:2px 7px;border-radius:10px;background:var(--purple-l);color:var(--purple);margin-top:2px}
-.sales-ref{font-size:9px;color:var(--muted);margin-top:1px}
-.period-cell{display:flex;flex-direction:column;gap:3px;padding:4px 2px}
-.fc-row{display:flex;align-items:center;gap:4px;padding:3px 6px;border-radius:6px;cursor:pointer;transition:background .15s;white-space:nowrap}
+.period-th{min-width:140px;max-width:160px}
+.period-cell{display:flex;flex-direction:column;gap:2px;padding:4px 4px;font-size:11px;border:1px solid #E8EDF2;border-radius:6px;background:#FAFCFD}
+.period-cell .ref-row{font-size:10px;color:var(--blue-d);background:var(--blue-l);border-radius:4px;padding:2px 6px;text-align:center;font-weight:700;border:1px solid rgba(26,95,168,0.12)}
+.period-cell .ref-row.fallback{background:var(--amber-l);color:var(--amber-d);border-color:#E8C17A}
+.period-cell .branch-row{font-size:9px;color:var(--muted);text-align:center;padding:1px 4px;border-bottom:1px dashed #E8EDF2}
+.period-cell .branch-row strong{color:var(--text);font-weight:700}
+.period-cell .branch-row .badge-pct{font-weight:800;padding:0 4px;border-radius:3px}
+.period-cell .branch-row .badge-pct.high{color:var(--red-d);background:var(--red-l)}
+.period-cell .branch-row .badge-pct.med{color:var(--amber-d);background:var(--amber-l)}
+.period-cell .branch-row .badge-pct.low{color:var(--green-d);background:var(--green-l)}
+.fc-row{display:flex;align-items:center;justify-content:space-between;gap:4px;padding:2px 6px;border-radius:4px;cursor:pointer;transition:background .15s}
 .fc-row:hover{background:rgba(0,0,0,.05)}
 .fc-row .fc-icon{font-size:11px;flex-shrink:0}
 .fc-row .fc-need{font-size:12px;font-weight:800}
 .fc-row .fc-ok{font-size:12px;color:var(--green-d);font-weight:700}
-.fc-row .fc-dash{font-size:11px;color:var(--border)}
-.fc-row.sc-1{background:rgba(176,48,48,.06)}
-.fc-row.sc-2{background:rgba(192,122,16,.06)}
+.fc-row.sc-1{background:rgba(176,48,48,.05)}
+.fc-row.sc-2{background:rgba(192,122,16,.05)}
 .fc-row.sc-1:hover{background:rgba(176,48,48,.12)}
 .fc-row.sc-2:hover{background:rgba(192,122,16,.12)}
-.fc-row.ok-row{background:rgba(26,138,100,.06)}
+.fc-row.ok-row{background:rgba(26,138,100,.05)}
 .badge{display:inline-flex;align-items:center;justify-content:center;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:800}
-.badge.need{background:var(--red-l);color:var(--red-d)}
 .badge.ok{background:var(--green-l);color:var(--green-d)}
 .badge.zero{background:#EDF2F7;color:var(--muted)}
 .badge.A{background:var(--green-l);color:var(--green-d)}
 .badge.B{background:var(--amber-l);color:var(--amber-d)}
 .badge.C{background:var(--red-l);color:var(--red-d)}
+.total-cell{display:flex;flex-direction:column;gap:3px;padding:4px 6px}
+.total-row{font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap}
+.total-row.s1{color:var(--red-d)}
+.total-row.s2{color:var(--amber-d)}
 .pareto-sum{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px}
 .ps-card{border-radius:12px;padding:16px;text-align:center;border:1.5px solid;cursor:pointer;transition:all .2s}
 .ps-card:hover{transform:translateY(-2px);box-shadow:var(--shadow)}
@@ -121,12 +134,6 @@ th.col-total{z-index:6;background:#F7FAFC}
 .explain-section{margin-top:14px;border-top:1px solid var(--border);padding-top:12px}
 .explain-section-title{font-size:11px;font-weight:800;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px}
 .explain-formula{background:#F7FAFC;border-radius:8px;padding:10px 14px;font-size:11px;margin-top:8px;font-family:monospace;direction:ltr;text-align:left;border:1px solid var(--border);line-height:1.8;white-space:pre-wrap}
-.item-list{display:flex;flex-direction:column;gap:4px;max-height:260px;overflow-y:auto}
-.item-row{font-size:11px;display:flex;justify-content:space-between;align-items:center;padding:5px 12px;border-radius:7px;background:var(--bg)}
-.item-row:nth-child(even){background:#F0F4F8}
-.item-row .item-name{font-weight:700;color:var(--text)}
-.item-row .item-color{color:var(--muted);font-size:10px}
-.item-row .item-val{font-weight:800;color:var(--green-d)}
 .sc-summary{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:10px}
 .sc-card{border-radius:10px;padding:12px;text-align:center}
 .sc-card.s1{background:var(--red-l);border:1.5px solid #E8A0A0}
@@ -135,6 +142,21 @@ th.col-total{z-index:6;background:#F7FAFC}
 .sc-card .sc-fc{font-size:18px;font-weight:900;margin:4px 0}
 .sc-card .sc-need{font-size:10px;font-weight:600}
 .warn-badge{font-size:10px;background:var(--amber-l);color:var(--amber-d);padding:4px 12px;border-radius:6px;border:1px solid #E8C17A;margin-bottom:10px;display:inline-block}
+.explain-insight{background:linear-gradient(135deg,#F0FFF4,#E6F5EF);border-radius:10px;padding:14px 16px;margin:12px 0;border-right:4px solid var(--green)}
+.explain-insight .insight-title{font-size:11px;font-weight:800;color:var(--green-d);margin-bottom:4px}
+.explain-insight .insight-text{font-size:12px;color:var(--text);line-height:1.6}
+.explain-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
+.explain-stat .stat-item{background:var(--bg);border-radius:8px;padding:10px;text-align:center}
+.explain-stat .stat-item .stat-val{font-size:20px;font-weight:900}
+.explain-stat .stat-item .stat-lbl{font-size:10px;color:var(--muted);font-weight:600}
+.explain-stat .stat-item.green .stat-val{color:var(--green-d)}
+.explain-stat .stat-item.red .stat-val{color:var(--red-d)}
+.explain-stat .stat-item.amber .stat-val{color:var(--amber-d)}
+.coverage-bar-wrap{margin-top:8px}
+.coverage-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
+.coverage-bar{height:8px;border-radius:10px;background:#E2E8F0;overflow:hidden}
+.coverage-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--green),var(--green-m))}
+.coverage-fill.warn{background:linear-gradient(90deg,var(--amber),#F0B060)}
 .msel{position:relative;display:inline-block}
 .msel-btn{font-size:12px;padding:7px 12px;border-radius:9px;border:1.5px solid var(--border);background:#fff;cursor:pointer;font-family:var(--font);display:flex;align-items:center;gap:6px;min-width:150px;justify-content:space-between;font-weight:600;transition:border-color .2s}
 .msel-btn:hover{border-color:var(--green)}
@@ -155,30 +177,10 @@ th.col-total{z-index:6;background:#F7FAFC}
 .hidden{display:none!important}
 canvas{width:100%!important}
 #dashboard{display:none}
-.total-cell{display:flex;flex-direction:column;gap:3px;padding:4px 6px}
-.total-row{font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px;white-space:nowrap}
-.total-row.s1{color:var(--red-d)}
-.total-row.s2{color:var(--amber-d)}
 .tbl-scroll::-webkit-scrollbar{height:6px;width:6px}
 .tbl-scroll::-webkit-scrollbar-track{background:#F0F4F8}
 .tbl-scroll::-webkit-scrollbar-thumb{background:#C4CEDD;border-radius:10px}
 .tbl-scroll::-webkit-scrollbar-thumb:hover{background:#94A3B8}
-.period-ref{font-size:10px;color:var(--blue-d);background:var(--blue-l);border-radius:4px;padding:2px 6px;margin-bottom:4px;text-align:center;font-weight:700;border:1px solid rgba(26,95,168,0.15)}
-.explain-insight{background:linear-gradient(135deg,#F0FFF4,#E6F5EF);border-radius:10px;padding:14px 16px;margin:12px 0;border-right:4px solid var(--green)}
-.explain-insight .insight-title{font-size:11px;font-weight:800;color:var(--green-d);margin-bottom:4px}
-.explain-insight .insight-text{font-size:12px;color:var(--text);line-height:1.6}
-.explain-stat{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:8px 0}
-.explain-stat .stat-item{background:var(--bg);border-radius:8px;padding:10px;text-align:center}
-.explain-stat .stat-item .stat-val{font-size:20px;font-weight:900}
-.explain-stat .stat-item .stat-lbl{font-size:10px;color:var(--muted);font-weight:600}
-.explain-stat .stat-item.green .stat-val{color:var(--green-d)}
-.explain-stat .stat-item.red .stat-val{color:var(--red-d)}
-.explain-stat .stat-item.amber .stat-val{color:var(--amber-d)}
-.coverage-bar-wrap{margin-top:8px}
-.coverage-label{display:flex;justify-content:space-between;font-size:11px;margin-bottom:4px}
-.coverage-bar{height:8px;border-radius:10px;background:#E2E8F0;overflow:hidden}
-.coverage-fill{height:100%;border-radius:10px;background:linear-gradient(90deg,var(--green),var(--green-m))}
-.coverage-fill.warn{background:linear-gradient(90deg,var(--amber),#F0B060)}
 </style>
 </head>
 <body>
@@ -237,6 +239,19 @@ canvas{width:100%!important}
           <span style="color:var(--amber-d)">⚠ مرجع تقريبي</span>
         </div>
         <div class="note" id="info-note"></div>
+        <div class="global-bar">
+          <span style="font-size:12px;font-weight:800;color:var(--green-d)">⚙ إعدادات عامة:</span>
+          <div class="inp-group">
+            <div class="inp-label">🏪+ فروع جديدة للكل</div>
+            <input class="global-input" id="g-branches" type="number" min="0" placeholder="0" oninput="applyGlobal()">
+          </div>
+          <div class="inp-group">
+            <div class="inp-label">📈 نسبة نمو للكل %</div>
+            <input class="global-input" id="g-growth" type="number" min="0" max="200" placeholder="0" oninput="applyGlobal()">
+          </div>
+          <button class="apply-all-btn" onclick="applyGlobal()">✓ تطبيق على الكل</button>
+          <button class="apply-all-btn" style="background:var(--muted)" onclick="resetGlobal()">↺ إعادة تعيين</button>
+        </div>
         <div class="filters-row">
           <div class="msel" id="msel-plf-grp"></div>
           <div class="msel" id="msel-plf-dept"></div>
@@ -308,8 +323,9 @@ canvas{width:100%!important}
 var byItem={}, allPeriods=[], planResults=[];
 var psFilter=null, allPSRows=[];
 var charts={};
+var rowOverrides={};
 var currentExplain=null;
-var sgSoldCache={}; // For sold column
+var sgSoldCache={};
 
 // ============================================================
 // UTILS
@@ -427,7 +443,6 @@ document.getElementById('fi').addEventListener('change',function(e){
             if(ocm && !d.ocm) d.ocm=ocm;
             if(oc && !d.oc) d.oc=oc;
             
-            // Cache sold per SG for "كمية المباع" column
             if(!isStockRow && sold>0){
               if(!sgSoldCache[sg]) sgSoldCache[sg]={};
               if(!sgSoldCache[sg][pk]) sgSoldCache[sg][pk]=0;
@@ -467,7 +482,7 @@ function buildPeriodOcmMap(){
 }
 
 // ============================================================
-// SUBGROUP AGGREGATED SALES BY PERIOD
+// SUBGROUP AGGREGATED SALES
 // ============================================================
 var sgPeriodCache={};
 function buildSGPeriodCache(){
@@ -491,7 +506,7 @@ function buildSGPeriodCache(){
 }
 
 // ============================================================
-// FORECAST AT SUB-GROUP LEVEL - ONLY 2 SCENARIOS
+// FORECAST - ONLY 2 SCENARIOS
 // ============================================================
 function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
   var sgData=sgPeriodCache[sg]||{};
@@ -513,7 +528,7 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
     refData=sgData[lastYearPK];
     s1Base=refData.sold;
   } else {
-    // 2. Fallback: one period back only (not any period)
+    // 2. Fallback: one period back only
     var targetIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===targetPK;});
     var prevIdx=targetIdx-1;
     if(prevIdx>=0){
@@ -528,25 +543,24 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
     }
   }
   
-  // Scenario 2: s1 + weak/new branch adjustment (with half growth rate)
+  // Scenario 2: s1 + weak/new branch adjustment (half of uncovered percentage)
   var weakAdj=0, newBranchAdj=0;
   if(refData && refData.tot>0){
     if(refData.ok>0 && refData.wk>0){
       weakAdj=Math.round((s1Base/refData.ok)*refData.wk);
     }
     if(extraBranches>0){
-      // NEW: multiply by half the growth percentage
       var branchFactor = (growthPct || 0) * 0.005; // 60% → 0.3
       newBranchAdj = Math.round(extraBranches * (s1Base / refData.tot) * branchFactor);
     }
   }
   var s2Base=s1Base+weakAdj+newBranchAdj;
   
-  // No scenario 3 anymore
-  
   // Coverage
-  var coveragePct=0,uncoveredPct=0;
+  var coveragePct=0, uncoveredPct=0, uncoveredCount=0, totalBranches=0;
   if(refData && refData.tot>0){
+    totalBranches=refData.tot;
+    uncoveredCount=refData.wk||0;
     coveragePct=Math.round((refData.ok/refData.tot)*100);
     uncoveredPct=100-coveragePct;
   }
@@ -568,6 +582,8 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
       refData:refData,
       coveragePct:coveragePct,
       uncoveredPct:uncoveredPct,
+      uncoveredCount:uncoveredCount,
+      totalBranches:totalBranches,
       refTot:refData?refData.tot:0,
       refOk:refData?refData.ok:0,
       refWk:refData?refData.wk:0
@@ -634,16 +650,15 @@ function computePlan(){
     if(globalStockPeriod&&stockBySG[sg]&&stockBySG[sg][pK(globalStockPeriod.parsed)]!==undefined){
       startStock=Math.max(0,stockBySG[sg][pK(globalStockPeriod.parsed)]);
     }
+    var ovr=rowOverrides[sg]||{branches:0,growth:0};
     var stocks={s1:startStock,s2:startStock};
     var perPeriod=[];
     var totNeed={s1:0,s2:0};
 
     futurePeriods.forEach(function(fp){
       var fpk=pK(fp.parsed);
-      // No extra branches or growth - we removed those columns
-      var fc=forecastSG(sg, fpk, fp, 0, 0);
+      var fc=forecastSG(sg, fpk, fp, ovr.branches, ovr.growth);
       
-      // Sales ref: same period last year (for display)
       var py=fp.parsed, lyPK=null;
       for(var k=0;k<allPeriods.length;k++){var q=allPeriods[k];if(q.parsed.mo===py.mo&&q.parsed.h===py.h&&q.parsed.yr===py.yr-1){lyPK=pK(q.parsed);break;}}
       var salesRef=0;
@@ -677,7 +692,6 @@ function computePlan(){
       perPeriod.push(periodResult);
     });
 
-    // Calculate sold quantity for "كمية المباع" column (aggregated across all periods)
     var totalSold=0;
     if(sgSoldCache[sg]){
       Object.values(sgSoldCache[sg]).forEach(function(v){totalSold+=v;});
@@ -711,18 +725,13 @@ function renderPlanTable(){
   var periodLabels=refResult.futurePeriods.map(function(p){return p.raw;});
 
   var head='<tr>';
-  // Fixed columns: SG, Group, Dept, Stock, Sold
   head+='<th class="frozen th-cell col-sg"><div class="th-inner">المجموعة الفرعية</div></th>';
   head+='<th class="frozen th-cell col-grp"><div class="th-inner">المجموعة الرئيسية</div></th>';
   head+='<th class="frozen th-cell col-dept"><div class="th-inner">القسم</div></th>';
   head+='<th class="frozen th-cell col-stock"><div class="th-inner">الرصيد الحالي</div></th>';
-  head+='<th class="frozen th-cell col-sold"><div class="th-inner">كمية المباع</div></th>';
   
-  // Period columns
   periodLabels.forEach(function(lbl){
-    head+='<th class="period-th"><div class="th-inner">'+lbl;
-    head+='<div class="sales-ref">1️⃣ 2️⃣</div>';
-    head+='</div></th>';
+    head+='<th class="period-th"><div class="th-inner">'+lbl+'</div></th>';
   });
   
   head+='<th class="col-total th-cell" style="left:0;position:sticky;z-index:6;background:#F7FAFC"><div class="th-inner">إجمالي احتياج</div></th>';
@@ -735,25 +744,36 @@ function renderPlanTable(){
     row+='<td class="frozen col-grp" style="word-wrap:break-word;white-space:normal">'+r.grp+'</td>';
     row+='<td class="frozen col-dept" style="word-wrap:break-word;white-space:normal">'+r.dept+'</td>';
     row+='<td class="frozen col-stock"><span class="badge '+(r.startStock>0?'ok':'zero')+'">'+r.startStock.toLocaleString()+'</span></td>';
-    row+='<td class="frozen col-sold"><span class="badge ok">'+r.totalSold.toLocaleString()+'</span></td>';
 
     periodLabels.forEach(function(lbl,i){
       var pp=r.perPeriod[i];
       if(!pp||!pp.hasData){row+='<td><span style="color:var(--border);font-size:16px">—</span></td>';return;}
-      var cell='<div class="period-cell">';
-      var refLabel='';
-      if(pp.usedFallback) refLabel='⚠';
-      if(refLabel) cell+='<div style="font-size:9px;color:var(--amber-d);text-align:center">'+refLabel+'</div>';
       
-      // Scenario 1 & 2
+      var m=pp.fc_meta||{};
+      var refLabel='📊 '+pp.salesRef.toLocaleString();
+      var fallbackClass=pp.usedFallback?' fallback':'';
+      
+      var cell='<div class="period-cell">';
+      
+      // Reference row
+      cell+='<div class="ref-row'+fallbackClass+'">'+refLabel+(pp.usedFallback?' ⚠':' ✓')+'</div>';
+      
+      // Branches row
+      if(m.totalBranches>0){
+        var pctClass=m.uncoveredPct>30?'high':m.uncoveredPct>15?'med':'low';
+        cell+='<div class="branch-row">🏪 '+m.uncoveredCount+'/'+m.totalBranches+' <span class="badge-pct '+pctClass+'">'+m.uncoveredPct+'%</span></div>';
+      }
+      
+      // Scenario rows
       ['s1','s2'].forEach(function(sc,si){
         var need=pp.needs[sc];
         var icon=si===0?'1️⃣':'2️⃣';
         var cls='fc-row sc-'+(si+1);
+        var color=si===0?'var(--red-d)':'var(--amber-d)';
         if(need>0){
           cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
             '<span class="fc-icon">'+icon+'</span>'+
-            '<span class="fc-need" style="color:'+(si===0?'var(--red-d)':'var(--amber-d)')+'">'+need.toLocaleString()+'</span>'+
+            '<span class="fc-need" style="color:'+color+'">'+need.toLocaleString()+'</span>'+
             '</div>';
         }else{
           cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
@@ -762,6 +782,7 @@ function renderPlanTable(){
             '</div>';
         }
       });
+      
       cell+='</div>';
       row+='<td>'+cell+'</td>';
     });
@@ -776,6 +797,114 @@ function renderPlanTable(){
   }).join('');
 
   filterPlan();
+}
+
+// ============================================================
+// OVERRIDES
+// ============================================================
+function setOverride(sg,rIdx,field,val){
+  if(!rowOverrides[sg])rowOverrides[sg]={branches:0,growth:0};
+  rowOverrides[sg][field]=parseFloat(val)||0;
+  recomputeRow(rIdx);
+  refreshRowDOM(rIdx);
+}
+
+function recomputeRow(rIdx){
+  var r=planResults[rIdx];
+  var ovr=rowOverrides[r.sg]||{branches:0,growth:0};
+  var stocks={s1:r.startStock,s2:r.startStock};
+  var totNeed={s1:0,s2:0};
+  
+  r.futurePeriods.forEach(function(fp,i){
+    var fpk=pK(fp.parsed);
+    var fc=forecastSG(r.sg, fpk, fp, ovr.branches, ovr.growth);
+    
+    var py=fp.parsed, lyPK=null;
+    for(var k=0;k<allPeriods.length;k++){var q=allPeriods[k];if(q.parsed.mo===py.mo&&q.parsed.h===py.h&&q.parsed.yr===py.yr-1){lyPK=pK(q.parsed);break;}}
+    var salesRef=0;
+    if(lyPK&&sgPeriodCache[r.sg]&&sgPeriodCache[r.sg][lyPK])salesRef=Math.round(sgPeriodCache[r.sg][lyPK].sold||0);
+    
+    var pp=r.perPeriod[i];
+    pp.salesRef=salesRef;
+    pp.fcTot={s1:fc.s1,s2:fc.s2};
+    pp.fc_meta=fc.meta;
+    pp.usedFallback=fc.meta.usedFallback;
+    
+    ['s1','s2'].forEach(function(sc){
+      pp.stockBefore[sc]=Math.round(stocks[sc]);
+      var need=0,remaining=stocks[sc]-fc[sc];
+      if(remaining<0){need=-remaining;stocks[sc]=0;}else{stocks[sc]=remaining;}
+      pp.needs[sc]=Math.round(need);
+      pp.stockAfter[sc]=Math.round(stocks[sc]);
+      totNeed[sc]+=pp.needs[sc];
+    });
+  });
+  r.totNeed=totNeed;
+}
+
+function refreshRowDOM(rIdx){
+  var r=planResults[rIdx];
+  var ovr=rowOverrides[r.sg]||{branches:0,growth:0};
+  var trs=document.querySelectorAll('#purchase-table tbody tr');
+  var tr=trs[rIdx];if(!tr)return;
+  var tds=tr.querySelectorAll('td');
+  var frozenCount=4;
+  r.perPeriod.forEach(function(pp,i){
+    var td=tds[frozenCount+i];if(!td)return;
+    if(!pp||!pp.hasData){td.innerHTML='<span style="color:var(--border);font-size:16px">—</span>';return;}
+    
+    var m=pp.fc_meta||{};
+    var refLabel='📊 '+pp.salesRef.toLocaleString();
+    var fallbackClass=pp.usedFallback?' fallback':'';
+    
+    var cell='<div class="period-cell">';
+    cell+='<div class="ref-row'+fallbackClass+'">'+refLabel+(pp.usedFallback?' ⚠':' ✓')+'</div>';
+    
+    if(m.totalBranches>0){
+      var pctClass=m.uncoveredPct>30?'high':m.uncoveredPct>15?'med':'low';
+      cell+='<div class="branch-row">🏪 '+m.uncoveredCount+'/'+m.totalBranches+' <span class="badge-pct '+pctClass+'">'+m.uncoveredPct+'%</span></div>';
+    }
+    
+    ['s1','s2'].forEach(function(sc,si){
+      var need=pp.needs[sc],icon=si===0?'1️⃣':'2️⃣';
+      var cls='fc-row sc-'+(si+1);
+      var color=si===0?'var(--red-d)':'var(--amber-d)';
+      if(need>0){
+        cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-need" style="color:'+color+'">'+need.toLocaleString()+'</span></div>';
+      }else{
+        cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-ok">✓</span></div>';
+      }
+    });
+    
+    cell+='</div>';
+    td.innerHTML=cell;
+  });
+  var totalTd=tds[frozenCount+r.perPeriod.length];
+  if(totalTd){
+    totalTd.innerHTML='<div class="total-cell">'+
+      '<div class="total-row s1">1️⃣ '+Math.round(r.totNeed.s1).toLocaleString()+'</div>'+
+      '<div class="total-row s2">2️⃣ '+Math.round(r.totNeed.s2).toLocaleString()+'</div>'+
+      '</div>';
+  }
+}
+
+function applyGlobal(){
+  var gb=parseFloat(document.getElementById('g-branches').value)||0;
+  var gg=parseFloat(document.getElementById('g-growth').value)||0;
+  planResults.forEach(function(r,rIdx){
+    if(!rowOverrides[r.sg])rowOverrides[r.sg]={branches:0,growth:0};
+    if(gb>0)rowOverrides[r.sg].branches=gb;
+    if(gg>0)rowOverrides[r.sg].growth=gg;
+    recomputeRow(rIdx);
+    refreshRowDOM(rIdx);
+  });
+}
+
+function resetGlobal(){
+  document.getElementById('g-branches').value='';
+  document.getElementById('g-growth').value='';
+  rowOverrides={};
+  planResults.forEach(function(r,rIdx){recomputeRow(rIdx);refreshRowDOM(rIdx);});
 }
 
 // ============================================================
@@ -795,13 +924,13 @@ function filterPlan(){
 }
 
 // ============================================================
-// EXPLAIN MODAL - Only 2 scenarios
+// EXPLAIN MODAL
 // ============================================================
 function showExplain(rIdx,pIdx,sc){
   var r=planResults[rIdx];if(!r)return;
   var pp=r.perPeriod[pIdx];if(!pp)return;
   
-  var scNames={'s1':'1️⃣ مساوي للبيع (مع Fallback)','s2':'2️⃣ البيع + تعويض فروع (نصف النسبة)'};
+  var scNames={'s1':'1️⃣ مساوي للبيع','s2':'2️⃣ البيع + تعويض فروع'};
   var scName=scNames[sc]||sc;
   var m=pp.fc_meta||{};
 
@@ -822,13 +951,14 @@ function showExplain(rIdx,pIdx,sc){
   var insightText='';
   if(sc==='s1'){
     insightText='التوقع = مبيعات المرجع ('+refVal.toLocaleString()+')';
+    if(m.growth>0) insightText+=' × (1 + '+m.growth+'% نمو)';
     insightText+=' = '+fcVal.toLocaleString();
   } else {
     insightText='التوقع = مبيعات المرجع ('+refVal.toLocaleString()+')';
     if(m.weakAdj>0) insightText+=' + تعويض فروع ضعيفة ('+m.weakAdj.toLocaleString()+')';
     if(m.newBranchAdj>0) insightText+=' + فروع جديدة ('+m.newBranchAdj.toLocaleString()+')';
+    if(m.growth>0) insightText+=' × (1 + '+m.growth+'% نمو)';
     insightText+=' = '+fcVal.toLocaleString();
-    if(m.growth>0) insightText+=' (نسبة النمو: '+m.growth+'%)';
   }
 
   html+='<div class="explain-insight">';
@@ -883,11 +1013,13 @@ function showExplain(rIdx,pIdx,sc){
   html+='<div class="explain-formula">';
   if(sc==='s1'){
     html+='التوقع 1️⃣ = مبيعات نفس الفترة من السنة السابقة (أو فترة واحدة للخلف كـ Fallback)';
+    if(m.growth>0) html+=' × (1 + '+m.growth+'%)';
     html+='\nاحتياج = max(0, التوقع − الرصيد المتبقي)';
   } else {
     html+='التوقع 2️⃣ = مبيعات المرجع + تعويض فروع ضعيفة + فروع جديدة (بنصف نسبة النمو)';
-    if(m.weakAdj>0) html+='\nتعويض فروع ضعيفة: ('+m.weakAdj+')';
-    if(m.newBranchAdj>0) html+='\nفروع جديدة: ('+m.newBranchAdj+')';
+    if(m.weakAdj>0) html+='\nتعويض فروع ضعيفة: '+m.weakAdj;
+    if(m.newBranchAdj>0) html+='\nفروع جديدة: '+m.newBranchAdj;
+    if(m.growth>0) html+='\nنسبة النمو: '+m.growth+'%';
     html+='\nاحتياج = max(0, التوقع − الرصيد المتبقي)';
   }
   html+='</div></div>';
@@ -916,8 +1048,11 @@ function exportExplain(){
     ['مبيعات المرجع',m.s1Base||0],
     ['تم استخدام مرجع بديل',m.usedFallback?'نعم':'لا'],
     ['نسبة الفروع غير المغطاة',m.uncoveredPct+'%'],
+    ['عدد الفروع غير المغطاة',m.uncoveredCount||0],
+    ['إجمالي الفروع',m.totalBranches||0],
     ['تعويض فروع ضعيفة',m.weakAdj||0],
     ['فروع جديدة',m.newBranchAdj||0],
+    ['نسبة النمو',m.growth+'%'],
     [''],
     ['السيناريو','التوقع','الرصيد قبل','الرصيد بعد','احتياج الشراء'],
     ['1️⃣ مساوي للبيع',pp.fcTot.s1,pp.stockBefore.s1,pp.stockAfter.s1,pp.needs.s1],
@@ -938,23 +1073,25 @@ function exportFullTable(){
   planResults.forEach(function(r){if(r.futurePeriods.length>maxLen){maxLen=r.futurePeriods.length;refResult=r;}});
   var periodLabels=refResult.futurePeriods.map(function(p){return p.raw;});
 
-  var headerRow=['المجموعة الفرعية','المجموعة الرئيسية','القسم','الرصيد الحالي','كمية المباع'];
+  var headerRow=['المجموعة الفرعية','المجموعة الرئيسية','القسم','الرصيد الحالي'];
   periodLabels.forEach(function(lbl){
     headerRow.push(lbl+' - توقع 1️⃣');
     headerRow.push(lbl+' - توقع 2️⃣');
     headerRow.push(lbl+' - احتياج 1️⃣');
     headerRow.push(lbl+' - احتياج 2️⃣');
     headerRow.push(lbl+' - مرجع بديل');
+    headerRow.push(lbl+' - % فروع غير مغطاة');
   });
   headerRow.push('إجمالي احتياج 1️⃣','إجمالي احتياج 2️⃣');
 
   var rows=[headerRow];
   planResults.forEach(function(r){
-    var row=[r.sg,r.grp,r.dept,r.startStock,r.totalSold];
+    var row=[r.sg,r.grp,r.dept,r.startStock];
     periodLabels.forEach(function(lbl,i){
       var pp=r.perPeriod[i];
-      if(!pp||!pp.hasData){row.push('','','','','');return;}
-      row.push(pp.fcTot.s1, pp.fcTot.s2, pp.needs.s1, pp.needs.s2, pp.usedFallback?'نعم':'');
+      if(!pp||!pp.hasData){row.push('','','','','','');return;}
+      var m=pp.fc_meta||{};
+      row.push(pp.fcTot.s1, pp.fcTot.s2, pp.needs.s1, pp.needs.s2, pp.usedFallback?'نعم':'', m.uncoveredPct||'');
     });
     row.push(Math.round(r.totNeed.s1),Math.round(r.totNeed.s2));
     rows.push(row);
@@ -1048,7 +1185,7 @@ function filterPS(){
 }
 
 // ============================================================
-// MULTI-SELECT WITH SEARCH
+// MULTI-SELECT
 // ============================================================
 var mselState={'pf-grp':null,'pf-dept':null,'plf-grp':null,'plf-dept':null};
 var allSGData={grps:[],depts:[]};
@@ -1116,7 +1253,7 @@ function triggerMselChange(cid){if(cid.indexOf('pf-')>=0)renderPareto();else fil
 function mselAllows(sk,v){var st=mselState[sk];if(!st)return true;var s=Object.values(st).filter(Boolean).length;if(s===0||s===Object.keys(st).length)return true;return!!st[v];}
 
 // ============================================================
-// TABS
+// TABS & DRAG
 // ============================================================
 var tabList=['plan','pareto'];
 function switchTab(tab){
@@ -1124,9 +1261,6 @@ function switchTab(tab){
   document.querySelectorAll('.tab-btn').forEach(function(el,i){el.classList.toggle('active',tabList[i]===tab);});
 }
 
-// ============================================================
-// DRAG & DROP
-// ============================================================
 var dz=document.getElementById('drop-zone');
 dz.addEventListener('dragover',function(e){e.preventDefault();dz.style.background='#E6F7F2';});
 dz.addEventListener('dragleave',function(){dz.style.background='';});
