@@ -79,7 +79,7 @@ tr:hover td.frozen{background:#F8FAFB}
 .col-stock{right:470px;min-width:90px}
 .col-total{left:0;min-width:95px;position:sticky;z-index:2;background:#fff}
 th.col-total{z-index:6;background:#F7FAFC}
-.period-th{min-width:140px;max-width:160px}
+.period-th{min-width:75px;max-width:85px}
 .period-cell{display:flex;flex-direction:column;gap:2px;padding:4px 4px;font-size:11px;border:1px solid #E8EDF2;border-radius:6px;background:#FAFCFD}
 .period-cell .ref-row{font-size:10px;color:var(--blue-d);background:var(--blue-l);border-radius:4px;padding:2px 6px;text-align:center;font-weight:700;border:1px solid rgba(26,95,168,0.12)}
 .period-cell .ref-row.fallback{background:var(--amber-l);color:var(--amber-d);border-color:#E8C17A}
@@ -182,24 +182,24 @@ canvas{width:100%!important}
 .tbl-scroll::-webkit-scrollbar-thumb{background:#C4CEDD;border-radius:10px}
 .tbl-scroll::-webkit-scrollbar-thumb:hover{background:#94A3B8}
 
-/* Purchase Map Table */
-.map-table{width:100%;border-collapse:collapse;font-size:12px}
-.map-table th{background:#F7FAFC;padding:8px 12px;text-align:center;font-weight:800;font-size:11px;color:var(--muted);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:5}
-.map-table td{padding:6px 10px;border-bottom:1px solid #F0F4F8;text-align:center;vertical-align:middle}
-.map-table tr:hover td{background:#F8FAFB}
-.map-table .season-summer{background:#FFF8E7}
-.map-table .season-winter{background:#E8F0FE}
-.map-table .season-both{background:#F0F0F0}
-.map-table .urgent{background:#FDEAEA!important}
-.map-table .urgent td{background:#FDEAEA}
-.map-table .ok-row{background:#E6F5EF!important}
-.map-table .ok-row td{background:#E6F5EF}
-.map-badge{font-size:10px;padding:2px 8px;border-radius:12px;font-weight:700}
-.map-badge.summer{background:#FFE0B2;color:#E65100}
-.map-badge.winter{background:#BBDEFB;color:#0D47A1}
-.map-badge.both{background:#E0E0E0;color:#424242}
-.map-badge.urgent{background:#FFCDD2;color:#C62828}
-.map-badge.ok{background:#C8E6C9;color:#2E7D32}
+/* Calendar Table */
+.calendar-table{width:100%;border-collapse:collapse;font-size:11px}
+.calendar-table th{background:#F7FAFC;padding:6px 4px;text-align:center;font-weight:800;font-size:10px;color:var(--muted);border-bottom:2px solid var(--border);position:sticky;top:0;z-index:5;white-space:nowrap}
+.calendar-table td{padding:4px 4px;border-bottom:1px solid #F0F4F8;text-align:center;vertical-align:middle;font-size:11px}
+.calendar-table tr:hover td{background:#F8FAFB}
+.calendar-table .cal-sg{text-align:right!important;font-weight:700;word-wrap:break-word;white-space:normal;min-width:180px}
+.calendar-table .cal-stock{font-weight:700}
+.calendar-table .cal-total{font-weight:800}
+.calendar-table .need-0{background:#E6F5EF;color:var(--green-d)}
+.calendar-table .need-low{background:#FFF8E1;color:#F57F17}
+.calendar-table .need-med{background:#FFE0B2;color:#E65100}
+.calendar-table .need-high{background:#FFCDD2;color:#C62828}
+.calendar-table .cal-month{background:#F0F4F8;font-weight:700;font-size:10px}
+.calendar-table .cal-scenario-selector{display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.calendar-table .cal-scenario-selector label{font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:5px;padding:4px 12px;border-radius:6px;border:1.5px solid var(--border);transition:all .2s}
+.calendar-table .cal-scenario-selector label:hover{background:var(--green-l);border-color:var(--green)}
+.calendar-table .cal-scenario-selector input[type="radio"]{accent-color:var(--green);cursor:pointer}
+.calendar-table .cal-scenario-selector .active-sc{background:var(--green-l);border-color:var(--green)}
 </style>
 </head>
 <body>
@@ -242,7 +242,7 @@ canvas{width:100%!important}
     <div class="tabs">
       <button class="tab-btn active" onclick="switchTab('plan')">📋 خطة المشتريات</button>
       <button class="tab-btn" onclick="switchTab('pareto')">📊 باريتو الاحتياج</button>
-      <button class="tab-btn" onclick="switchTab('map')">🗺️ خريطة الشراء</button>
+      <button class="tab-btn" onclick="switchTab('calendar')">📅 التقويم</button>
     </div>
 
     <!-- PLAN TAB -->
@@ -322,50 +322,35 @@ canvas{width:100%!important}
       </div>
     </div>
 
-    <!-- MAP TAB -->
-    <div id="tab-map" class="hidden">
+    <!-- CALENDAR TAB -->
+    <div id="tab-calendar" class="hidden">
       <div class="section">
         <div class="sec-hdr">
-          <span class="sec-title">🗺️ خريطة الشراء — طلبيتين في الشهر (حسب المجموعة الفرعية)</span>
-          <button class="btn-export" onclick="exportMap()">⬇ تصدير Excel</button>
+          <span class="sec-title">📅 التقويم — الكميات المطلوبة حسب الفترة</span>
+          <button class="btn-export" onclick="exportCalendar()">⬇ تصدير Excel</button>
         </div>
         <div class="note">
-          📌 مدة التصنيع: شهر ونص - شهرين<br>
-          📌 موعد الطلب = فترة البيع - شهرين (نفس النصف)<br>
-          📌 <span style="color:var(--red-d)">🔴 الطلبات المستعجلة (خلال شهر)</span> | <span style="color:var(--green-d)">🟢 كافٍ (مطلوب 0)</span>
+          📌 الألوان: <span style="background:#E6F5EF;padding:2px 8px;border-radius:4px">🟢 كافٍ (0)</span>
+          <span style="background:#FFF8E1;padding:2px 8px;border-radius:4px">🟡 قليل (1-500)</span>
+          <span style="background:#FFE0B2;padding:2px 8px;border-radius:4px">🟠 متوسط (501-1000)</span>
+          <span style="background:#FFCDD2;padding:2px 8px;border-radius:4px">🔴 كثير (1000+)</span>
+        </div>
+        <div class="calendar-table cal-scenario-selector">
+          <label class="active-sc"><input type="radio" name="cal-scenario" value="s1" checked onchange="setCalendarScenario('s1')"> 1️⃣ مساوي للبيع</label>
+          <label><input type="radio" name="cal-scenario" value="s2" onchange="setCalendarScenario('s2')"> 2️⃣ البيع + تعويض فروع</label>
         </div>
         <div class="filters-row">
-          <div class="msel" id="msel-map-scenario"></div>
-          <div class="msel" id="msel-map-season"></div>
-          <div class="msel" id="msel-map-sg"></div>
+          <div class="msel" id="msel-cal-grp"></div>
+          <div class="msel" id="msel-cal-dept"></div>
         </div>
-        <input class="search-box" id="map-search" placeholder="ابحث في خريطة الشراء..." oninput="filterMap()">
+        <input class="search-box" id="cal-search" placeholder="ابحث بالمجموعة الفرعية..." oninput="filterCalendar()">
         <div class="tbl-container">
           <div class="tbl-scroll" style="max-height:600px">
-            <table class="map-table" id="map-table">
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>شهر الطلب</th>
-                  <th>موعد الطلب</th>
-                  <th>المجموعة الفرعية</th>
-                  <th>فترة البيع</th>
-                  <th>الموسم</th>
-                  <th>الكمية 1️⃣</th>
-                  <th>الكمية 2️⃣</th>
-                  <th>الحالة</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
+            <table class="calendar-table" id="calendar-table">
+              <thead><tr id="cal-header"></tr></thead>
+              <tbody id="cal-body"></tbody>
             </table>
           </div>
-        </div>
-        <div style="margin-top:12px;display:flex;gap:20px;flex-wrap:wrap;font-size:12px">
-          <span><span class="map-badge summer">صيفي</span> موسم صيفي</span>
-          <span><span class="map-badge winter">شتوي</span> موسم شتوي</span>
-          <span><span class="map-badge both">شتوي+صيفي</span> موسم انتقالي</span>
-          <span><span class="map-badge urgent">عاجل</span> الطلب خلال 30 يوم</span>
-          <span><span class="map-badge ok">كافٍ</span> لا يحتاج شراء</span>
         </div>
       </div>
     </div>
@@ -398,10 +383,8 @@ var rowOverrides={};
 var currentExplain=null;
 var sgSoldCache={};
 
-// Map state
-var mapScenario='s1';
-var mapSeason='all';
-var mapSG='all';
+// Calendar state
+var calScenario='s1';
 
 // ============================================================
 // UTILS
@@ -434,31 +417,12 @@ function setP(pct,msg){document.getElementById('pb').style.width=pct+'%';documen
 function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function periodByKey(pk){return allPeriods.find(function(p){return pK(p.parsed)===pk;})||null;}
 
-// Get order date (2 months before sale)
-function getOrderDate(periodLabel){
-  var pp=parsePer(periodLabel);
-  if(!pp)return periodLabel;
-  var mo=pp.mo-2;
-  var yr=pp.yr;
-  if(mo<=0){mo+=12;yr--;}
-  var half=pp.h===1?'اول':'اخر';
-  return 'نص '+half+' '+mo+'-'+yr;
-}
-
 function getSeason(season){
   if(!season)return 'غير محدد';
   if(season.indexOf('صيفي')>=0 && season.indexOf('شتوي')>=0)return 'شتوي+صيفي';
   if(season.indexOf('صيفي')>=0)return 'صيفي';
   if(season.indexOf('شتوي')>=0)return 'شتوي';
   return season;
-}
-
-function getSeasonClass(season){
-  var s=getSeason(season);
-  if(s==='صيفي')return 'summer';
-  if(s==='شتوي')return 'winter';
-  if(s==='شتوي+صيفي')return 'both';
-  return '';
 }
 
 // ============================================================
@@ -616,7 +580,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
   var py=periodP.parsed;
   var growth=1+(growthPct||0)/100;
   
-  // 1. Try same period last year
   var lastYearPK=null;
   for(var i=0;i<allPeriods.length;i++){
     var q=allPeriods[i];
@@ -631,7 +594,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
     refData=sgData[lastYearPK];
     s1Base=refData.sold;
   } else {
-    // 2. Fallback: one period back only
     var targetIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===targetPK;});
     var prevIdx=targetIdx-1;
     if(prevIdx>=0){
@@ -646,7 +608,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
     }
   }
   
-  // Scenario 2: s1 + weak/new branch adjustment
   var weakAdj=0, newBranchAdj=0;
   if(refData && refData.tot>0){
     if(refData.ok>0 && refData.wk>0){
@@ -800,7 +761,6 @@ function computePlan(){
       Object.values(sgSoldCache[sg]).forEach(function(v){totalSold+=v;});
     }
 
-    // Get season from periods
     var season='';
     for(var pk in sgPeriodCache[sg]){
       if(sgPeriodCache[sg][pk].ocm){
@@ -1007,7 +967,7 @@ function applyGlobal(){
     recomputeRow(rIdx);
     refreshRowDOM(rIdx);
   });
-  renderMap();
+  renderCalendar();
 }
 
 function resetGlobal(){
@@ -1015,7 +975,7 @@ function resetGlobal(){
   document.getElementById('g-growth').value='';
   rowOverrides={};
   planResults.forEach(function(r,rIdx){recomputeRow(rIdx);refreshRowDOM(rIdx);});
-  renderMap();
+  renderCalendar();
 }
 
 // ============================================================
@@ -1035,165 +995,188 @@ function filterPlan(){
 }
 
 // ============================================================
-// MAP - Purchase Map
+// CALENDAR - 24 periods view
 // ============================================================
-function renderMap(){
-  var tbody=document.querySelector('#map-table tbody');
-  if(!planResults.length){tbody.innerHTML='<tr><td colspan="9" style="padding:20px;color:var(--muted);text-align:center">لا توجد بيانات</td></tr>';return;}
+function renderCalendar(){
+  var thead=document.getElementById('cal-header');
+  var tbody=document.getElementById('cal-body');
+  if(!planResults.length){thead.innerHTML='';tbody.innerHTML='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="10">لا توجد بيانات</td></tr>';return;}
   
-  var rows=[];
+  // Build period labels: 24 periods (first half + second half of each month)
+  // Use available periods from data
+  var allPeriodLabels = [];
+  var periodSet = {};
   planResults.forEach(function(r){
     r.perPeriod.forEach(function(pp){
-      if(!pp||!pp.hasData)return;
-      var need=pp.needs[mapScenario]||0;
-      var orderDate=getOrderDate(pp.period);
-      var season=pp.fc_meta.season||r.season||'';
-      rows.push({
-        sg:r.sg,
-        grp:r.grp,
-        dept:r.dept,
-        period:pp.period,
-        orderDate:orderDate,
-        need:need,
-        season:season,
-        fcTot:pp.fcTot,
-        needs:pp.needs,
-        usedFallback:pp.usedFallback
-      });
+      if(pp && pp.period){
+        var p=parsePer(pp.period);
+        if(p){
+          var key=p.yr+'_'+p.mo+'_'+p.h;
+          if(!periodSet[key]){
+            periodSet[key]=true;
+            allPeriodLabels.push(pp.period);
+          }
+        }
+      }
     });
   });
   
-  // Filter by season
-  if(mapSeason!=='all'){
-    rows=rows.filter(function(r){return r.season===mapSeason;});
-  }
-  
-  // Filter by SG
-  if(mapSG!=='all'){
-    rows=rows.filter(function(r){return r.sg===mapSG;});
-  }
-  
-  // Sort by order date
-  rows.sort(function(a,b){
-    var pa=parsePer(a.orderDate);
-    var pb=parsePer(b.orderDate);
+  // Sort periods
+  allPeriodLabels.sort(function(a,b){
+    var pa=parsePer(a), pb=parsePer(b);
     if(!pa && !pb)return 0;
     if(!pa)return 1;
     if(!pb)return -1;
     return pOrd(pa)-pOrd(pb);
   });
   
-  // Build table
-  var html='';
-  if(!rows.length){
-    html='<tr><td colspan="9" style="padding:20px;color:var(--muted);text-align:center">لا توجد طلبات مطابقة للفلترة</td></tr>';
-  } else {
-    rows.forEach(function(r,idx){
-      var seasonClass=getSeasonClass(r.season);
-      var isUrgent=false;
-      var orderP=parsePer(r.orderDate);
-      if(orderP){
-        var now=new Date();
-        var orderMonth=orderP.mo;
-        var orderYear=orderP.yr;
-        var todayMonth=now.getMonth()+1;
-        var todayYear=now.getFullYear();
-        var diff=(orderYear-todayYear)*12+(orderMonth-todayMonth);
-        if(diff<=1 && diff>=0)isUrgent=true;
-      }
-      var isOk=r.need===0;
-      var rowClass='';
-      if(isUrgent && !isOk) rowClass='urgent';
-      else if(isOk) rowClass='ok-row';
-      else if(seasonClass) rowClass='season-'+seasonClass;
-      
-      html+='<tr class="'+rowClass+'">';
-      html+='<td>'+(idx+1)+'</td>';
-      html+='<td><strong>'+r.orderDate.replace(/نص (اول|اخر) /,'')+'</strong></td>';
-      html+='<td>'+r.orderDate+'</td>';
-      html+='<td style="text-align:right;font-weight:700;word-wrap:break-word;white-space:normal">'+r.sg+'</td>';
-      html+='<td>'+r.period+'</td>';
-      html+='<td><span class="map-badge '+seasonClass+'">'+(r.season||'غير محدد')+'</span></td>';
-      html+='<td>'+(r.needs.s1!==undefined?r.needs.s1.toLocaleString():'—')+'</td>';
-      html+='<td>'+(r.needs.s2!==undefined?r.needs.s2.toLocaleString():'—')+'</td>';
-      if(isOk){
-        html+='<td><span class="map-badge ok">✅ كافٍ</span></td>';
-      } else if(isUrgent){
-        html+='<td><span class="map-badge urgent">🔴 عاجل</span></td>';
-      } else {
-        html+='<td><span class="map-badge">🟡 مطلوب</span></td>';
-      }
-      html+='</tr>';
-    });
+  if(!allPeriodLabels.length){
+    thead.innerHTML='';tbody.innerHTML='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="10">لا توجد فترات</td></tr>';
+    return;
   }
-  tbody.innerHTML=html;
   
-  // Apply search filter
-  filterMap();
-}
-
-function filterMap(){
-  var q=(document.getElementById('map-search').value||'').trim().toLowerCase();
-  var rows=document.querySelectorAll('#map-table tbody tr');
-  rows.forEach(function(tr){
-    if(!q){tr.style.display='';return;}
-    var txt=tr.textContent.toLowerCase();
-    tr.style.display=txt.indexOf(q)>=0?'':'none';
+  // Build header
+  var headerHtml='<th style="min-width:180px;text-align:right">المجموعة الفرعية</th>';
+  headerHtml+='<th style="min-width:70px">الرصيد</th>';
+  allPeriodLabels.forEach(function(lbl){
+    var short=lbl.replace(/نص (اول|اخر) /,'');
+    headerHtml+='<th style="min-width:60px;max-width:70px;font-size:9px">'+short+'</th>';
   });
+  headerHtml+='<th style="min-width:80px">الإجمالي</th>';
+  thead.innerHTML=headerHtml;
+  
+  // Build rows
+  var rows=[];
+  planResults.forEach(function(r){
+    var row={sg:r.sg, stock:r.startStock, needs:{}, total:0};
+    var hasData=false;
+    allPeriodLabels.forEach(function(lbl){
+      var found=false;
+      r.perPeriod.forEach(function(pp){
+        if(pp && pp.period===lbl){
+          var need=pp.needs[calScenario]||0;
+          row.needs[lbl]=need;
+          row.total += need;
+          if(need>0) hasData=true;
+          found=true;
+        }
+      });
+      if(!found) row.needs[lbl]=0;
+    });
+    if(hasData || r.startStock>0) rows.push(row);
+  });
+  
+  // Filter by group/dept
+  rows = rows.filter(function(r){
+    var sgData=planResults.find(function(p){return p.sg===r.sg;});
+    if(!sgData)return true;
+    if(!mselAllows('cal-grp',sgData.grp))return false;
+    if(!mselAllows('cal-dept',sgData.dept))return false;
+    return true;
+  });
+  
+  // Search
+  var q=(document.getElementById('cal-search').value||'').trim().toLowerCase();
+  if(q) rows=rows.filter(function(r){return r.sg.toLowerCase().indexOf(q)>=0;});
+  
+  // Sort by total descending
+  rows.sort(function(a,b){return b.total-a.total;});
+  
+  // Build body
+  var bodyHtml='';
+  rows.forEach(function(row){
+    bodyHtml+='<tr>';
+    bodyHtml+='<td style="text-align:right;font-weight:700;word-wrap:break-word;white-space:normal">'+row.sg+'</td>';
+    bodyHtml+='<td class="cal-stock">'+row.stock.toLocaleString()+'</td>';
+    allPeriodLabels.forEach(function(lbl){
+      var need=row.needs[lbl]||0;
+      var cls='';
+      if(need===0) cls='need-0';
+      else if(need<=500) cls='need-low';
+      else if(need<=1000) cls='need-med';
+      else cls='need-high';
+      bodyHtml+='<td class="'+cls+'">'+(need>0?need.toLocaleString():'0')+'</td>';
+    });
+    bodyHtml+='<td class="cal-total" style="font-weight:900;color:var(--red-d)">'+row.total.toLocaleString()+'</td>';
+    bodyHtml+='</tr>';
+  });
+  
+  if(!rows.length){
+    bodyHtml='<tr><td style="padding:20px;color:var(--muted);text-align:center" colspan="'+(allPeriodLabels.length+3)+'">لا توجد نتائج مطابقة</td></tr>';
+  }
+  tbody.innerHTML=bodyHtml;
 }
 
-function exportMap(){
+function setCalendarScenario(sc){
+  calScenario=sc;
+  document.querySelectorAll('.cal-scenario-selector label').forEach(function(el){
+    var inp=el.querySelector('input[type="radio"]');
+    if(inp && inp.value===sc){
+      el.classList.add('active-sc');
+    } else {
+      el.classList.remove('active-sc');
+    }
+  });
+  renderCalendar();
+}
+
+function filterCalendar(){
+  renderCalendar();
+}
+
+function exportCalendar(){
   if(!planResults.length)return;
   var wb=XLSX.utils.book_new();
-  var data=[['#','شهر الطلب','موعد الطلب','المجموعة الفرعية','فترة البيع','الموسم','الكمية 1️⃣','الكمية 2️⃣','الحالة']];
   
-  var rows=[];
+  // Get periods
+  var allPeriodLabels = [];
+  var periodSet = {};
   planResults.forEach(function(r){
     r.perPeriod.forEach(function(pp){
-      if(!pp||!pp.hasData)return;
-      var need=pp.needs[mapScenario]||0;
-      var orderDate=getOrderDate(pp.period);
-      var season=pp.fc_meta.season||r.season||'';
-      var isOk=need===0;
-      rows.push({
-        sg:r.sg,
-        period:pp.period,
-        orderDate:orderDate,
-        need:need,
-        season:season,
-        needs:pp.needs,
-        isOk:isOk
-      });
+      if(pp && pp.period){
+        var p=parsePer(pp.period);
+        if(p){
+          var key=p.yr+'_'+p.mo+'_'+p.h;
+          if(!periodSet[key]){
+            periodSet[key]=true;
+            allPeriodLabels.push(pp.period);
+          }
+        }
+      }
     });
   });
-  
-  rows.sort(function(a,b){
-    var pa=parsePer(a.orderDate);
-    var pb=parsePer(b.orderDate);
+  allPeriodLabels.sort(function(a,b){
+    var pa=parsePer(a), pb=parsePer(b);
     if(!pa && !pb)return 0;
     if(!pa)return 1;
     if(!pb)return -1;
     return pOrd(pa)-pOrd(pb);
   });
   
-  rows.forEach(function(r,idx){
-    var monthLabel=r.orderDate.replace(/نص (اول|اخر) /,'');
-    var status=r.isOk?'كافٍ':'مطلوب';
-    data.push([
-      idx+1,
-      monthLabel,
-      r.orderDate,
-      r.sg,
-      r.period,
-      r.season||'غير محدد',
-      r.needs.s1!==undefined?r.needs.s1:0,
-      r.needs.s2!==undefined?r.needs.s2:0,
-      status
-    ]);
+  var header=['المجموعة الفرعية','الرصيد الحالي'];
+  allPeriodLabels.forEach(function(lbl){header.push(lbl.replace(/نص (اول|اخر) /,''));});
+  header.push('الإجمالي');
+  
+  var data=[header];
+  planResults.forEach(function(r){
+    var row=[r.sg, r.startStock];
+    var total=0;
+    allPeriodLabels.forEach(function(lbl){
+      var need=0;
+      r.perPeriod.forEach(function(pp){
+        if(pp && pp.period===lbl){
+          need=pp.needs[calScenario]||0;
+        }
+      });
+      row.push(need);
+      total+=need;
+    });
+    row.push(total);
+    data.push(row);
   });
   
-  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'خريطة الشراء');
-  XLSX.writeFile(wb,'TREE_خريطة_الشراء_'+new Date().toISOString().substring(0,10)+'.xlsx');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(data),'التقويم');
+  XLSX.writeFile(wb,'TREE_التقويم_'+new Date().toISOString().substring(0,10)+'.xlsx');
 }
 
 // ============================================================
@@ -1461,7 +1444,7 @@ function filterPS(){
 // MULTI-SELECT
 // ============================================================
 var mselState={'pf-grp':null,'pf-dept':null,'plf-grp':null,'plf-dept':null,
-  'map-scenario':null,'map-season':null,'map-sg':null};
+  'cal-grp':null,'cal-dept':null};
 
 function renderAll(){
   computePlan();
@@ -1469,65 +1452,28 @@ function renderAll(){
   buildFilterDropdowns();
   renderPlanTable();
   renderPareto();
-  renderMap();
+  renderCalendar();
 }
 
 function buildAllData(){
-  var g={},d={},seasons={},sgs={};
+  var g={},d={};
   planResults.forEach(function(r){
     g[r.grp]=true;
     d[r.dept]=true;
-    sgs[r.sg]=true;
-    if(r.season) seasons[r.season]=true;
   });
   allSGData.grps=Object.keys(g).sort();
   allSGData.depts=Object.keys(d).sort();
-  allSGData.seasons=Object.keys(seasons).sort();
-  allSGData.sgs=Object.keys(sgs).sort();
 }
 
-var allSGData={grps:[],depts:[],seasons:[],sgs:[]};
+var allSGData={grps:[],depts:[]};
 
 function buildFilterDropdowns(){
-  buildMultiSelect('msel-pf-grp','pf-grp','المجموعة الرئيسية',allSGData.grps,renderPareto);
-  buildMultiSelect('msel-pf-dept','pf-dept','القسم',allSGData.depts,renderPareto);
-  buildMultiSelect('msel-plf-grp','plf-grp','المجموعة الرئيسية',allSGData.grps,filterPlan);
-  buildMultiSelect('msel-plf-dept','plf-dept','القسم',allSGData.depts,filterPlan);
-  
-  // Map filters - simple dropdown style
-  buildMapFilter('msel-map-scenario','map-scenario','السيناريو',['s1','s2'],['1️⃣ مساوي للبيع','2️⃣ البيع+فروع'],function(v){mapScenario=v;renderMap();});
-  buildMapFilter('msel-map-season','map-season','الموسم',['all'].concat(allSGData.seasons),['الكل'].concat(allSGData.seasons),function(v){mapSeason=v;renderMap();});
-  buildMapFilter('msel-map-sg','map-sg','المجموعة الفرعية',['all'].concat(allSGData.sgs),['الكل'].concat(allSGData.sgs),function(v){mapSG=v;renderMap();});
-}
-
-function buildMapFilter(containerId,stateKey,label,values,labels,callback){
-  var container=document.getElementById(containerId);
-  if(!mselState[stateKey]) mselState[stateKey]=values[0]||'all';
-  var current=mselState[stateKey]||values[0]||'all';
-  var selLabel=labels[values.indexOf(current)]||current;
-  var html='<button class="msel-btn" onclick="toggleMselPanel(\''+containerId+'\')">'+label+'<span style="font-weight:400;margin-right:6px">'+selLabel+'</span></button>'+
-    '<div class="msel-panel" id="panel-'+containerId+'">'+
-    '<div class="msel-options">'+
-    values.map(function(v,i){
-      var lbl=labels[i]||v;
-      return'<label><input type="radio" name="'+stateKey+'" value="'+v+'" '+(current===v?'checked':'')+' onchange="mapSelect(\''+stateKey+'\',\''+containerId+'\',\''+v+'\',\''+lbl+'\')"><span>'+lbl+'</span></label>';
-    }).join('')+
-    '</div></div>';
-  container.innerHTML=html;
-}
-
-function mapSelect(sk,cid,val,lbl){
-  mselState[sk]=val;
-  document.querySelector('#'+cid+' .msel-btn span').textContent=lbl;
-  document.querySelectorAll('#panel-'+cid+' input[type=radio]').forEach(function(el){
-    el.checked=el.value===val;
-  });
-  document.querySelectorAll('.msel-panel').forEach(function(p){p.classList.remove('open');});
-  // Trigger callback
-  if(sk==='map-scenario') mapScenario=val;
-  else if(sk==='map-season') mapSeason=val;
-  else if(sk==='map-sg') mapSG=val;
-  renderMap();
+  buildMultiSelect('msel-pf-grp','pf-grp','المجموعة الرئيسية',allSGData.grps,function(){renderPareto();});
+  buildMultiSelect('msel-pf-dept','pf-dept','القسم',allSGData.depts,function(){renderPareto();});
+  buildMultiSelect('msel-plf-grp','plf-grp','المجموعة الرئيسية',allSGData.grps,function(){filterPlan();});
+  buildMultiSelect('msel-plf-dept','plf-dept','القسم',allSGData.depts,function(){filterPlan();});
+  buildMultiSelect('msel-cal-grp','cal-grp','المجموعة الرئيسية',allSGData.grps,function(){renderCalendar();});
+  buildMultiSelect('msel-cal-dept','cal-dept','القسم',allSGData.depts,function(){renderCalendar();});
 }
 
 function buildMultiSelect(containerId,stateKey,label,options,onChangeCb){
@@ -1567,17 +1513,17 @@ document.addEventListener('click',function(e){if(!e.target.closest('.msel'))docu
 function mselToggle(sk,cid,opt,val){mselState[sk][opt]=val;refreshMselBadge(cid,sk);triggerMselChange(cid);}
 function mselSetAll(sk,cid,val){Object.keys(mselState[sk]).forEach(function(k){mselState[sk][k]=val;});document.querySelectorAll('#panel-'+cid+' input[type=checkbox]').forEach(function(cb){cb.checked=val;});refreshMselBadge(cid,sk);triggerMselChange(cid);}
 function refreshMselBadge(cid,sk){var s=Object.values(mselState[sk]).filter(Boolean).length,t=Object.keys(mselState[sk]).length,isAll=s===t||s===0;var b=document.querySelector('#'+cid+' .msel-count');if(b){b.textContent=s;b.classList.toggle('empty',isAll);}}
-function triggerMselChange(cid){if(cid.indexOf('pf-')>=0)renderPareto();else if(cid.indexOf('map-')>=0)renderMap();else filterPlan();}
+function triggerMselChange(cid){if(cid.indexOf('pf-')>=0)renderPareto();else if(cid.indexOf('cal-')>=0)renderCalendar();else filterPlan();}
 function mselAllows(sk,v){var st=mselState[sk];if(!st)return true;var s=Object.values(st).filter(Boolean).length;if(s===0||s===Object.keys(st).length)return true;return!!st[v];}
 
 // ============================================================
 // TABS & DRAG
 // ============================================================
-var tabList=['plan','pareto','map'];
+var tabList=['plan','pareto','calendar'];
 function switchTab(tab){
   tabList.forEach(function(t){var el=document.getElementById('tab-'+t);if(el)el.className=t===tab?'':'hidden';});
   document.querySelectorAll('.tab-btn').forEach(function(el,i){el.classList.toggle('active',tabList[i]===tab);});
-  if(tab==='map') renderMap();
+  if(tab==='calendar') renderCalendar();
 }
 
 var dz=document.getElementById('drop-zone');
