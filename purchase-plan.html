@@ -407,17 +407,82 @@ function findCol(H,cands){
   return null;
 }
 
+// ============================================================
+// IMPROVED parsePer - HANDLES ALL DATE FORMATS
+// ============================================================
 function parsePer(s){
-  if(!s)return null;
-  s=s.toString().trim();
-  s=s.replace(/الأول/g,'اول').replace(/الاول/g,'اول');
-  s=s.replace(/الاخر/g,'اخر').replace(/الآخر/g,'اخر');
-  s=s.replace(/(اول)(\d)/g,'$1 $2');
-  s=s.replace(/(اخر)(\d)/g,'$1 $2');
-  var m=s.match(/(\d{1,2})-(\d{4})/);
-  if(!m)return null;
-  var h=(s.indexOf('اول')>=0||s.indexOf('أول')>=0)?1:2;
-  return{yr:parseInt(m[2]),mo:parseInt(m[1]),h:h,lbl:s};
+  if(!s) return null;
+  s = s.toString().trim();
+  
+  // Remove "نص" from beginning
+  s = s.replace(/^نص\s*/g, '');
+  
+  // Normalize اول/اخر variations
+  s = s.replace(/الاول/g, 'اول');
+  s = s.replace(/الأول/g, 'اول');
+  s = s.replace(/الاخر/g, 'اخر');
+  s = s.replace(/الأخر/g, 'اخر');
+  s = s.replace(/آخر/g, 'اخر');
+  
+  // Clean extra spaces
+  s = s.replace(/\s+/g, ' ').trim();
+  
+  // Patterns supported:
+  // اول 1-2025, اول1-2025, 1-2025 اول, اول 1 (no year)
+  var patterns = [
+    /(اول|اخر)\s*(\d{1,2})\s*[-–]\s*(\d{4})/,    // اول 1-2025
+    /(اول|اخر)(\d{1,2})\s*[-–]\s*(\d{4})/,       // اول1-2025
+    /(\d{1,2})\s*[-–]\s*(\d{4})\s*(اول|اخر)/,    // 1-2025 اول
+    /(اول|اخر)\s*(\d{1,2})/                        // اول 1 (without year)
+  ];
+  
+  for(var i = 0; i < patterns.length; i++){
+    var m = s.match(patterns[i]);
+    if(m){
+      var h, mo, yr;
+      
+      // Determine اول/اخر
+      if(m[1] === 'اول' || m[1] === 'أول'){
+        h = 1;
+      } else if(m[1] === 'اخر' || m[1] === 'آخر'){
+        h = 2;
+      }
+      
+      if(h && m[2] && m[3]){
+        // Pattern: اول 1-2025
+        mo = parseInt(m[2]);
+        yr = parseInt(m[3]);
+      } else if(m[1] && m[2] && m[3]){
+        // Pattern: 1-2025 اول
+        mo = parseInt(m[1]);
+        yr = parseInt(m[2]);
+        h = (m[3] === 'اول' || m[3] === 'أول') ? 1 : 2;
+      } else if(h && m[2]){
+        // Pattern: اول 1 (no year) - use current year
+        mo = parseInt(m[2]);
+        yr = new Date().getFullYear();
+      } else {
+        continue;
+      }
+      
+      if(mo >= 1 && mo <= 12 && yr >= 2020){
+        return {yr: yr, mo: mo, h: h, lbl: s};
+      }
+    }
+  }
+  
+  // Final attempt: extract any number and year
+  var lastTry = s.match(/(\d{1,2})\s*[-–]\s*(\d{4})/);
+  if(lastTry){
+    var mo2 = parseInt(lastTry[1]);
+    var yr2 = parseInt(lastTry[2]);
+    if(mo2 >= 1 && mo2 <= 12 && yr2 >= 2020){
+      var h2 = (s.indexOf('اول') >= 0 || s.indexOf('أول') >= 0) ? 1 : 2;
+      return {yr: yr2, mo: mo2, h: h2, lbl: s};
+    }
+  }
+  
+  return null;
 }
 
 function pOrd(p){return p.yr*10000+p.mo*10+p.h;}
@@ -429,14 +494,13 @@ function periodByKey(pk){return allPeriods.find(function(p){return pK(p.parsed)=
 // ============================================================
 // SEASON CLASSIFICATION (from القسم name)
 // ============================================================
-// يحدد نوع موسمية المجموعة الفرعية بناءً على اسم القسم
 function classifyDeptSeason(deptName){
   var d=(deptName||'').toString();
   if(d.indexOf('صيفي')>=0)return 'صيفي';
   if(d.indexOf('شتوي')>=0)return 'شتوي';
   if(d.indexOf('خريفي')>=0)return 'خريفي';
   if(d.indexOf('مدارس')>=0)return 'مدارس';
-  return 'دائم'; // رئيسي / داخلي / أي قسم آخر بدون اسم موسم صريح
+  return 'دائم';
 }
 
 // ============================================================
@@ -559,7 +623,7 @@ function buildPeriodOcmMap(){
 // SUBGROUP AGGREGATED SALES BY PERIOD (+ per-color breakdown)
 // ============================================================
 var sgPeriodCache={};
-var sgColorCache={}; // sg -> period -> color -> qty
+var sgColorCache={};
 function buildSGPeriodCache(){
   sgPeriodCache={};
   sgColorCache={};
@@ -588,14 +652,13 @@ function buildSGPeriodCache(){
 }
 
 // ============================================================
-// FORECAST AT SUB-GROUP LEVEL (1-period fallback max, halved weak-branch effect)
+// FORECAST AT SUB-GROUP LEVEL
 // ============================================================
 function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
   var sgData=sgPeriodCache[sg]||{};
   var py=periodP.parsed;
   var growth=1+(growthPct||0)/100;
 
-  // 1. Try same period last year
   var lastYearPK=null;
   for(var i=0;i<allPeriods.length;i++){
     var q=allPeriods[i];
@@ -610,8 +673,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
     refData=sgData[lastYearPK];
     s1Base=refData.sold;
   } else {
-    // 2. Fallback: ONE period back only (max 1 step), relative to the last-year reference point
-    // (لو مفيش مرجع سنة سابقة أصلاً، نحاول فترة واحدة قبل الفترة المستهدفة نفسها)
     var anchorPK=lastYearPK || targetPK;
     var anchorIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===anchorPK;});
     if(anchorIdx>0){
@@ -624,14 +685,12 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
         fallbackPK=prevPK2;
       }
     }
-    // لو لسه مفيش (فترة واحدة فقط للخلف وبردو صفر) -> s1Base يفضل 0، بدون محاولات أكتر
   }
 
-  // Scenario 2: s1 + weak/new branch adjustment (نص النسبة فقط لتخفيف المبالغة)
   var weakAdj=0, newBranchAdj=0;
   if(refData && refData.tot>0){
     if(refData.ok>0 && refData.wk>0){
-      var weakRatio=refData.wk/refData.tot; // نسبة الفروع الضعيفة
+      var weakRatio=refData.wk/refData.tot;
       weakAdj=Math.round((s1Base/refData.ok)*refData.wk*weakRatio*0.5);
     }
     if(extraBranches>0){
@@ -640,7 +699,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
   }
   var s2Base=s1Base+weakAdj+newBranchAdj;
 
-  // Coverage
   var coveragePct=0,uncoveredPct=0;
   if(refData && refData.tot>0){
     coveragePct=Math.round((refData.ok/refData.tot)*100);
@@ -1023,7 +1081,7 @@ function showExplain(rIdx,pIdx,sc){
 
   if(m.usedFallback){
     var fbPeriod=m.fallbackPK?periodByKey(m.fallbackPK)?periodByKey(m.fallbackPK).raw:'—':'—';
-    html+='<div class="warn-badge">⚠️ لا توجد مبيعات في نفس الفترة من العام السابق — تم استخدام الفترة السابقة مباشرة ("'+fbPeriod+'") كمرجع تقريبي (خطوة واحدة فقط)</div>';
+    html+='<div class="warn-badge">⚠️ لا توجد بيانات لنفس الفترة من العام السابق — تم استخدام الفترة السابقة مباشرة ("'+fbPeriod+'") كمرجع تقريبي (خطوة واحدة فقط)</div>';
   }
 
   var fcVal=pp.fcTot[sc]||0;
@@ -1306,38 +1364,31 @@ function filterPS(){
 // ============================================================
 // ORDERS REPORT (جدول الطلبيات)
 // ============================================================
-// مدة التصنيع: شهرين = 4 فترات نص شهرية
 var MANUFACTURING_LEAD_PERIODS=4;
 
-// يحدد آخر فترة "آمنة" للتصنيع داخل كل موسم لكل مجموعة فرعية
-// بإيجاد أول فترة "شتوي/خريفي/صيفي صافي" تالية (بدون اختلاط) والرجوع فترتين منها
 function isOrderSafe(deptSeason, periodIdx, allPeriodsArr){
-  if(deptSeason==='دائم')return true; // سلعة دائمة: لا قيود موسمية
+  if(deptSeason==='دائم')return true;
   if(deptSeason==='مدارس'){
-    // فترات المدارس المسموحة: من نص أول 8 إلى نص اخر 10 فقط
     var p=allPeriodsArr[periodIdx];
     if(!p)return false;
     var mo=p.parsed.mo;
     if(mo>=8 && mo<=10)return true;
     return false;
   }
-  // موسمي عام (صيفي/شتوي/خريفي): نحتاج معرفة الموسم الفعلي لكل فترة من periodOcmMap
   var p=allPeriodsArr[periodIdx];
-  if(!p)return true; // افتراضي: نسمح لو مش عارفين
+  if(!p)return true;
   var pk=pK(p.parsed);
   var thisOcm=periodOcmMap[pk]||'';
-  // البحث عن أول فترة "صافية" من موسم مختلف بعد هذه الفترة
   for(var i=periodIdx+1;i<allPeriodsArr.length;i++){
     var q=allPeriodsArr[i];
     var qk=pK(q.parsed);
     var qOcm=periodOcmMap[qk]||'';
     if(qOcm && qOcm!==thisOcm && qOcm.indexOf('/')<0){
-      // وجدنا أول فترة موسم صافي مختلف - النطاق الآمن = فترتين قبلها
       var safeUntilIdx=i-2;
       return periodIdx<=safeUntilIdx;
     }
   }
-  return true; // لم نجد تغيير موسم قادم - نعتبرها آمنة
+  return true;
 }
 
 function renderOrdersReport(){
@@ -1349,7 +1400,6 @@ function renderOrdersReport(){
 
   var q=(document.getElementById('orders-search').value||'').trim().toLowerCase();
 
-  // لكل مجموعة فرعية، لكل فترة قادمة: تحقق هل آمنة للتصنيع
   var orderItems=[];
   var excludedCount=0;
 
@@ -1366,13 +1416,11 @@ function renderOrdersReport(){
       var safe=isOrderSafe(r.deptSeason,globalIdx,allPeriods);
       if(!safe){excludedCount++;return;}
 
-      // مقارنة % مع نفس الفترة العام السابق (sanity check)
       var diffPct=null;
       if(pp.salesRef>0){
         diffPct=Math.round((pp.fcTot.s1-pp.salesRef)/pp.salesRef*100);
       }
 
-      // توزيع الألوان من فترة المرجع
       var colorDist=[];
       var refPK=pp.fc_meta&&pp.fc_meta.refPK;
       if(refPK && sgColorCache[r.sg] && sgColorCache[r.sg][refPK]){
@@ -1403,7 +1451,6 @@ function renderOrdersReport(){
     return;
   }
 
-  // تجميع حسب الشهر (orderMonth) ثم ترتيب تنازلي بالاحتياج
   var byMonth={};
   orderItems.forEach(function(it){
     if(!byMonth[it.orderMonth])byMonth[it.orderMonth]=[];
@@ -1444,7 +1491,6 @@ function renderOrdersReport(){
       html+='<div class="qty-box s2"><div class="qty-lbl">2️⃣ + تعويض فروع</div><div class="qty-val">'+it.need2.toLocaleString()+'</div></div>';
       html+='</div>';
 
-      // سبب القرار
       html+='<div class="reason-box">';
       html+='<div class="reason-title">💡 سبب الكمية</div>';
       var reasonTxt='باعت هذه المجموعة <strong>'+it.salesRef.toLocaleString()+'</strong> قطعة في نفس الفترة من العام السابق';
@@ -1453,7 +1499,6 @@ function renderOrdersReport(){
       html+=reasonTxt;
       html+='</div>';
 
-      // دليل تاريخي (فرصة ضائعة) - فقط لو فيه نقص تغطية معتبر
       if(it.uncoveredPct>=15){
         html+='<div class="history-box">';
         html+='<div class="history-title">📉 فرصة ضائعة سابقة</div>';
@@ -1461,7 +1506,6 @@ function renderOrdersReport(){
         html+='</div>';
       }
 
-      // sanity check
       if(it.diffPct!==null && Math.abs(it.diffPct)>=30){
         html+='<div class="warn-badge">⚠️ التوقع يختلف '+(it.diffPct>0?'+':'')+it.diffPct+'% عن نفس الفترة بالعام السابق — يُنصح بالتحقق قبل التأكيد</div>';
       }
@@ -1469,7 +1513,6 @@ function renderOrdersReport(){
         html+='<div class="warn-badge">⚠️ لا توجد بيانات لنفس الفترة من العام السابق — تم استخدام أقرب فترة سابقة كمرجع تقديري</div>';
       }
 
-      // توزيع الألوان
       if(it.colorDist.length){
         html+='<div class="color-dist">';
         html+='<div class="color-dist-title">🎨 توزيع الألوان المقترح (بناءً على فترة المرجع)</div>';
@@ -1484,7 +1527,7 @@ function renderOrdersReport(){
         html+='</div>';
       }
 
-      html+='</div>'; // order-card
+      html+='</div>';
     });
   });
 
