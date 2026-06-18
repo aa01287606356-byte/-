@@ -359,6 +359,16 @@ canvas{width:100%!important}
           <span class="sec-title">📅 جدول الطلبيات — جاهز للإرسال للمصنع</span>
           <button class="btn-export" onclick="exportOrdersReport()">⬇ تصدير Excel</button>
         </div>
+        <div class="global-bar">
+          <span style="font-size:12px;font-weight:800;color:var(--green-d)">⏱ مدة التصنيع المطلوبة:</span>
+          <select id="lead-months" class="global-input" style="width:auto;padding:6px 12px" onchange="renderOrdersReport()">
+            <option value="1">شهر واحد</option>
+            <option value="2" selected>شهرين</option>
+            <option value="3">3 شهور</option>
+            <option value="4">4 شهور</option>
+          </select>
+          <span style="font-size:11px;color:var(--muted)">— سيتم حساب الاحتياج من تاريخ التسليم المتوقع وحتى أول نفاد للمخزون</span>
+        </div>
         <div class="note" id="orders-note"></div>
         <div class="filters-row">
           <div class="msel" id="msel-of-grp"></div>
@@ -430,6 +440,16 @@ function periodByKey(pk){return allPeriods.find(function(p){return pK(p.parsed)=
 // SEASON CLASSIFICATION (from القسم name)
 // ============================================================
 // يحدد نوع موسمية المجموعة الفرعية بناءً على اسم القسم
+// توحيد اسم المجموعة الفرعية لحالة "بولو" فقط (تمت إضافة تصنيف مقاس "top" هذا العام)
+// لا يُطبق على أي مجموعة فرعية أخرى لتجنب أي تأثير غير مقصود
+function normalizeSG(sgName){
+  if(!sgName)return sgName;
+  if(sgName.indexOf('بولو')>=0){
+    return sgName.replace(/\s*top\s*$/i,'').trim();
+  }
+  return sgName;
+}
+
 function classifyDeptSeason(deptName){
   var d=(deptName||'').toString();
   if(d.indexOf('صيفي')>=0)return 'صيفي';
@@ -492,6 +512,7 @@ document.getElementById('fi').addEventListener('change',function(e){
             var color=clC?(r[clC]||''):'';
             var grp=gC?(r[gC]||'غير محدد'):'غير محدد';
             var sg=sgC?(r[sgC]||'غير محدد'):'غير محدد';
+            sg=normalizeSG(sg);
             var dept=dC?(r[dC]||'غير محدد'):'غير محدد';
             var oc=ocC?r[ocC]:'';
             var ocm=ocmC?r[ocmC]:'';
@@ -606,14 +627,15 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
 
   var s1Base=0, refData=null, usedFallback=false, fallbackPK=null;
 
-  if(lastYearPK && sgData[lastYearPK] && sgData[lastYearPK].sold>0){
+  var lyHasData = lastYearPK && sgData[lastYearPK] && sgData[lastYearPK].sold>0;
+
+  if(lyHasData){
     refData=sgData[lastYearPK];
     s1Base=refData.sold;
-  } else {
-    // 2. Fallback: ONE period back only (max 1 step), relative to the last-year reference point
-    // (لو مفيش مرجع سنة سابقة أصلاً، نحاول فترة واحدة قبل الفترة المستهدفة نفسها)
-    var anchorPK=lastYearPK || targetPK;
-    var anchorIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===anchorPK;});
+  } else if(lastYearPK){
+    // فقط إذا كانت هناك بالأساس فترة مقابلة في العام السابق ضمن نطاق البيانات، لكنها صفر/غير موجودة
+    // 2. Fallback: ONE period back only (max 1 step)
+    var anchorIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===lastYearPK;});
     if(anchorIdx>0){
       var prevP=allPeriods[anchorIdx-1];
       var prevPK2=pK(prevP.parsed);
@@ -626,6 +648,7 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct){
     }
     // لو لسه مفيش (فترة واحدة فقط للخلف وبردو صفر) -> s1Base يفضل 0، بدون محاولات أكتر
   }
+  // لو lastYearPK مش موجود أصلاً (الفترة المقابلة خارج نطاق البيانات بالكامل) -> s1Base=0 بدون أي fallback ولا تحذير
 
   // Scenario 2: s1 + weak/new branch adjustment (نص النسبة فقط لتخفيف المبالغة)
   var weakAdj=0, newBranchAdj=0;
@@ -1304,40 +1327,44 @@ function filterPS(){
 }
 
 // ============================================================
-// ORDERS REPORT (جدول الطلبيات)
+// ORDERS REPORT (جدول الطلبيات) — منطق "من تاريخ اليوم"
 // ============================================================
-// مدة التصنيع: شهرين = 4 فترات نص شهرية
-var MANUFACTURING_LEAD_PERIODS=4;
+var MIN_ECONOMIC_QTY=90; // الحد الأدنى الاقتصادي للطلب
 
 // يحدد آخر فترة "آمنة" للتصنيع داخل كل موسم لكل مجموعة فرعية
 // بإيجاد أول فترة "شتوي/خريفي/صيفي صافي" تالية (بدون اختلاط) والرجوع فترتين منها
 function isOrderSafe(deptSeason, periodIdx, allPeriodsArr){
   if(deptSeason==='دائم')return true; // سلعة دائمة: لا قيود موسمية
   if(deptSeason==='مدارس'){
-    // فترات المدارس المسموحة: من نص أول 8 إلى نص اخر 10 فقط
     var p=allPeriodsArr[periodIdx];
     if(!p)return false;
     var mo=p.parsed.mo;
     if(mo>=8 && mo<=10)return true;
     return false;
   }
-  // موسمي عام (صيفي/شتوي/خريفي): نحتاج معرفة الموسم الفعلي لكل فترة من periodOcmMap
   var p=allPeriodsArr[periodIdx];
-  if(!p)return true; // افتراضي: نسمح لو مش عارفين
+  if(!p)return true;
   var pk=pK(p.parsed);
   var thisOcm=periodOcmMap[pk]||'';
-  // البحث عن أول فترة "صافية" من موسم مختلف بعد هذه الفترة
   for(var i=periodIdx+1;i<allPeriodsArr.length;i++){
     var q=allPeriodsArr[i];
     var qk=pK(q.parsed);
     var qOcm=periodOcmMap[qk]||'';
     if(qOcm && qOcm!==thisOcm && qOcm.indexOf('/')<0){
-      // وجدنا أول فترة موسم صافي مختلف - النطاق الآمن = فترتين قبلها
       var safeUntilIdx=i-2;
       return periodIdx<=safeUntilIdx;
     }
   }
-  return true; // لم نجد تغيير موسم قادم - نعتبرها آمنة
+  return true;
+}
+
+// يحدد أقرب فترة في allPeriods تساوي أو تأتي بعد تاريخ معين (سنة/شهر)
+function findPeriodIdxOnOrAfter(targetYr,targetMo){
+  for(var i=0;i<allPeriods.length;i++){
+    var p=allPeriods[i].parsed;
+    if(p.yr>targetYr || (p.yr===targetYr && p.mo>=targetMo))return i;
+  }
+  return -1;
 }
 
 function renderOrdersReport(){
@@ -1345,175 +1372,239 @@ function renderOrdersReport(){
   var noteEl=document.getElementById('orders-note');
   if(!planResults.length){container.innerHTML='';return;}
 
-  noteEl.innerHTML='📦 يجمّع هذا التقرير الكميات المطلوب طلبها من المصنع <strong>هذا الشهر</strong>، مع مراعاة مدة التصنيع (~شهرين) واستبعاد الفترات التي ستصل بعد انتهاء موسم بيعها.';
+  var leadMonths=parseInt(document.getElementById('lead-months').value)||2;
+  var todayNow=new Date();
+  var curYr=todayNow.getFullYear(),curMo=todayNow.getMonth()+1,curDay=todayNow.getDate();
+
+  // تاريخ التسليم المتوقع = اليوم + مدة التصنيع
+  var deliveryMo=curMo+leadMonths;
+  var deliveryYr=curYr;
+  while(deliveryMo>12){deliveryMo-=12;deliveryYr++;}
+
+  var deliveryIdx=findPeriodIdxOnOrAfter(deliveryYr,deliveryMo);
+  var deliveryLabel=deliveryYr+'-'+String(deliveryMo).padStart(2,'0');
+  var monthNames=['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
+
+  noteEl.innerHTML='📦 بناءً على تاريخ اليوم ('+curDay+' '+monthNames[curMo]+' '+curYr+') ومدة تصنيع <strong>'+leadMonths+' شهر</strong>، التسليم المتوقع حوالي <strong>'+monthNames[deliveryMo]+' '+deliveryYr+'</strong>. الكميات أدناه هي ما سينفد من المخزون منذ لحظة التسليم وحتى أول نقطة نفاد — جاهزة للطلب الآن.';
 
   var q=(document.getElementById('orders-search').value||'').trim().toLowerCase();
 
-  // لكل مجموعة فرعية، لكل فترة قادمة: تحقق هل آمنة للتصنيع
+  if(deliveryIdx<0){
+    container.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div>لا توجد فترات بيانات كافية بعد تاريخ التسليم المتوقع</div></div>';
+    return;
+  }
+
   var orderItems=[];
-  var excludedCount=0;
+  var excludedSeasonCount=0;
 
   planResults.forEach(function(r){
     if(!mselAllows('of-grp',r.grp))return;
     if(!mselAllows('of-dept',r.dept))return;
     if(q && (r.sg+r.grp+r.dept).toLowerCase().indexOf(q)<0)return;
 
-    r.perPeriod.forEach(function(pp,i){
-      if(!pp.hasData)return;
-      if(pp.needs.s1<=0 && pp.needs.s2<=0)return;
+    // محاكاة تراكمية من بداية futurePeriods حتى نقطة التسليم (لمعرفة الرصيد المتوقع وقت التسليم)
+    // نعتمد على pp.stockAfter المحسوبة أصلاً في computePlan لكل سيناريو
+    var deliveryPeriodIdxInR=-1;
+    for(var i=0;i<r.futurePeriods.length;i++){
+      var gIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===pK(r.futurePeriods[i].parsed);});
+      if(gIdx>=deliveryIdx){deliveryPeriodIdxInR=i;break;}
+    }
+    if(deliveryPeriodIdxInR<0)return; // لا توجد فترات بعد موعد التسليم لهذه المجموعة
 
-      var globalIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===pp.fpk;});
-      var safe=isOrderSafe(r.deptSeason,globalIdx,allPeriods);
-      if(!safe){excludedCount++;return;}
+    // الرصيد المتوقع وقت التسليم (نهاية الفترة قبل فترة التسليم)
+    var stockAtDelivery={s1:r.startStock,s2:r.startStock};
+    if(deliveryPeriodIdxInR>0){
+      var prevPP=r.perPeriod[deliveryPeriodIdxInR-1];
+      stockAtDelivery.s1=prevPP.stockAfter.s1;
+      stockAtDelivery.s2=prevPP.stockAfter.s2;
+    }
 
-      // مقارنة % مع نفس الفترة العام السابق (sanity check)
-      var diffPct=null;
-      if(pp.salesRef>0){
-        diffPct=Math.round((pp.fcTot.s1-pp.salesRef)/pp.salesRef*100);
-      }
+    // نمشي من فترة التسليم فصاعداً، نطرح الاحتياج تراكمياً لحد أول نفاد
+    var running={s1:stockAtDelivery.s1,s2:stockAtDelivery.s2};
+    var totalNeed={s1:0,s2:0};
+    var stopped={s1:false,s2:false};
+    var lastPeriodUsed=null;
+    var anySafePeriod=false;
+    var firstSalesRef=null,firstUncovered=0,firstFallback=false,firstColorDist=[];
 
-      // توزيع الألوان من فترة المرجع
-      var colorDist=[];
-      var refPK=pp.fc_meta&&pp.fc_meta.refPK;
-      if(refPK && sgColorCache[r.sg] && sgColorCache[r.sg][refPK]){
-        var cObj=sgColorCache[r.sg][refPK];
-        var totalColor=Object.values(cObj).reduce(function(s,v){return s+v;},0);
-        if(totalColor>0){
-          colorDist=Object.keys(cObj).map(function(c){
-            return{color:c,qty:cObj[c],pct:Math.round(cObj[c]/totalColor*100)};
-          }).sort(function(a,b){return b.qty-a.qty;});
+    for(var j=deliveryPeriodIdxInR;j<r.perPeriod.length;j++){
+      var pp=r.perPeriod[j];
+      if(!pp.hasData)continue;
+
+      var gIdx2=allPeriods.findIndex(function(p){return pK(p.parsed)===pp.fpk;});
+      var safe=isOrderSafe(r.deptSeason,gIdx2,allPeriods);
+      if(!safe){excludedSeasonCount++;continue;}
+      anySafePeriod=true;
+
+      if(firstSalesRef===null){
+        firstSalesRef=pp.salesRef;
+        firstUncovered=(pp.fc_meta&&pp.fc_meta.uncoveredPct)||0;
+        firstFallback=pp.usedFallback;
+        var refPK=pp.fc_meta&&pp.fc_meta.refPK;
+        if(refPK && sgColorCache[r.sg] && sgColorCache[r.sg][refPK]){
+          var cObj=sgColorCache[r.sg][refPK];
+          var totalColor=Object.values(cObj).reduce(function(s,v){return s+v;},0);
+          if(totalColor>0){
+            firstColorDist=Object.keys(cObj).map(function(c){
+              return{color:c,qty:cObj[c],pct:Math.round(cObj[c]/totalColor*100)};
+            }).sort(function(a,b){return b.qty-a.qty;});
+          }
         }
       }
 
-      orderItems.push({
-        sg:r.sg,grp:r.grp,dept:r.dept,
-        period:pp.period,fpk:pp.fpk,
-        need1:pp.needs.s1,need2:pp.needs.s2,
-        salesRef:pp.salesRef,diffPct:diffPct,
-        usedFallback:pp.usedFallback,
-        uncoveredPct:(pp.fc_meta&&pp.fc_meta.uncoveredPct)||0,
-        colorDist:colorDist,
-        orderMonth:allPeriods[globalIdx].parsed.yr+'-'+String(allPeriods[globalIdx].parsed.mo).padStart(2,'0')
+      ['s1','s2'].forEach(function(sc){
+        if(stopped[sc])return;
+        running[sc]-=pp.fcTot[sc];
+        if(running[sc]<0){
+          totalNeed[sc]+=(-running[sc]);
+          running[sc]=0;
+          stopped[sc]=true; // وقف عند أول نقطة نفاد لهذا السيناريو
+        }
       });
+      lastPeriodUsed=pp.period;
+      if(stopped.s1 && stopped.s2)break;
+    }
+
+    if(!anySafePeriod)return;
+    if(totalNeed.s1<=0 && totalNeed.s2<=0)return;
+
+    orderItems.push({
+      sg:r.sg,grp:r.grp,dept:r.dept,
+      need1:Math.round(totalNeed.s1),need2:Math.round(totalNeed.s2),
+      untilPeriod:lastPeriodUsed,
+      salesRef:firstSalesRef||0,
+      uncoveredPct:firstUncovered,
+      usedFallback:firstFallback,
+      colorDist:firstColorDist
     });
   });
 
   if(!orderItems.length){
-    container.innerHTML='<div class="empty-state"><div class="empty-icon">📭</div><div>لا توجد طلبيات مطلوبة حالياً بناءً على المعايير الحالية</div></div>';
+    container.innerHTML='<div class="empty-state"><div class="empty-icon">✅</div><div>لا توجد نواقص متوقعة خلال هذه المدة — المخزون الحالي كافٍ</div></div>';
     return;
   }
 
-  // تجميع حسب الشهر (orderMonth) ثم ترتيب تنازلي بالاحتياج
-  var byMonth={};
-  orderItems.forEach(function(it){
-    if(!byMonth[it.orderMonth])byMonth[it.orderMonth]=[];
-    byMonth[it.orderMonth].push(it);
-  });
-  var months=Object.keys(byMonth).sort();
+  orderItems.sort(function(a,b){return b.need1-a.need1;});
+  var grandTotal1=orderItems.reduce(function(s,it){return s+it.need1;},0);
 
   var html='';
-  if(excludedCount>0){
-    html+='<div class="excluded-note">ℹ️ تم استبعاد '+excludedCount+' حالة لأن التصنيع لن يصل في وقت مناسب قبل انتهاء موسم البيع الخاص بها.</div>';
-  }
+  html+='<div class="month-divider">';
+  html+='<div class="month-divider-label">📅 طلبية اليوم — تسليم متوقع '+monthNames[deliveryMo]+' '+deliveryYr+'</div>';
+  html+='<div class="month-divider-line"></div>';
+  html+='<div class="month-summary">'+orderItems.length+' مجموعة · إجمالي '+grandTotal1.toLocaleString()+' قطعة</div>';
+  html+='</div>';
 
-  months.forEach(function(monthKey){
-    var items=byMonth[monthKey].sort(function(a,b){return b.need1-a.need1;});
-    var monthTotal1=items.reduce(function(s,it){return s+it.need1;},0);
-    var monthLabel=formatMonthLabel(monthKey);
+  orderItems.forEach(function(it){
+    var confClass=it.usedFallback?'low':'high';
+    var confLabel=it.usedFallback?'🟡 بيانات تقديرية':'🟢 بيانات قوية';
+    var isSmall1=it.need1>0 && it.need1<MIN_ECONOMIC_QTY;
+    var isSmall2=it.need2>0 && it.need2<MIN_ECONOMIC_QTY;
 
-    html+='<div class="month-divider">';
-    html+='<div class="month-divider-label">📅 '+monthLabel+'</div>';
-    html+='<div class="month-divider-line"></div>';
-    html+='<div class="month-summary">'+items.length+' طلب · إجمالي '+monthTotal1.toLocaleString()+' قطعة</div>';
+    html+='<div class="order-card">';
+    html+='<div class="order-card-hdr">';
+    html+='<div><div class="order-card-title">'+it.sg+'</div><div class="order-card-sub">'+it.grp+' · '+it.dept+'</div></div>';
+    html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
+    html+='<span class="confidence-badge '+confClass+'">'+confLabel+'</span>';
+    html+='<span class="order-card-period">ينفد المخزون حتى: '+(it.untilPeriod||'—')+'</span>';
+    html+='</div></div>';
+
+    html+='<div class="order-qty-row">';
+    html+='<div class="qty-box s1"><div class="qty-lbl">1️⃣ مساوي للبيع</div><div class="qty-val">'+it.need1.toLocaleString()+'</div>'+(isSmall1?'<div style="font-size:9px;color:var(--amber-d);margin-top:3px">💡 يُقترح تجميعها لحد أدنى '+MIN_ECONOMIC_QTY+'</div>':'')+'</div>';
+    html+='<div class="qty-box s2"><div class="qty-lbl">2️⃣ + تعويض فروع</div><div class="qty-val">'+it.need2.toLocaleString()+'</div>'+(isSmall2?'<div style="font-size:9px;color:var(--amber-d);margin-top:3px">💡 يُقترح تجميعها لحد أدنى '+MIN_ECONOMIC_QTY+'</div>':'')+'</div>';
     html+='</div>';
 
-    items.forEach(function(it){
-      var confClass=it.usedFallback?'low':'high';
-      var confLabel=it.usedFallback?'🟡 بيانات تقديرية':'🟢 بيانات قوية';
+    html+='<div class="reason-box">';
+    html+='<div class="reason-title">💡 سبب الكمية</div>';
+    var reasonTxt='بناءً على مبيعات <strong>'+it.salesRef.toLocaleString()+'</strong> قطعة في الفترة المرجعية المماثلة';
+    if(it.uncoveredPct>0)reasonTxt+='، مع وجود <strong>'+it.uncoveredPct+'%</strong> من الفروع تعاني نقص مخزون وقت البيع — ما يعني خسارة مبيعات محتملة لم تُحتسب بالكامل في الرقم المسجل';
+    reasonTxt+='. الكمية تمثل ما سينفد من المخزون الحالي بعد وصول التصنيع.';
+    html+=reasonTxt;
+    html+='</div>';
 
-      html+='<div class="order-card">';
-      html+='<div class="order-card-hdr">';
-      html+='<div><div class="order-card-title">'+it.sg+'</div><div class="order-card-sub">'+it.grp+' · '+it.dept+'</div></div>';
-      html+='<div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">';
-      html+='<span class="confidence-badge '+confClass+'">'+confLabel+'</span>';
-      html+='<span class="order-card-period">يباع في: '+it.period+'</span>';
-      html+='</div></div>';
-
-      html+='<div class="order-qty-row">';
-      html+='<div class="qty-box s1"><div class="qty-lbl">1️⃣ مساوي للبيع</div><div class="qty-val">'+it.need1.toLocaleString()+'</div></div>';
-      html+='<div class="qty-box s2"><div class="qty-lbl">2️⃣ + تعويض فروع</div><div class="qty-val">'+it.need2.toLocaleString()+'</div></div>';
+    if(it.uncoveredPct>=15){
+      html+='<div class="history-box">';
+      html+='<div class="history-title">📉 فرصة ضائعة سابقة</div>';
+      html+='كان '+it.uncoveredPct+'% من الفروع بدون مخزون كافٍ وقت بيع هذه المجموعة في الفترة المرجعية، مما يعني تفويت مبيعات محتملة لم تظهر في رقم '+it.salesRef.toLocaleString()+' المسجل. توفير مخزون أكبر هذه المرة يمنع تكرار الفجوة.';
       html+='</div>';
+    }
+    if(it.usedFallback){
+      html+='<div class="warn-badge">⚠️ لا توجد بيانات لنفس الفترة من العام السابق — تم استخدام أقرب فترة سابقة كمرجع تقديري</div>';
+    }
 
-      // سبب القرار
-      html+='<div class="reason-box">';
-      html+='<div class="reason-title">💡 سبب الكمية</div>';
-      var reasonTxt='باعت هذه المجموعة <strong>'+it.salesRef.toLocaleString()+'</strong> قطعة في نفس الفترة من العام السابق';
-      if(it.uncoveredPct>0)reasonTxt+='، مع وجود <strong>'+it.uncoveredPct+'%</strong> من الفروع تعاني نقص مخزون وقت البيع — ما يعني خسارة مبيعات محتملة لم تُحتسب بالكامل في رقم البيع الفعلي';
-      reasonTxt+='.';
-      html+=reasonTxt;
+    if(it.colorDist.length){
+      html+='<div class="color-dist">';
+      html+='<div class="color-dist-title">🎨 توزيع الألوان المقترح (بناءً على فترة المرجع)</div>';
+      it.colorDist.slice(0,6).forEach(function(c){
+        var suggestedQty=Math.round(it.need1*c.pct/100);
+        html+='<div class="color-bar-row">';
+        html+='<div class="color-bar-name">'+c.color+'</div>';
+        html+='<div class="color-bar-track"><div class="color-bar-fill" style="width:'+c.pct+'%"></div></div>';
+        html+='<div class="color-bar-val">'+c.pct+'% ('+suggestedQty.toLocaleString()+')</div>';
+        html+='</div>';
+      });
       html+='</div>';
+    }
 
-      // دليل تاريخي (فرصة ضائعة) - فقط لو فيه نقص تغطية معتبر
-      if(it.uncoveredPct>=15){
-        html+='<div class="history-box">';
-        html+='<div class="history-title">📉 فرصة ضائعة سابقة</div>';
-        html+='كان '+it.uncoveredPct+'% من الفروع بدون مخزون كافٍ وقت بيع هذه المجموعة في الفترة المرجعية، مما يعني تفويت مبيعات محتملة لم تظهر في رقم '+it.salesRef.toLocaleString()+' المسجل. توفير مخزون أكبر هذه المرة يمنع تكرار الفجوة.';
-        html+='</div>';
-      }
-
-      // sanity check
-      if(it.diffPct!==null && Math.abs(it.diffPct)>=30){
-        html+='<div class="warn-badge">⚠️ التوقع يختلف '+(it.diffPct>0?'+':'')+it.diffPct+'% عن نفس الفترة بالعام السابق — يُنصح بالتحقق قبل التأكيد</div>';
-      }
-      if(it.usedFallback){
-        html+='<div class="warn-badge">⚠️ لا توجد بيانات لنفس الفترة من العام السابق — تم استخدام أقرب فترة سابقة كمرجع تقديري</div>';
-      }
-
-      // توزيع الألوان
-      if(it.colorDist.length){
-        html+='<div class="color-dist">';
-        html+='<div class="color-dist-title">🎨 توزيع الألوان المقترح (بناءً على فترة المرجع)</div>';
-        it.colorDist.slice(0,6).forEach(function(c){
-          var suggestedQty=Math.round(it.need1*c.pct/100);
-          html+='<div class="color-bar-row">';
-          html+='<div class="color-bar-name">'+c.color+'</div>';
-          html+='<div class="color-bar-track"><div class="color-bar-fill" style="width:'+c.pct+'%"></div></div>';
-          html+='<div class="color-bar-val">'+c.pct+'% ('+suggestedQty.toLocaleString()+')</div>';
-          html+='</div>';
-        });
-        html+='</div>';
-      }
-
-      html+='</div>'; // order-card
-    });
+    html+='</div>';
   });
 
   container.innerHTML=html;
 }
 
-function formatMonthLabel(monthKey){
-  var parts=monthKey.split('-');
-  var yr=parts[0],mo=parseInt(parts[1]);
-  var names=['','يناير','فبراير','مارس','أبريل','مايو','يونيو','يوليو','أغسطس','سبتمبر','أكتوبر','نوفمبر','ديسمبر'];
-  return 'طلبية شهر '+names[mo]+' '+yr;
-}
-
 function exportOrdersReport(){
-  var rows=[['المجموعة الفرعية','المجموعة الرئيسية','القسم','شهر الطلب','الفترة المستهدفة (البيع)','احتياج 1️⃣','احتياج 2️⃣','مبيعات نفس الفترة بالعام السابق','الفرق %','% فروع غير مغطاة','مرجع تقديري']];
+  var leadMonths=parseInt(document.getElementById('lead-months').value)||2;
+  var todayNow=new Date();
+  var curYr=todayNow.getFullYear(),curMo=todayNow.getMonth()+1;
+  var deliveryMo=curMo+leadMonths,deliveryYr=curYr;
+  while(deliveryMo>12){deliveryMo-=12;deliveryYr++;}
+  var deliveryIdx=findPeriodIdxOnOrAfter(deliveryYr,deliveryMo);
+  if(deliveryIdx<0)return;
+
+  var rows=[['المجموعة الفرعية','المجموعة الرئيسية','القسم','ينفد حتى فترة','احتياج 1️⃣','احتياج 2️⃣','مبيعات الفترة المرجعية','% فروع غير مغطاة','مرجع تقديري','أقل من الحد الاقتصادي (90)']];
+
   planResults.forEach(function(r){
     if(!mselAllows('of-grp',r.grp))return;
     if(!mselAllows('of-dept',r.dept))return;
-    r.perPeriod.forEach(function(pp){
-      if(!pp.hasData)return;
-      if(pp.needs.s1<=0 && pp.needs.s2<=0)return;
-      var globalIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===pp.fpk;});
-      var safe=isOrderSafe(r.deptSeason,globalIdx,allPeriods);
-      if(!safe)return;
-      var diffPct=pp.salesRef>0?Math.round((pp.fcTot.s1-pp.salesRef)/pp.salesRef*100):'';
-      var monthKey=allPeriods[globalIdx].parsed.yr+'-'+String(allPeriods[globalIdx].parsed.mo).padStart(2,'0');
-      rows.push([r.sg,r.grp,r.dept,formatMonthLabel(monthKey),pp.period,pp.needs.s1,pp.needs.s2,pp.salesRef,diffPct,(pp.fc_meta&&pp.fc_meta.uncoveredPct)||0,pp.usedFallback?'نعم':'لا']);
-    });
+
+    var deliveryPeriodIdxInR=-1;
+    for(var i=0;i<r.futurePeriods.length;i++){
+      var gIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===pK(r.futurePeriods[i].parsed);});
+      if(gIdx>=deliveryIdx){deliveryPeriodIdxInR=i;break;}
+    }
+    if(deliveryPeriodIdxInR<0)return;
+
+    var stockAtDelivery={s1:r.startStock,s2:r.startStock};
+    if(deliveryPeriodIdxInR>0){
+      var prevPP=r.perPeriod[deliveryPeriodIdxInR-1];
+      stockAtDelivery.s1=prevPP.stockAfter.s1;
+      stockAtDelivery.s2=prevPP.stockAfter.s2;
+    }
+
+    var running={s1:stockAtDelivery.s1,s2:stockAtDelivery.s2};
+    var totalNeed={s1:0,s2:0};
+    var stopped={s1:false,s2:false};
+    var lastPeriodUsed=null,firstSalesRef=null,firstUncovered=0,firstFallback=false;
+
+    for(var j=deliveryPeriodIdxInR;j<r.perPeriod.length;j++){
+      var pp=r.perPeriod[j];
+      if(!pp.hasData)continue;
+      var gIdx2=allPeriods.findIndex(function(p){return pK(p.parsed)===pp.fpk;});
+      var safe=isOrderSafe(r.deptSeason,gIdx2,allPeriods);
+      if(!safe)continue;
+      if(firstSalesRef===null){firstSalesRef=pp.salesRef;firstUncovered=(pp.fc_meta&&pp.fc_meta.uncoveredPct)||0;firstFallback=pp.usedFallback;}
+      ['s1','s2'].forEach(function(sc){
+        if(stopped[sc])return;
+        running[sc]-=pp.fcTot[sc];
+        if(running[sc]<0){totalNeed[sc]+=(-running[sc]);running[sc]=0;stopped[sc]=true;}
+      });
+      lastPeriodUsed=pp.period;
+      if(stopped.s1 && stopped.s2)break;
+    }
+
+    if(totalNeed.s1<=0 && totalNeed.s2<=0)return;
+    rows.push([r.sg,r.grp,r.dept,lastPeriodUsed||'',Math.round(totalNeed.s1),Math.round(totalNeed.s2),firstSalesRef||0,firstUncovered,firstFallback?'نعم':'لا',(totalNeed.s1>0&&totalNeed.s1<MIN_ECONOMIC_QTY)?'نعم':'لا']);
   });
+
   var wb=XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet(rows),'جدول الطلبيات');
   XLSX.writeFile(wb,'TREE_جدول_الطلبيات_'+new Date().toISOString().substring(0,10)+'.xlsx');
