@@ -1,608 +1,426 @@
-(H,['فروع_رصيد_كافي','فروع رصيد كافي','رصيد كافي']);
-          var wkC=findCol(H,['فروع_رصيد_ضعيف','فروع رصيد ضعيف','رصيد ضعيف']);
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>لوحة تحكم مشتريات وتحليل المخزون</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-          if(!pC||!sgC||!sC){
-            alert('أعمدة أساسية مفقودة (التاريخ، المجموعة الفرعية، المبيعات)');
-            document.getElementById('prog-wrap').style.display='none';
-            document.getElementById('upload-screen').style.display='block';
-            return;
-          }
-
-          var pSet={};
-          byItem={}; allPeriods=[]; planResults=[];
-
-          raw.forEach(function(r){
-            var sg=normalizeSG(r[sgC]);
-            var mg=r[gC]||'غير محدد', d=r[dC]||'غير محدد';
-            if(!sg)return;
-            
-            var key=sg+'|'+mg+'|'+d;
-            if(!byItem[key]) byItem[key]={sg:sg,mg:mg,d:d,per:{},stock:0,items:[],season:classifyDeptSeason(d)};
-
-            var sQty=parseFloat(r[sC])||0;
-            var isStock=(r[ocmC]||'').toString().trim()==='رصيد حالي';
-
-            if(isStock){
-              byItem[key].stock+=sQty;
-              var iName=r[iC]||'';
-              if(iName){
-                var existingItem = byItem[key].items.find(function(i){return i.name===iName && i.color===(r[clC]||'غير محدد');});
-                if(existingItem) existingItem.qty += sQty;
-                else byItem[key].items.push({name:iName, color:r[clC]||'غير محدد', qty:sQty});
-              }
-            }else{
-              var perStr=r[pC];
-              var pObj=parsePer(perStr);
-              if(pObj){
-                var pk=pK(pObj);
-                if(!pSet[pk]){pSet[pk]={parsed:pObj,orig:perStr}; allPeriods.push(pSet[pk]);}
-                if(!byItem[key].per[pk]) byItem[key].per[pk]={s:0,stk:0,totBr:0,okBr:0,wkBr:0,count:0};
-                byItem[key].per[pk].s+=sQty;
-                byItem[key].per[pk].stk+=parseFloat(r[stC])||0;
-                byItem[key].per[pk].totBr+=parseFloat(r[totC])||0;
-                byItem[key].per[pk].okBr+=parseFloat(r[okC])||0;
-                byItem[key].per[pk].wkBr+=parseFloat(r[wkC])||0;
-                byItem[key].per[pk].count++;
-              }
-            }
-          });
-
-          allPeriods.sort(function(a,b){return pOrd(a.parsed)-pOrd(b.parsed);});
-          
-          if(allPeriods.length>0){
-            document.getElementById('period-range').textContent = allPeriods[0].orig + ' ⬅ ' + allPeriods[allPeriods.length-1].orig;
-            document.getElementById('info-note').innerHTML = 'تم استخراج وتصنيف <strong>'+Object.keys(byItem).length+'</strong> مجموعة فرعية عبر <strong>'+allPeriods.length+'</strong> فترة زمنية.';
-          }
-
-          for(var k in byItem){
-            for(var pk in byItem[k].per){
-              var p=byItem[k].per[pk];
-              if(p.count>0){
-                p.stk=p.stk/p.count; p.totBr=p.totBr/p.count; p.okBr=p.okBr/p.count; p.wkBr=p.wkBr/p.count;
-              }
-            }
-          }
-
-          setP(90,'جاري بناء الواجهة...');
-          setTimeout(function(){
-            document.getElementById('prog-wrap').style.display='none';
-            document.getElementById('dashboard').style.display='block';
-            initFilters();
-            buildPlanTable();
-          },400);
-
-        }catch(err){
-          alert('خطأ أثناء التحليل: '+err.message);
-          document.getElementById('prog-wrap').style.display='none';
-          document.getElementById('upload-screen').style.display='block';
+    <style>
+        :root {
+            --primary-color: #2c3e50;
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --bg-color: #f4f6f9;
         }
-      },100);
-    };
-    reader.readAsArrayBuffer(f);
-  });
 
-// ============================================================
-// UI & TABS
-// ============================================================
-function switchTab(t){
-  document.querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active');});
-  document.querySelector('.tab-btn[onclick="switchTab(\''+t+'\')"]').classList.add('active');
-  document.getElementById('tab-plan').classList.add('hidden');
-  document.getElementById('tab-pareto').classList.add('hidden');
-  document.getElementById('tab-orders').classList.add('hidden');
-  document.getElementById('tab-'+t).classList.remove('hidden');
-  if(t==='pareto') calcPareto();
-  if(t==='orders') renderOrdersReport();
-}
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
 
-function applyGlobal(){ buildPlanTable(); }
-function resetGlobal(){
-  document.getElementById('g-branches').value='';
-  document.getElementById('g-growth').value='';
-  for(var k in rowOverrides) delete rowOverrides[k];
-  buildPlanTable();
-}
+        .container {
+            max-width: 1300px;
+            margin: 0 auto;
+        }
 
-function updateRowOverride(key, type, val){
-  if(!rowOverrides[key]) rowOverrides[key]={};
-  rowOverrides[key][type]=val;
-  buildPlanTable();
-}
+        .header-section {
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+            text-align: center;
+            margin-bottom: 25px;
+        }
 
-// ============================================================
-// MULTI-SELECT FILTERS
-// ============================================================
-var filterState = {
-  plan: { grp:[], dept:[] },
-  pareto: { grp:[], dept:[] },
-  orders: { grp:[], dept:[] }
-};
+        .upload-zone {
+            border: 2px dashed #cbd5e1;
+            padding: 20px;
+            border-radius: 8px;
+            background: #f8fafc;
+            cursor: pointer;
+            display: inline-block;
+            transition: 0.3s;
+        }
 
-function initFilters(){
-  var mgs=new Set(), depts=new Set();
-  for(var k in byItem){ mgs.add(byItem[k].mg); depts.add(byItem[k].d); }
-  var mgArr=Array.from(mgs).sort(), deptArr=Array.from(depts).sort();
+        .upload-zone:hover {
+            border-color: var(--success-color);
+            background: #f0fdf4;
+        }
 
-  createMsel('msel-plf-grp', 'المجموعة الرئيسية', mgArr, 'plan', 'grp');
-  createMsel('msel-plf-dept', 'القسم', deptArr, 'plan', 'dept');
-  createMsel('msel-pf-grp', 'المجموعة الرئيسية', mgArr, 'pareto', 'grp');
-  createMsel('msel-pf-dept', 'القسم', deptArr, 'pareto', 'dept');
-  createMsel('msel-of-grp', 'المجموعة الرئيسية', mgArr, 'orders', 'grp');
-  createMsel('msel-of-dept', 'القسم', deptArr, 'orders', 'dept');
-  
-  document.addEventListener('click', function(e){
-    document.querySelectorAll('.msel-panel.open').forEach(function(p){
-      if(!p.parentElement.contains(e.target)) p.classList.remove('open');
+        .stats-summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px;
+            margin-bottom: 25px;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.02);
+            border-right: 5px solid var(--primary-color);
+        }
+
+        .stat-card.success { border-right-color: var(--success-color); }
+
+        .stat-title { font-size: 14px; color: #64748b; margin-bottom: 5px; }
+        .stat-value { font-size: 24px; font-weight: bold; color: #1e293b; }
+
+        .main-layout {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 25px;
+        }
+
+        @media (min-width: 992px) {
+            .main-layout { grid-template-columns: 1.6fr 1.4fr; }
+        }
+
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+
+        .panel-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #f1f5f9;
+            color: var(--primary-color);
+        }
+
+        /* كروت المجموعات (الكارتة من بره) */
+        .category-card {
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            overflow: hidden;
+        }
+
+        .category-header {
+            background: #f8fafc;
+            padding: 15px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+            cursor: pointer;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .category-totals span {
+            margin-right: 15px;
+            font-size: 13px;
+            background: #e2e8f0;
+            padding: 3px 8px;
+            border-radius: 4px;
+        }
+
+        .category-details {
+            padding: 15px;
+            background: white;
+        }
+
+        .item-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 14px;
+        }
+
+        .item-table th, .item-table td {
+            padding: 10px;
+            text-align: right;
+            border-bottom: 1px solid #f1f5f9;
+        }
+
+        .item-table th { color: #64748b; background: #f8fafc; }
+
+        .status-badge {
+            background: #fef3c7;
+            color: #d97706;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    
+    <div class="header-section">
+        <h2>لوحة تحكم إدارة المشتريات والمخزون المتكاملة</h2>
+        <p>قم برفع ملف الإكسيل الناتجة عن الـ Power Query للمعالجة الفورية</p>
+        <div class="upload-zone">
+            <label for="file-upload" style="cursor: pointer;">📁 اضغط هنا لاختيار ملف الإكسيل أو الـ CSV</label>
+            <input type="file" id="file-upload" accept=".xlsx, .xls, .csv" style="display: none;">
+        </div>
+    </div>
+
+    <div class="stats-summary">
+        <div class="stat-card">
+            <div class="stat-title">إجمالي السطور المقروءة</div>
+            <div class="stat-value" id="lbl-total-rows">0</div>
+        </div>
+        <div class="stat-card success">
+            <div class="stat-title">إجمالي الكمية المباعة المجمعة</div>
+            <div class="stat-value" id="lbl-total-sales">0</div>
+        </div>
+        <div class="stat-card">
+            <div class="stat-title">عدد المجموعات الفرعية</div>
+            <div class="stat-value" id="lbl-total-categories">0</div>
+        </div>
+    </div>
+
+    <div class="main-layout">
+        
+        <div class="panel">
+            <div class="panel-title">📦 خطة المجموعات وتفاصيل الأصناف</div>
+            <div id="categories-container">
+                <p style="color: #94a3b8; text-align: center;">يرجى رفع ملف أولاً لإظهار البيانات...</p>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="panel-title">📊 تحليل باريتو للأصناف (Pareto ABC Chart)</div>
+            <div style="position: relative; height:400px; width:100%">
+                <canvas id="paretoChart"></canvas>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<script>
+    let myChart = null; // متغير لحفظ الرسم البياني لمنع التداخل عند الرفع المتكرر
+
+    // 1. الاستماع لحدث رفع الملف
+    document.getElementById('file-upload').addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const data = new Uint8Array(e.target.result);
+            const workbook = XLSX.read(data, { type: 'array' });
+            const firstSheetName = workbook.SheetNames[0];
+            const worksheet = workbook.Sheets[firstSheetName];
+
+            // ⚠️ الحل الجذري الأول: قراءة صارمة لعدم تطيير أي صفوف فارغة وتثبيت النصوص
+            const rawData = XLSX.utils.sheet_to_json(worksheet, { 
+                raw: false, 
+                defval: "", 
+                blankrows: false 
+            });
+
+            // عرض إجمالي الصفوف للتأكيد (مثل الـ 649 سطر الفعليين)
+            document.getElementById('lbl-total-rows').innerText = rawData.length;
+            console.log("إجمالي السطور التي تم رصدها في الملف:", rawData.length);
+
+            // تشغيل محرك المعالجة والرسم
+            const processedData = processDataEngine(rawData);
+            renderUI(processedData);
+            renderPareto(processedData.allItemsArray);
+        };
+        reader.readAsArrayBuffer(file);
     });
-  });
-}
 
-function createMsel(id, label, options, tab, type){
-  var cont=document.getElementById(id);
-  if(!cont) return;
-  var html = '<div class="msel-btn" onclick="toggleMsel(this)"><span>'+label+'</span><span class="msel-count empty">0</span></div>';
-  html += '<div class="msel-panel" onclick="event.stopPropagation()">';
-  html += '<input type="text" class="msel-search" placeholder="بحث..." oninput="filterMsel(this)">';
-  html += '<div class="msel-actions"><button onclick="selAllMsel(this, true)">تحديد الكل</button><button onclick="selAllMsel(this, false)">إلغاء الكل</button></div>';
-  html += '<div class="msel-options">';
-  options.forEach(function(o){ html += '<label><input type="checkbox" value="'+o+'" onchange="updateMselState(this, \''+tab+'\', \''+type+'\')"> '+o+'</label>'; });
-  html += '</div></div>';
-  cont.innerHTML = html;
-}
+    // 2. محرك معالجة البيانات (Data Processing Engine)
+    function processDataEngine(rawData) {
+        const categories = {};
+        const allItemsMap = {}; // لتجميع تكرار الأصناف الكلية من أجل باريتو
+        let globalTotalSales = 0;
 
-function toggleMsel(btn){
-  var p=btn.nextElementSibling;
-  var isOpen=p.classList.contains('open');
-  document.querySelectorAll('.msel-panel.open').forEach(function(x){x.classList.remove('open');});
-  if(!isOpen) p.classList.add('open');
-}
+        rawData.forEach(row => {
+            // سحب الحقول الأساسية
+            let itemCode = row["كود الصنف"] ? row["كود الصنف"].toString().trim() : "";
+            if (!itemCode) return; // تجاهل الأسطر التي تخلو تماماً من كود الصنف
 
-function filterMsel(inp){
-  var term=inp.value.toLowerCase();
-  var lbls=inp.parentElement.querySelectorAll('.msel-options label');
-  lbls.forEach(function(l){ l.style.display = l.textContent.toLowerCase().indexOf(term)>=0 ? 'flex' : 'none'; });
-}
+            let categoryName = row["المجموعة"] ? row["المجموعة"].trim() : "عام";
+            let itemName = row["اسم الصنف"] ? row["اسم الصنف"].trim() : itemCode;
+            
+            // ⚠️ الحل الجذري الثاني: سحب المبيعات من العنوان الصحيح "في الكمية المباعه"
+            let sales = parseFloat(row["في الكمية المباعه"]) || 0;
+            let stock = parseFloat(row["الرصيد"]) || 0;
+            
+            // ⚠️ التحديث المعتمد: الحالة الافتراضية "مراجعة المخزون"
+            let status = row["الحالة"] ? row["الحالة"].trim() : "مراجعة المخزون";
 
-function selAllMsel(btn, checked){
-  var p=btn.closest('.msel-panel');
-  var tab=p.parentElement.id.indexOf('plf')>=0?'plan':p.parentElement.id.indexOf('pf')>=0?'pareto':'orders';
-  var type=p.parentElement.id.indexOf('grp')>=0?'grp':'dept';
-  p.querySelectorAll('.msel-options input[type="checkbox"]').forEach(function(cb){
-    if(cb.parentElement.style.display!=='none'){ cb.checked=checked; }
-  });
-  updateMselState(p.querySelector('input'), tab, type);
-}
+            // أ: تجميع الكارتة الكبيرة من بره
+            if (!categories[categoryName]) {
+                categories[categoryName] = {
+                    name: categoryName,
+                    totalSales: 0, // تجميع المبيعات الخارجي الصحيح
+                    totalStock: 0,
+                    items: {}
+                };
+            }
+            categories[categoryName].totalSales += sales;
+            categories[categoryName].totalStock += stock;
+            globalTotalSales += sales;
 
-function updateMselState(el, tab, type){
-  var p=el.closest('.msel-panel');
-  var checked = Array.from(p.querySelectorAll('input:checked')).map(function(cb){return cb.value;});
-  filterState[tab][type] = checked;
-  var countBadge = p.previousElementSibling.querySelector('.msel-count');
-  if(checked.length>0){ countBadge.textContent=checked.length; countBadge.classList.remove('empty'); }
-  else { countBadge.classList.add('empty'); }
-  
-  if(tab==='plan') filterPlan();
-  else if(tab==='pareto') calcPareto();
-  else if(tab==='orders') renderOrdersReport();
-}
+            // ب: تجميع الأصناف داخل الكارتة (تجميع تراكمي لمنع اختفاء الـ 19 قطعة المتكررة)
+            if (!categories[categoryName].items[itemCode]) {
+                categories[categoryName].items[itemCode] = {
+                    code: itemCode,
+                    name: itemName,
+                    sales: 0,
+                    stock: 0,
+                    status: status
+                };
+            }
+            categories[categoryName].items[itemCode].sales += sales;
+            categories[categoryName].items[itemCode].stock += stock;
 
-function checkFilters(item, tab){
-  var st=filterState[tab];
-  if(st.grp.length>0 && st.grp.indexOf(item.mg)===-1) return false;
-  if(st.dept.length>0 && st.dept.indexOf(item.d)===-1) return false;
-  return true;
-}
-
-// ============================================================
-// CORE CALCULATION & PLAN TABLE
-// ============================================================
-function buildPlanTable(){
-  var gBr=parseInt(document.getElementById('g-branches').value)||0;
-  var gGr=parseFloat(document.getElementById('g-growth').value)||0;
-  
-  var th='<tr><th class="col-total"><div class="th-inner">إجمالي الاحتياج</div></th>';
-  th+='<th class="frozen col-sg"><div class="th-inner">المجموعة الفرعية</div></th>';
-  th+='<th class="frozen col-grp"><div class="th-inner">المجموعة الرئيسية</div></th>';
-  th+='<th class="frozen col-dept"><div class="th-inner">القسم</div></th>';
-  th+='<th class="frozen col-stock"><div class="th-inner">الرصيد الحالي</div></th>';
-  th+='<th class="frozen col-ref"><div class="th-inner">مرجع الحساب</div></th>';
-  th+='<th class="frozen col-br"><div class="th-inner">+ فروع<br><span style="font-size:9px;color:var(--green)">(يدوي)</span></div></th>';
-  th+='<th class="frozen col-growth"><div class="th-inner">نمو %<br><span style="font-size:9px;color:var(--green)">(يدوي)</span></div></th>';
-  
-  allPeriods.forEach(function(p){
-    th+='<th class="period-th"><div class="th-inner">'+p.orig+'</div></th>';
-  });
-  th+='</tr>';
-  document.querySelector('#purchase-table thead').innerHTML=th;
-
-  var tbody=document.querySelector('#purchase-table tbody');
-  tbody.innerHTML='';
-  planResults=[];
-
-  for(var k in byItem){
-    var d=byItem[k];
-    var rOver=rowOverrides[k]||{};
-    var rBr=rOver.br!==undefined?parseInt(rOver.br):(rOver.br===''?0:gBr);
-    var rGr=rOver.gr!==undefined?parseFloat(rOver.gr):(rOver.gr===''?0:gGr);
-    if(isNaN(rBr))rBr=0; if(isNaN(rGr))rGr=0;
-
-    var currentStock = d.stock;
-    var rowTotalSC1=0, rowTotalSC2=0;
-    var rowHTML='';
-    var isApprox=false;
-
-    var resultRow = {key:k, sg:d.sg, mg:d.mg, dept:d.d, stock:d.stock, periods:[], s1:0, s2:0};
-
-    allPeriods.forEach(function(p, pIdx){
-      var pk=pK(p.parsed);
-      var perData=d.per[pk];
-      var cellHTML='';
-      var sc1=0, sc2=0, s=0, totBr=0, okBr=0, wkBr=0;
-
-      if(perData){
-        s=perData.s; totBr=perData.totBr; okBr=perData.okBr; wkBr=perData.wkBr;
-      }else{
-        // Approximate if missing period data
-        var validPers=Object.values(d.per).filter(function(x){return x.s>0;});
-        if(validPers.length>0){
-          isApprox=true;
-          s=validPers[0].s; totBr=validPers[0].totBr; okBr=validPers[0].okBr; wkBr=validPers[0].wkBr;
-        }
-      }
-
-      if(s>0){
-        var rate = okBr>0 ? (s/okBr) : (totBr>0 ? s/totBr : s);
-        var baseSC1 = s;
-        var baseSC2 = s + (rate * wkBr) + (rate * rBr);
-        
-        var neededSC1 = Math.round(baseSC1 * (1 + (rGr/100)));
-        var neededSC2 = Math.round(baseSC2 * (1 + (rGr/100)));
-
-        // Deduct from stock
-        var actSC1 = Math.max(0, neededSC1 - currentStock);
-        var actSC2 = Math.max(0, neededSC2 - currentStock);
-        
-        currentStock = Math.max(0, currentStock - neededSC1); // optimistic deduction
-        
-        rowTotalSC1 += actSC1;
-        rowTotalSC2 += actSC2;
-
-        resultRow.periods.push({
-          pk:pk, s:s, okBr:okBr, wkBr:wkBr, rate:rate, neededSC1:actSC1, neededSC2:actSC2, isApprox:!perData
+            // جـ: تجميع كلي للأصناف لتقرير باريتو
+            if (!allItemsMap[itemCode]) {
+                allItemsMap[itemCode] = { code: itemCode, name: itemName, sales: 0 };
+            }
+            allItemsMap[itemCode].sales += sales;
         });
 
-        if(actSC2===0 && actSC1===0){
-          cellHTML='<div class="fc-row ok-row"><span class="fc-icon">✓</span> <span class="fc-ok">الرصيد كافٍ</span></div>';
-        } else {
-          cellHTML='<div class="fc-row sc-1" onclick="openExplain(\''+k+'\',\''+pk+'\',1)">1️⃣ <span class="fc-need">'+actSC1.toLocaleString()+'</span></div>';
-          cellHTML+='<div class="fc-row sc-2" onclick="openExplain(\''+k+'\',\''+pk+'\',2)">2️⃣ <span class="fc-need">'+actSC2.toLocaleString()+'</span></div>';
-        }
-      } else {
-        resultRow.periods.push({pk:pk, neededSC1:0, neededSC2:0});
-        cellHTML='<div class="fc-row"><span class="fc-dash">—</span></div>';
-      }
+        // تحويل خريطة باريتو إلى مصفوفة (Array) وفرزها تنازلياً
+        const allItemsArray = Object.values(allItemsMap).sort((a, b) => b.sales - a.sales);
 
-      rowHTML+='<td class="period-cell">'+cellHTML+'</td>';
-    });
-
-    resultRow.s1=rowTotalSC1; resultRow.s2=rowTotalSC2;
-    planResults.push(resultRow);
-
-    var tr=document.createElement('tr');
-    tr.setAttribute('data-k', k);
-    tr.setAttribute('data-sg', d.sg.toLowerCase());
-    tr.setAttribute('data-mg', d.mg.toLowerCase());
-    tr.setAttribute('data-d', d.d.toLowerCase());
-
-    var totTd='<td class="col-total"><div class="total-cell"><div class="total-row s1">1️⃣ '+rowTotalSC1.toLocaleString()+'</div><div class="total-row s2">2️⃣ '+rowTotalSC2.toLocaleString()+'</div></div></td>';
-    
-    var baseHTML=totTd;
-    baseHTML+='<td class="frozen col-sg"><strong>'+d.sg+'</strong>'+(d.season?'<div class="season-badge">'+d.season+'</div>':'')+'</td>';
-    baseHTML+='<td class="frozen col-grp">'+d.mg+'</td>';
-    baseHTML+='<td class="frozen col-dept">'+d.d+'</td>';
-    baseHTML+='<td class="frozen col-stock"><span class="badge '+(d.stock>0?'ok':'zero')+'">'+d.stock.toLocaleString()+'</span></td>';
-    baseHTML+='<td class="frozen col-ref">'+(isApprox?'<span style="color:var(--amber-d);font-size:14px" title="مرجع تقريبي">⚠</span>':'<span style="color:var(--green-d);font-size:12px">مكتمل</span>')+'</td>';
-    
-    baseHTML+='<td class="frozen col-br"><input type="number" class="mini-inp '+(rOver.br!==undefined&&rOver.br!==''?'has-val':'')+'" placeholder="'+gBr+'" value="'+(rOver.br!==undefined?rOver.br:'')+'" onchange="updateRowOverride(\''+k+'\',\'br\',this.value)"></td>';
-    baseHTML+='<td class="frozen col-growth"><input type="number" class="mini-inp '+(rOver.gr!==undefined&&rOver.gr!==''?'has-val':'')+'" placeholder="'+gGr+'" value="'+(rOver.gr!==undefined?rOver.gr:'')+'" onchange="updateRowOverride(\''+k+'\',\'gr\',this.value)"></td>';
-    
-    tr.innerHTML = baseHTML + rowHTML;
-    tbody.appendChild(tr);
-  }
-  filterPlan();
-}
-
-function filterPlan(){
-  var q=document.getElementById('plan-search').value.toLowerCase();
-  document.querySelectorAll('#purchase-table tbody tr').forEach(function(tr){
-    var k=tr.getAttribute('data-k');
-    var d=byItem[k];
-    var mText = tr.getAttribute('data-sg')+' '+tr.getAttribute('data-mg')+' '+tr.getAttribute('data-d');
-    var passS = mText.indexOf(q)>=0;
-    var passF = checkFilters(d, 'plan');
-    tr.style.display = (passS && passF) ? '' : 'none';
-  });
-}
-
-// ============================================================
-// PARETO (ABC) TAB
-// ============================================================
-function calcPareto(){
-  allPSRows=[];
-  var totSC1=0;
-  planResults.forEach(function(r){
-    var pass=checkFilters(byItem[r.key], 'pareto');
-    if(pass){
-      allPSRows.push({sg:r.sg, mg:r.mg, dept:r.dept, s1:r.s1, s2:r.s2});
-      totSC1+=r.s1;
-    }
-  });
-
-  allPSRows.sort(function(a,b){return b.s1-a.s1;});
-  var cum=0;
-  var sums={A:0, B:0, C:0, cntA:0, cntB:0, cntC:0};
-
-  allPSRows.forEach(function(r){
-    if(totSC1===0){ r.pct=0; r.cumPct=0; r.cls='C'; }
-    else {
-      r.pct = (r.s1/totSC1)*100;
-      cum += r.s1;
-      r.cumPct = (cum/totSC1)*100;
-      if(r.cumPct<=80){ r.cls='A'; sums.A+=r.s1; sums.cntA++; }
-      else if(r.cumPct<=95){ r.cls='B'; sums.B+=r.s1; sums.cntB++; }
-      else { r.cls='C'; sums.C+=r.s1; sums.cntC++; }
-    }
-  });
-
-  document.getElementById('ps-sum').innerHTML=
-    '<div class="ps-card A" onclick="filterByCls(\'A\')"><div class="ps-val">'+sums.cntA+'</div><div class="ps-lbl">تصنيف A</div><div class="ps-sub">الأهم (80% من الاحتياج)</div></div>'+
-    '<div class="ps-card B" onclick="filterByCls(\'B\')"><div class="ps-val">'+sums.cntB+'</div><div class="ps-lbl">تصنيف B</div><div class="ps-sub">متوسط (15% من الاحتياج)</div></div>'+
-    '<div class="ps-card C" onclick="filterByCls(\'C\')"><div class="ps-val">'+sums.cntC+'</div><div class="ps-lbl">تصنيف C</div><div class="ps-sub">الأقل (5% من الاحتياج)</div></div>';
-
-  drawParetoChart(allPSRows);
-  filterPS();
-}
-
-function filterByCls(c){
-  if(psFilter===c) psFilter=null; else psFilter=c;
-  document.querySelectorAll('.ps-card').forEach(function(el){ el.classList.remove('active-abc'); if(el.classList.contains(c) && psFilter) el.classList.add('active-abc'); });
-  filterPS();
-}
-
-function filterPS(){
-  var q=document.getElementById('ps-search').value.toLowerCase();
-  var tb=document.querySelector('#ps-table tbody');
-  tb.innerHTML='';
-  var idx=1;
-  allPSRows.forEach(function(r){
-    if(psFilter && r.cls!==psFilter) return;
-    var txt=(r.sg+' '+r.mg+' '+r.dept).toLowerCase();
-    if(q && txt.indexOf(q)===-1) return;
-    
-    tb.innerHTML+='<tr>'+
-      '<td>'+(idx++)+'</td>'+
-      '<td><strong>'+r.sg+'</strong></td>'+
-      '<td>'+r.mg+'</td>'+
-      '<td>'+r.dept+'</td>'+
-      '<td><span class="badge '+r.cls+'">'+r.cls+'</span></td>'+
-      '<td><strong>'+r.s1.toLocaleString()+'</strong></td>'+
-      '<td>'+r.s2.toLocaleString()+'</td>'+
-      '<td>'+r.pct.toFixed(2)+'%</td>'+
-      '<td>'+r.cumPct.toFixed(2)+'%</td>'+
-    '</tr>';
-  });
-}
-
-function drawParetoChart(data){
-  var ctx=document.getElementById('ps-chart').getContext('2d');
-  killChart('pareto');
-  var lbls=[], barData=[], lineData=[];
-  data.forEach(function(d,i){ if(i>100)return; lbls.push(d.sg); barData.push(d.s1); lineData.push(d.cumPct); });
-
-  charts['pareto'] = new Chart(ctx, {
-    type: 'bar',
-    data: {
-      labels: lbls,
-      datasets: [
-        { type: 'line', label: '% التراكمي', data: lineData, borderColor: '#B03030', borderWidth: 2, yAxisID: 'y1', pointRadius: 0 },
-        { type: 'bar', label: 'الاحتياج 1️⃣', data: barData, backgroundColor: '#1A8A64', yAxisID: 'y' }
-      ]
-    },
-    options: {
-      responsive: true, maintainAspectRatio: false,
-      scales: {
-        y: { beginAtZero: true, position: 'right' },
-        y1: { beginAtZero: true, position: 'left', max: 100, grid:{display:false} }
-      },
-      plugins: { legend: { display: false } }
-    }
-  });
-}
-
-// ============================================================
-// ORDERS REPORT TAB
-// ============================================================
-function renderOrdersReport(){
-  var leadMonths = parseInt(document.getElementById('lead-months').value)||2;
-  var q = document.getElementById('orders-search').value.toLowerCase();
-  var cont = document.getElementById('orders-content');
-  cont.innerHTML = '';
-  
-  var ordersCount=0;
-  
-  planResults.forEach(function(r){
-    var d=byItem[r.key];
-    if(!checkFilters(d, 'orders')) return;
-    if(q && r.sg.toLowerCase().indexOf(q)===-1) return;
-
-    var totalS1=0, totalS2=0;
-    var includedPers=[];
-    var usedStock = d.stock;
-    
-    for(var i=0; i<Math.min(leadMonths, r.periods.length); i++){
-      var pReq = r.periods[i];
-      totalS1 += pReq.neededSC1;
-      totalS2 += pReq.neededSC2;
-      includedPers.push(allPeriods.find(function(ap){return pK(ap.parsed)===pReq.pk;}).orig);
+        return {
+            categories: Object.values(categories),
+            allItemsArray: allItemsArray,
+            globalTotalSales: globalTotalSales
+        };
     }
 
-    if(totalS1 <= 0 && totalS2 <= 0) return; // Skip if no need in this horizon
-    ordersCount++;
+    // 3. بناء واجهة كروت المجموعات والأصناف
+    function renderUI(data) {
+        document.getElementById('lbl-total-sales').innerText = data.globalTotalSales.toLocaleString();
+        document.getElementById('lbl-total-categories').innerText = data.categories.length;
 
-    var confCls = d.stock > 0 ? 'high' : 'low';
-    var confTxt = d.stock > 0 ? 'موثوقية عالية (يوجد رصيد مرجعي)' : 'موثوقية منخفضة (لا يوجد رصيد مسجل)';
+        const container = document.getElementById('categories-container');
+        container.innerHTML = ""; // مسح النصوص القديمة
 
-    var colorsHTML = '';
-    if(d.items && d.items.length > 0){
-      var cMap={}; var cTotal=0;
-      d.items.forEach(function(it){ cMap[it.color]=(cMap[it.color]||0)+it.qty; cTotal+=it.qty; });
-      var sortedColors = Object.keys(cMap).map(function(c){return {c:c, qty:cMap[c]};}).sort(function(a,b){return b.qty-a.qty;});
-      
-      colorsHTML+='<div class="color-dist"><div class="color-dist-title">توزيع الألوان المقترح (بناءً على الرصيد المتوفر):</div>';
-      sortedColors.forEach(function(c){
-        var pct = cTotal>0 ? (c.qty/cTotal)*100 : 0;
-        var cNeed = Math.round(totalS1 * (pct/100));
-        colorsHTML+='<div class="color-bar-row">'+
-          '<div class="color-bar-name">'+c.c+'</div>'+
-          '<div class="color-bar-track"><div class="color-bar-fill" style="width:'+pct+'%"></div></div>'+
-          '<div class="color-bar-val">'+cNeed+' قطعه ('+pct.toFixed(0)+'%)</div>'+
-        '</div>';
-      });
-      colorsHTML+='</div>';
+        data.categories.forEach((cat, index) => {
+            const catCard = document.createElement('div');
+            catCard.className = 'category-card';
+
+            // الهيدر الخارجي للكارتة (يعرض الأرقام الإجمالية الصحيحة الآن)
+            catCard.innerHTML = `
+                <div class="category-header" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display === 'none' ? 'block' : 'none'">
+                    <span>📂 ${cat.name}</span>
+                    <div class="category-totals">
+                        <span>مبيعات المرجع المجمعة: <b>${cat.totalSales}</b></span>
+                        <span>الرصيد: <b>${cat.totalStock}</b></span>
+                    </div>
+                </div>
+                <div class="category-details" style="display: block;">
+                    <table class="item-table">
+                        <thead>
+                            <tr>
+                                <th>كود الصنف / الاسم</th>
+                                <th>في الكمية المباعه</th>
+                                <th>الرصيد الحالي</th>
+                                <th>الحالة</th>
+                            </tr>
+                        </thead>
+                        <tbody id="items-rows-${index}">
+                        </tbody>
+                    </table>
+                </div>
+            `;
+            container.appendChild(catCard);
+
+            // تدوير وحقن الأصناف التابعة لهذه المجموعة في الجدول الداخلي
+            const tbody = document.getElementById(`items-rows-${index}`);
+            Object.values(cat.items).forEach(item => {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td><b>${item.code}</b> <br> <small style="color:#64748b">${item.name}</small></td>
+                    <td>${item.sales}</td>
+                    <td>${item.stock}</td>
+                    <td><span class="status-badge">${item.status}</span></td>
+                `;
+                tbody.appendChild(tr);
+            });
+        });
     }
 
-    var html = '<div class="order-card" data-sg="'+r.sg+'">';
-    html += '<div class="order-card-hdr">';
-    html += '<div><div class="order-card-title">'+r.sg+'</div><div class="order-card-sub">'+r.mg+' / '+r.dept+'</div></div>';
-    html += '<div class="order-card-period">مطلوب لـ '+leadMonths+' شهور القادمة ('+includedPers.join('، ')+')</div>';
-    html += '</div>';
+    // 4. بناء وتشغيل رسم باريتو البياني (Pareto ABC Chart)
+    function renderPareto(items) {
+        const labels = [];
+        const salesData = [];
+        const cumulativePercentages = [];
+        
+        let runningSum = 0;
+        const totalSales = items.reduce((sum, item) => sum + item.sales, 0);
 
-    html += '<span class="confidence-badge '+confCls+'">'+confTxt+'</span>';
+        // حساب النسب التراكمية (لأول 15 صنف رئيسي لضمان وضوح الرسم)
+        const displayItems = items.slice(0, 15);
 
-    html += '<div class="order-qty-row">';
-    html += '<div class="qty-box s1"><div class="qty-lbl">الكمية المطلوبة (سيناريو 1️⃣)</div><div class="qty-val">'+totalS1.toLocaleString()+'</div></div>';
-    html += '<div class="qty-box s2"><div class="qty-lbl">الكمية المطلوبة (سيناريو 2️⃣)</div><div class="qty-val">'+totalS2.toLocaleString()+'</div></div>';
-    html += '</div>';
+        displayItems.forEach(item => {
+            labels.push(item.code);
+            salesData.push(item.sales);
+            runningSum += item.sales;
+            let percentage = totalSales > 0 ? (runningSum / totalSales) * 100 : 0;
+            cumulativePercentages.push(percentage.toFixed(1));
+        });
 
-    html += '<div class="reason-box"><div class="reason-title">💡 سبب الطلب:</div>يوجد عجز متوقع بمقدار '+totalS1+' قطعة لتغطية مبيعات الفترات القادمة بناءً على متوسط استهلاك العام السابق، مع الأخذ في الاعتبار الرصيد الحالي المتاح ('+d.stock.toLocaleString()+').</div>';
-    
-    html += colorsHTML;
-    html += '</div>';
+        if (myChart) myChart.destroy(); // تدمير الرسم القديم إن وجد لمنع التداخل
 
-    cont.innerHTML += html;
-  });
-
-  if(ordersCount===0) cont.innerHTML = '<div class="empty-state"><div class="empty-icon">📭</div><p>لا توجد طلبيات مطلوبة للفترة المحددة بناءً على فلاتر البحث الحالية.</p></div>';
-  document.getElementById('orders-note').innerHTML = 'يتم عرض المجموعات الفرعية التي تحتاج إلى طلب شراء خلال الـ <strong>'+leadMonths+'</strong> شهور القادمة.';
-}
-
-// ============================================================
-// MODAL & EXPLANATION
-// ============================================================
-function openExplain(k, pk, sc){
-  var d=byItem[k];
-  var p=d.per[pk];
-  var rOver=rowOverrides[k]||{};
-  var gBr=parseInt(document.getElementById('g-branches').value)||0;
-  var gGr=parseFloat(document.getElementById('g-growth').value)||0;
-  var rBr=rOver.br!==undefined?parseInt(rOver.br):(rOver.br===''?0:gBr);
-  var rGr=rOver.gr!==undefined?parseFloat(rOver.gr):(rOver.gr===''?0:gGr);
-  if(isNaN(rBr))rBr=0; if(isNaN(rGr))rGr=0;
-
-  var perObj=allPeriods.find(function(x){return pK(x.parsed)===pk;});
-  currentExplain = {sg:d.sg, per:perObj.orig, d:d, p:p};
-
-  document.getElementById('explain-title').textContent = 'تفاصيل حساب: '+d.sg+' ('+perObj.orig+')';
-  
-  var rate = p.okBr>0 ? (p.s/p.okBr) : (p.totBr>0 ? p.s/p.totBr : p.s);
-  var baseSC1 = p.s;
-  var baseSC2 = p.s + (rate * p.wkBr) + (rate * rBr);
-  var needed = sc===1 ? Math.round(baseSC1 * (1+(rGr/100))) : Math.round(baseSC2 * (1+(rGr/100)));
-
-  var bHTML='<div class="explain-insight"><div class="insight-title">خلاصة الفترة السابقة</div><div class="insight-text">تم بيع <strong>'+p.s+'</strong> قطعة. الرصيد الافتتاحي كان <strong>'+p.stk.toFixed(1)+'</strong> متوزع على <strong>'+p.totBr+'</strong> فرع.</div></div>';
-
-  bHTML+='<div class="explain-stat">'+
-    '<div class="stat-item"><div class="stat-val">'+p.okBr+'</div><div class="stat-lbl">فروع رصيد كافي</div></div>'+
-    '<div class="stat-item"><div class="stat-val">'+p.wkBr+'</div><div class="stat-lbl">فروع رصيد ضعيف</div></div>'+
-  '</div>';
-
-  bHTML+='<div class="explain-section"><div class="explain-section-title">محددات المعادلة (سيناريو '+sc+'️⃣)</div>';
-  bHTML+='<div class="explain-row"><span class="lbl">مبيعات سابقة أساسية</span><strong>'+p.s+'</strong></div>';
-  if(sc===2){
-    bHTML+='<div class="explain-row"><span class="lbl">معدل البيع للفرع الكافي (Sales / OK Branches)</span><strong>'+rate.toFixed(2)+'</strong></div>';
-    bHTML+='<div class="explain-row"><span class="lbl">تعويض الفروع الضعيفة ('+p.wkBr+' * '+rate.toFixed(2)+')</span><strong>+'+(rate*p.wkBr).toFixed(0)+'</strong></div>';
-    if(rBr>0) bHTML+='<div class="explain-row"><span class="lbl">فروع جديدة ('+rBr+' * '+rate.toFixed(2)+')</span><strong>+'+(rate*rBr).toFixed(0)+'</strong></div>';
-  }
-  if(rGr>0) bHTML+='<div class="explain-row"><span class="lbl">نسبة النمو المطبقة</span><strong>+'+rGr+'%</strong></div>';
-  
-  bHTML+='<div class="explain-formula">الاحتياج النهائي = '+needed+' قطعة</div></div>';
-
-  if(d.items.length>0){
-    bHTML+='<div class="explain-section"><div class="explain-section-title">تفاصيل الأصناف المتوفرة الآن (رصيد حالي)</div><div class="item-list">';
-    d.items.forEach(function(it){
-      bHTML+='<div class="item-row"><div class="item-name">'+it.name+' <span class="item-color">['+it.color+']</span></div><div class="item-val">'+it.qty+'</div></div>';
-    });
-    bHTML+='</div></div>';
-  }
-
-  document.getElementById('explain-body').innerHTML=bHTML;
-  document.getElementById('explain-overlay').classList.add('open');
-}
-
-function closeExplain(){ document.getElementById('explain-overlay').classList.remove('open'); }
-
-// ============================================================
-// EXPORT FUNCTIONS (using SheetJS)
-// ============================================================
-function exportFullTable(){
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.table_to_sheet(document.getElementById('purchase-table'));
-  XLSX.utils.book_append_sheet(wb, ws, "خطة المشتريات");
-  XLSX.writeFile(wb, "خطة_المشتريات_TREE.xlsx");
-}
-
-function exportTbl(id, name){
-  var wb = XLSX.utils.book_new();
-  var ws = XLSX.utils.table_to_sheet(document.getElementById(id));
-  XLSX.utils.book_append_sheet(wb, ws, name);
-  XLSX.writeFile(wb, name+".xlsx");
-}
-
-function exportOrdersReport(){
-  var data = [];
-  document.querySelectorAll('.order-card').forEach(function(card){
-    data.push({
-      'المجموعة الفرعية': card.querySelector('.order-card-title').innerText,
-      'المجموعة / القسم': card.querySelector('.order-card-sub').innerText,
-      'الفترة': card.querySelector('.order-card-period').innerText,
-      'سيناريو 1': card.querySelector('.s1 .qty-val').innerText,
-      'سيناريو 2': card.querySelector('.s2 .qty-val').innerText,
-      'الموثوقية': card.querySelector('.confidence-badge').innerText
-    });
-  });
-  if(data.length===0){ alert('لا توجد بيانات للتصدير'); return; }
-  var ws = XLSX.utils.json_to_sheet(data);
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "الطلبيات");
-  XLSX.writeFile(wb, "جدول_الطلبيات_TREE.xlsx");
-}
-
-function exportExplain(){
-  if(!currentExplain) return;
-  var data = [{
-    'المجموعة الفرعية': currentExplain.sg,
-    'الفترة': currentExplain.per,
-    'المبيعات': currentExplain.p.s,
-    'فروع كافي': currentExplain.p.okBr,
-    'فروع ضعيف': currentExplain.p.wkBr,
-    'متوسط رصيد افتتاحي': currentExplain.p.stk
-  }];
-  var ws = XLSX.utils.json_to_sheet(data);
-  var wb = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb, ws, "تفاصيل");
-  XLSX.writeFile(wb, "تفاصيل_حساب_"+currentExplain.sg+".xlsx");
-}
-
+        const ctx = document.getElementById('paretoChart').getContext('2d');
+        myChart = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'كمية المبيعات المباشرة',
+                        data: salesData,
+                        backgroundColor: '#3b82f6',
+                        yAxisID: 'y'
+                    },
+                    {
+                        label: 'النسبة التراكمية % (خط باريتو)',
+                        data: cumulativePercentages,
+                        type: 'line',
+                        borderColor: '#ef4444',
+                        backgroundColor: '#ef4444',
+                        borderWidth: 2,
+                        fill: false,
+                        yAxisID: 'y2'
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        type: 'linear',
+                        position: 'left',
+                        title: { display: true, text: 'الكمية المباعة' }
+                    },
+                    y2: {
+                        type: 'linear',
+                        position: 'right',
+                        min: 0,
+                        max: 100,
+                        title: { display: true, text: 'النسبة التراكمية %' },
+                        grid: { drawOnChartArea: false } // يمنع تداخل الخطوط الشبكية
+                    }
+                }
+            }
+        });
+    }
 </script>
+
 </body>
 </html>
