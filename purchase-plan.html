@@ -194,7 +194,7 @@ canvas{width:100%!important}
 .coverage-fill{height:100%;background:var(--amber);border-radius:6px}
 .coverage-fill.warn{background:var(--red)}
 
-/* === ORDERS REPORT TAB === */
+/* ORDERS REPORT TAB */
 .confidence-badge{font-size:9px;padding:2px 8px;border-radius:10px;font-weight:700;display:inline-flex;align-items:center;gap:3px}
 .confidence-badge.high{background:var(--green-l);color:var(--green-d)}
 .confidence-badge.low{background:var(--amber-l);color:var(--amber-d)}
@@ -232,6 +232,10 @@ canvas{width:100%!important}
 .excluded-note{background:var(--bg);border-radius:10px;padding:10px 14px;font-size:11px;color:var(--muted);margin-bottom:14px;border-right:3px solid var(--border)}
 .empty-state{text-align:center;padding:50px 20px;color:var(--muted)}
 .empty-state .empty-icon{font-size:40px;margin-bottom:10px}
+
+/* ADDED: sales row style */
+.sales-row{font-size:11px;color:var(--blue-d);background:var(--blue-l);border-radius:4px;padding:2px 6px;margin-bottom:3px;font-weight:700;text-align:center;border:1px solid rgba(26,95,168,0.12)}
+.no-sales{font-size:10px;color:var(--muted);padding:2px 0;text-align:center}
 </style>
 </head>
 <body>
@@ -437,11 +441,8 @@ function killChart(id){if(charts[id]){charts[id].destroy();delete charts[id];}}
 function periodByKey(pk){return allPeriods.find(function(p){return pK(p.parsed)===pk;})||null;}
 
 // ============================================================
-// SEASON CLASSIFICATION (from القسم name)
+// SEASON CLASSIFICATION
 // ============================================================
-// يحدد نوع موسمية المجموعة الفرعية بناءً على اسم القسم
-// توحيد اسم المجموعة الفرعية لحالة "بولو" فقط (تمت إضافة تصنيف مقاس "top" هذا العام)
-// لا يُطبق على أي مجموعة فرعية أخرى لتجنب أي تأثير غير مقصود
 function normalizeSG(sgName){
   if(!sgName)return sgName;
   if(sgName.indexOf('بولو')>=0){
@@ -456,7 +457,7 @@ function classifyDeptSeason(deptName){
   if(d.indexOf('شتوي')>=0)return 'شتوي';
   if(d.indexOf('خريفي')>=0)return 'خريفي';
   if(d.indexOf('مدارس')>=0)return 'مدارس';
-  return 'دائم'; // رئيسي / داخلي / أي قسم آخر بدون اسم موسم صريح
+  return 'دائم';
 }
 
 // ============================================================
@@ -577,10 +578,10 @@ function buildPeriodOcmMap(){
 }
 
 // ============================================================
-// SUBGROUP AGGREGATED SALES BY PERIOD (+ per-color breakdown)
+// SUBGROUP AGGREGATED SALES BY PERIOD
 // ============================================================
 var sgPeriodCache={};
-var sgColorCache={}; // sg -> period -> color -> qty
+var sgColorCache={};
 function buildSGPeriodCache(){
   sgPeriodCache={};
   sgColorCache={};
@@ -609,7 +610,7 @@ function buildSGPeriodCache(){
 }
 
 // ============================================================
-// FORECAST AT SUB-GROUP LEVEL (1-period fallback max, halved weak-branch effect)
+// FORECAST AT SUB-GROUP LEVEL
 // ============================================================
 function forecastSG(sg, targetPK, periodP, extraBranches, growthPct, isFirstSimPeriod){
   var sgData=sgPeriodCache[sg]||{};
@@ -618,8 +619,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct, isFirstSimP
 
   var s1Base=0, refData=null, usedFallback=false, fallbackPK=null, lastYearPK=null;
 
-  // حالة خاصة: أول فترة في المحاكاة (= نفس فترة الرصيد قبل سنة) هي بيانات فعلية موجودة بالكامل
-  // مفيش داعي نحسبلها توقع من سنة قبلها (غالباً غير موجودة) - نستخدم مبيعاتها الحقيقية كمرجع لنفسها
   if(isFirstSimPeriod && sgData[targetPK] && sgData[targetPK].sold>0){
     refData=sgData[targetPK];
     s1Base=refData.sold;
@@ -654,7 +653,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct, isFirstSimP
     };
   }
 
-  // 1. Try same period last year
   for(var i=0;i<allPeriods.length;i++){
     var q=allPeriods[i];
     if(q.parsed.mo===py.mo&&q.parsed.h===py.h&&q.parsed.yr===py.yr-1){
@@ -668,8 +666,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct, isFirstSimP
     refData=sgData[lastYearPK];
     s1Base=refData.sold;
   } else if(lastYearPK){
-    // فقط إذا كانت هناك بالأساس فترة مقابلة في العام السابق ضمن نطاق البيانات، لكنها صفر/غير موجودة
-    // 2. Fallback: ONE period back only (max 1 step)
     var anchorIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===lastYearPK;});
     if(anchorIdx>0){
       var prevP=allPeriods[anchorIdx-1];
@@ -681,15 +677,12 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct, isFirstSimP
         fallbackPK=prevPK2;
       }
     }
-    // لو لسه مفيش (فترة واحدة فقط للخلف وبردو صفر) -> s1Base يفضل 0، بدون محاولات أكتر
   }
-  // لو lastYearPK مش موجود أصلاً (الفترة المقابلة خارج نطاق البيانات بالكامل) -> s1Base=0 بدون أي fallback ولا تحذير
 
-  // Scenario 2: s1 + weak/new branch adjustment (نص النسبة فقط لتخفيف المبالغة)
   var weakAdj=0, newBranchAdj=0;
   if(refData && refData.tot>0){
     if(refData.ok>0 && refData.wk>0){
-      var weakRatio=refData.wk/refData.tot; // نسبة الفروع الضعيفة
+      var weakRatio=refData.wk/refData.tot;
       weakAdj=Math.round((s1Base/refData.ok)*refData.wk*weakRatio*0.5);
     }
     if(extraBranches>0){
@@ -698,7 +691,6 @@ function forecastSG(sg, targetPK, periodP, extraBranches, growthPct, isFirstSimP
   }
   var s2Base=s1Base+weakAdj+newBranchAdj;
 
-  // Coverage
   var coveragePct=0,uncoveredPct=0;
   if(refData && refData.tot>0){
     coveragePct=Math.round((refData.ok/refData.tot)*100);
@@ -798,7 +790,6 @@ function computePlan(){
       var fpk=pK(fp.parsed);
       var fc=forecastSG(sg, fpk, fp, ovr.branches, ovr.growth, fpIdx===0);
 
-      // مبيعات المرجع المعروضة = نفس الأساس الذي استخدمه forecastSG فعلياً (يشمل حالة "أول فترة = بياناتها الفعلية")
       var salesRef=fc.meta.s1Base||0;
 
       var items=[];
@@ -851,7 +842,7 @@ function computePlan(){
 }
 
 // ============================================================
-// RENDER PLAN TABLE
+// RENDER PLAN TABLE — ALWAYS SHOW SALES
 // ============================================================
 function renderPlanTable(){
   var thead=document.querySelector('#purchase-table thead');
@@ -873,7 +864,8 @@ function renderPlanTable(){
 
   periodLabels.forEach(function(lbl){
     head+='<th class="period-th"><div class="th-inner">'+lbl;
-    head+='<div class="sales-ref">📊 مبيعات المرجع</div>';
+    head+='<div class="sales-ref" style="color:var(--blue-d);font-weight:700">📊 مبيعات الفترة</div>';
+    head+='<div class="sales-ref" style="color:var(--muted);font-size:8px">الاحتياج أدناه</div>';
     head+='</div></th>';
   });
 
@@ -895,12 +887,30 @@ function renderPlanTable(){
 
     periodLabels.forEach(function(lbl,i){
       var pp=r.perPeriod[i];
-      if(!pp||!pp.hasData){row+='<td><span style="color:var(--border);font-size:16px">—</span></td>';return;}
       var cell='<div class="period-cell">';
-      var refLabel='📊 '+pp.salesRef.toLocaleString();
-      if(pp.usedFallback)refLabel+=' ⚠';
-      cell+='<div class="period-ref">'+refLabel+'</div>';
-
+      
+      // ALWAYS show sales for this period
+      var actualSales=0;
+      if(pp && pp.salesRef!==undefined){
+        actualSales=pp.salesRef;
+      } else {
+        var sgData=sgPeriodCache[r.sg]||{};
+        var fpk = pp ? pp.fpk : '';
+        if(sgData[fpk] && sgData[fpk].sold!==undefined){
+          actualSales=sgData[fpk].sold;
+        }
+      }
+      
+      var refLabel='📊 '+actualSales.toLocaleString();
+      if(pp && pp.usedFallback) refLabel+=' ⚠';
+      cell+='<div class="sales-row">'+refLabel+'</div>';
+      
+      if(!pp || !pp.hasData){
+        cell+='<div class="no-sales">لا توجد مبيعات مسجلة</div>';
+        row+='<td>'+cell+'</td>';
+        return;
+      }
+      
       ['s1','s2'].forEach(function(sc,si){
         var need=pp.needs[sc];
         var icon=si===0?'1️⃣':'2️⃣';
@@ -914,7 +924,7 @@ function renderPlanTable(){
         }else{
           cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
             '<span class="fc-icon">'+icon+'</span>'+
-            '<span class="fc-ok">✓</span>'+
+            '<span class="fc-ok">✓ صفر</span>'+
             '</div>';
         }
       });
@@ -983,17 +993,35 @@ function refreshRowDOM(rIdx){
   var frozenCount=7;
   r.perPeriod.forEach(function(pp,i){
     var td=tds[frozenCount+i];if(!td)return;
-    if(!pp||!pp.hasData){td.innerHTML='<span style="color:var(--border);font-size:16px">—</span>';return;}
     var cell='<div class="period-cell">';
-    var refLabel='📊 '+pp.salesRef.toLocaleString();
-    if(pp.usedFallback)refLabel+=' ⚠';
-    cell+='<div class="period-ref">'+refLabel+'</div>';
+    
+    // ALWAYS show sales
+    var actualSales=pp ? pp.salesRef || 0 : 0;
+    var refLabel='📊 '+actualSales.toLocaleString();
+    if(pp && pp.usedFallback) refLabel+=' ⚠';
+    cell+='<div class="sales-row">'+refLabel+'</div>';
+    
+    if(!pp||!pp.hasData){
+      cell+='<div class="no-sales">لا توجد مبيعات مسجلة</div>';
+      td.innerHTML=cell;
+      return;
+    }
+    
     ['s1','s2'].forEach(function(sc,si){
       var need=pp.needs[sc],icon=si===0?'1️⃣':'2️⃣';
       var cls='fc-row sc-'+(si+1);
       var color=si===0?'var(--red-d)':'var(--amber-d)';
-      if(need>0){cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-need" style="color:'+color+'">'+need.toLocaleString()+'</span></div>';}
-      else{cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')"><span class="fc-icon">'+icon+'</span><span class="fc-ok">✓</span></div>';}
+      if(need>0){
+        cell+='<div class="'+cls+'" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
+          '<span class="fc-icon">'+icon+'</span>'+
+          '<span class="fc-need" style="color:'+color+'">'+need.toLocaleString()+'</span>'+
+          '</div>';
+      }else{
+        cell+='<div class="'+cls+' ok-row" onclick="showExplain('+rIdx+','+i+',\''+sc+'\')">'+
+          '<span class="fc-icon">'+icon+'</span>'+
+          '<span class="fc-ok">✓ صفر</span>'+
+          '</div>';
+      }
     });
     cell+='</div>';
     td.innerHTML=cell;
@@ -1058,7 +1086,7 @@ function filterPlan(){
 }
 
 // ============================================================
-// EXPLAIN MODAL
+// EXPLAIN MODAL (unchanged)
 // ============================================================
 function showExplain(rIdx,pIdx,sc){
   var r=planResults[rIdx];if(!r)return;
@@ -1282,7 +1310,7 @@ function exportTbl(tableId,name){
 }
 
 // ============================================================
-// PARETO
+// PARETO (unchanged)
 // ============================================================
 function renderPareto(){
   var rows=planResults.filter(function(r){
@@ -1357,14 +1385,12 @@ function filterPS(){
 }
 
 // ============================================================
-// ORDERS REPORT (جدول الطلبيات) — منطق "من تاريخ اليوم"
+// ORDERS REPORT (unchanged)
 // ============================================================
-var MIN_ECONOMIC_QTY=90; // الحد الأدنى الاقتصادي للطلب
+var MIN_ECONOMIC_QTY=90;
 
-// يحدد آخر فترة "آمنة" للتصنيع داخل كل موسم لكل مجموعة فرعية
-// بإيجاد أول فترة "شتوي/خريفي/صيفي صافي" تالية (بدون اختلاط) والرجوع فترتين منها
 function isOrderSafe(deptSeason, periodIdx, allPeriodsArr){
-  if(deptSeason==='دائم')return true; // سلعة دائمة: لا قيود موسمية
+  if(deptSeason==='دائم')return true;
   if(deptSeason==='مدارس'){
     var p=allPeriodsArr[periodIdx];
     if(!p)return false;
@@ -1388,7 +1414,6 @@ function isOrderSafe(deptSeason, periodIdx, allPeriodsArr){
   return true;
 }
 
-// يحدد أقرب فترة في allPeriods تساوي أو تأتي بعد تاريخ معين (سنة/شهر)
 function findPeriodIdxOnOrAfter(targetYr,targetMo){
   for(var i=0;i<allPeriods.length;i++){
     var p=allPeriods[i].parsed;
@@ -1406,7 +1431,6 @@ function renderOrdersReport(){
   var todayNow=new Date();
   var curYr=todayNow.getFullYear(),curMo=todayNow.getMonth()+1,curDay=todayNow.getDate();
 
-  // تاريخ التسليم المتوقع = اليوم + مدة التصنيع
   var deliveryMo=curMo+leadMonths;
   var deliveryYr=curYr;
   while(deliveryMo>12){deliveryMo-=12;deliveryYr++;}
@@ -1432,16 +1456,13 @@ function renderOrdersReport(){
     if(!mselAllows('of-dept',r.dept))return;
     if(q && (r.sg+r.grp+r.dept).toLowerCase().indexOf(q)<0)return;
 
-    // محاكاة تراكمية من بداية futurePeriods حتى نقطة التسليم (لمعرفة الرصيد المتوقع وقت التسليم)
-    // نعتمد على pp.stockAfter المحسوبة أصلاً في computePlan لكل سيناريو
     var deliveryPeriodIdxInR=-1;
     for(var i=0;i<r.futurePeriods.length;i++){
       var gIdx=allPeriods.findIndex(function(p){return pK(p.parsed)===pK(r.futurePeriods[i].parsed);});
       if(gIdx>=deliveryIdx){deliveryPeriodIdxInR=i;break;}
     }
-    if(deliveryPeriodIdxInR<0)return; // لا توجد فترات بعد موعد التسليم لهذه المجموعة
+    if(deliveryPeriodIdxInR<0)return;
 
-    // الرصيد المتوقع وقت التسليم (نهاية الفترة قبل فترة التسليم)
     var stockAtDelivery={s1:r.startStock,s2:r.startStock};
     if(deliveryPeriodIdxInR>0){
       var prevPP=r.perPeriod[deliveryPeriodIdxInR-1];
@@ -1449,7 +1470,6 @@ function renderOrdersReport(){
       stockAtDelivery.s2=prevPP.stockAfter.s2;
     }
 
-    // نمشي من فترة التسليم فصاعداً، نطرح الاحتياج تراكمياً لحد أول نفاد
     var running={s1:stockAtDelivery.s1,s2:stockAtDelivery.s2};
     var totalNeed={s1:0,s2:0};
     var stopped={s1:false,s2:false};
@@ -1488,7 +1508,7 @@ function renderOrdersReport(){
         if(running[sc]<0){
           totalNeed[sc]+=(-running[sc]);
           running[sc]=0;
-          stopped[sc]=true; // وقف عند أول نقطة نفاد لهذا السيناريو
+          stopped[sc]=true;
         }
       });
       lastPeriodUsed=pp.period;
@@ -1641,7 +1661,7 @@ function exportOrdersReport(){
 }
 
 // ============================================================
-// MULTI-SELECT WITH SEARCH
+// MULTI-SELECT
 // ============================================================
 var mselState={'pf-grp':null,'pf-dept':null,'plf-grp':null,'plf-dept':null,'of-grp':null,'of-dept':null};
 var allSGData={grps:[],depts:[]};
