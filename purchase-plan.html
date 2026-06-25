@@ -551,12 +551,19 @@ function parseData(raw){
   if(!sgCol){alert('لم يتم العثور على عمود "المجموعة الفرعية"');return;}
   if(!stockCol){alert('لم يتم العثور على عمود الرصيد.\nالأعمدة الأولى في الملف:\n'+H.slice(0,5).map(function(h,i){return(i+1)+': "'+h+'"';}).join('\n'));return;}
 
-  // detect period columns: "D-M-YYYY - البيع الفعلي" / "D-M-YYYY - البيع المتوقع"
-  var periodMap={}; // dateKey -> {actual:col, expected:col}
+  // detect period columns — يتعرف على الاتجاهين (يمين لشمال أو شمال ليمين)
+  // "D-M-YYYY - البيع الفعلي" أو "البيع الفعلي - D-M-YYYY"
+  var periodMap={};
   H.forEach(function(h){
-    var m=h.match(/^(\d{1,2}-\d{1,2}-\d{4})\s*-\s*(.*)/);
-    if(!m)return;
-    var rawDate=m[1].trim(), type=m[2].trim();
+    var hn=h.toString().trim();
+    // محاولة 1: D-M-YYYY - نوع
+    var m1=hn.match(/^(\d{1,2}-\d{1,2}-\d{4})\s*-\s*(.+)$/);
+    // محاولة 2: نوع - D-M-YYYY (معكوس)
+    var m2=hn.match(/^(.+)\s*-\s*(\d{1,2}-\d{1,2}-\d{4})$/);
+    var rawDate=null, type=null;
+    if(m1){rawDate=m1[1].trim();type=m1[2].trim();}
+    else if(m2){rawDate=m2[2].trim();type=m2[1].trim();}
+    if(!rawDate||!type)return;
     var pd=parseDate(rawDate);
     if(!pd)return;
     if(!periodMap[pd.key])periodMap[pd.key]={actual:null,expected:null,label:dateToLabel(pd.key)};
