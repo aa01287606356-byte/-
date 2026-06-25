@@ -523,21 +523,33 @@ document.getElementById('fi').addEventListener('change',function(e){
 function parseData(raw){
   var H=Object.keys(raw[0]);
   // detect columns
-  var stockCol=H.find(function(h){return h.toString().trim()==='الرصيد.إجمالي_الكمية';});
-  if(!stockCol)stockCol=H.find(function(h){var n=h.toString().trim();return n.indexOf('رصيد')>=0&&n.indexOf('كمية')>=0;});
-  if(!stockCol)stockCol=H.find(function(h){var n=h.toString().trim();return n.indexOf('رصيد')>=0&&n.indexOf('إجمالي')>=0;});
+  // تنظيف اسم العمود من أي مسافات أو أحرف غير مرئية
+  function cleanH(h){return h.toString().replace(/\s+/g,'').replace(/[\u200B-\u200D\uFEFF]/g,'');}
 
-  var sgCol=H.find(function(h){return h.toString().trim()==='المجموعة الفرعية';});
-  if(!sgCol)sgCol=H.find(function(h){return h.toString().trim().indexOf('فرعية')>=0;});
+  var stockCol=H.find(function(h){
+    var c=cleanH(h);
+    return c==='الرصيد.إجمالي_الكمية'||c==='الرصيد.اجمالي_الكمية'||
+           c.indexOf('رصيد')>=0&&c.indexOf('كمية')>=0||
+           c.indexOf('رصيد')>=0&&c.indexOf('جمالي')>=0;
+  });
 
-  var colorCol=H.find(function(h){return h.toString().trim()==='اللون';});
-  if(!colorCol)colorCol=H.find(function(h){return h.toString().trim()==='لون';});
+  var sgCol=H.find(function(h){
+    var c=cleanH(h);
+    return c==='المجموعةالفرعية'||c.indexOf('فرعية')>=0;
+  });
 
-  // القسم اختياري — لو مفيش بنستخدم "غير محدد"
-  var deptCol=H.find(function(h){var n=h.toString().trim();return n==='القسم'||n==='الاقسام'||n==='قسم';});
+  var colorCol=H.find(function(h){
+    var c=cleanH(h);
+    return c==='اللون'||c==='لون';
+  });
+
+  var deptCol=H.find(function(h){
+    var c=cleanH(h);
+    return c==='القسم'||c==='الاقسام'||c==='قسم';
+  });
 
   if(!sgCol){alert('لم يتم العثور على عمود "المجموعة الفرعية"');return;}
-  if(!stockCol){alert('لم يتم العثور على عمود الرصيد.\nالأعمدة الموجودة:\n'+H.slice(0,6).join('\n'));return;}
+  if(!stockCol){alert('لم يتم العثور على عمود الرصيد.\nالأعمدة الأولى في الملف:\n'+H.slice(0,5).map(function(h,i){return(i+1)+': "'+h+'"';}).join('\n'));return;}
 
   // detect period columns: "D-M-YYYY - البيع الفعلي" / "D-M-YYYY - البيع المتوقع"
   var periodMap={}; // dateKey -> {actual:col, expected:col}
